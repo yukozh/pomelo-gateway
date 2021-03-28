@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Buffers;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Tunnel;
 
@@ -13,12 +16,31 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private TcpListener server;
         private StreamTunnelContextFactory streamTunnelContextFactory;
         private IStreamRouter router;
+        private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
 
-        public TcpPortListner(IPEndPoint endpoint, IStreamRouter router, StreamTunnelContextFactory streamTunnelContextFactory)
+        public TcpPortListner(IPEndPoint endpoint, IServiceProvider services, StreamTunnelContextFactory streamTunnelContextFactory)
         {
-            this.streamTunnelContextFactory = streamTunnelContextFactory;
-            this.router = router;
+            this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            var ruleContext = services.GetRequiredService<RuleContext>();
+            var _endpoint = ruleContext.Endpoints.SingleOrDefault(x => x.Address == endpoint.Address.ToString() && x.Protocol == Protocol.TCP && x.Port == endpoint.Port);
+            if (_endpoint == null)
+            {
+                throw new InvalidOperationException("The endpoint info has not been found");
+            }
+
+            this.router = services.GetServices<IStreamRouter>().SingleOrDefault(x => x.Id == _endpoint.RouterId);
+            if (this.router == null)
+            {
+                throw new DllNotFoundException($"The router {_endpoint.RouterId} has not been registered");
+            }
+
+            this.tunnel = services.GetServices<IStreamTunnel>().SingleOrDefault(x => x.Id == _endpoint.TunnelId);
+            if (this.tunnel == null)
+            {
+                throw new DllNotFoundException($"The tunnel {_endpoint.TunnelId} has not been registered");
+            }
+
             server = new TcpListener(endpoint);
             server.Start();
             StartAcceptAsync();
@@ -44,9 +66,9 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 client.Close();
                 client.Dispose();
             }
-            var tunnel = streamTunnelContextFactory.Create(buffer, result.Identifier);
-            tunnel.RightClient = client;
-            await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnel.ConnectionId);
+            var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
+            tunnelContext.RightClient = client;
+            await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId);
         }
 
         public void Dispose()

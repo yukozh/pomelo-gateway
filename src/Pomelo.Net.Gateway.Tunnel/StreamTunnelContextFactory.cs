@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Pomelo.Net.Gateway.Router;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -25,7 +26,8 @@ namespace Pomelo.Net.Gateway.Tunnel
         {
             while (true)
             {
-                try {
+                try 
+                {
                     foreach (var context in EnumerateContexts())
                     {
                         if (context.CreatedTimeUtc.AddSeconds(TunnelCreateTimeoutSeconds) < DateTime.UtcNow
@@ -44,18 +46,38 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier)
+        public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier, IStreamRouter router, IStreamTunnel tunnel)
         {
-            var context = new StreamTunnelContext(headerBuffer, userIdentifier);
+            var context = new StreamTunnelContext(headerBuffer, userIdentifier, router, tunnel);
             tunnels.TryAdd(context.ConnectionId, context);
             return context;
+        }
+
+        public void Delete(Guid connectionId)
+        {
+            tunnels.TryRemove(connectionId, out var _);
+        }
+
+        public void DestroyContextsForUserIdentifier(string identifier)
+        {
+            foreach (var context in tunnels.Values)
+            {
+                if (context.UserIdentifier == identifier)
+                {
+                    tunnels.TryRemove(context.ConnectionId, out var _);
+                    context.Dispose();
+                }
+            }
         }
 
         public StreamTunnelContext GetContextById(Guid id) => tunnels.ContainsKey(id) ? tunnels[id] : null;
 
         public void Dispose()
         {
-
+            foreach (var x in tunnels)
+            {
+                x.Value?.Dispose();
+            }
         }
     }
 }

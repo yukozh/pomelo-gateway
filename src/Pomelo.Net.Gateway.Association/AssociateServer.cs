@@ -10,6 +10,7 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Router;
+using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
@@ -20,14 +21,16 @@ namespace Pomelo.Net.Gateway.Association
         private ConcurrentDictionary<string, AssociateContext> clients;
         private TcpListener server;
         private IPEndPoint endpoint;
-        private IServiceProvider services;
         private IAuthenticator authenticator;
+        private StreamTunnelContextFactory streamTunnelContextFactory;
+        private IServiceProvider services;
 
         private AssociateServer(IServiceProvider services)
         {
             this.clients = new ConcurrentDictionary<string, AssociateContext>();
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
+            this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
         }
 
         public AssociateServer(IPEndPoint endpoint, IServiceProvider services)
@@ -57,11 +60,11 @@ namespace Pomelo.Net.Gateway.Association
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
-                HandleClientAsync(client);
+                HandleClientAcceptAsync(client);
             }
         }
 
-        private async ValueTask HandleClientAsync(TcpClient client, CancellationToken cancellationToken = default)
+        private async ValueTask HandleClientAcceptAsync(TcpClient client, CancellationToken cancellationToken = default)
         {
             using (var context = new AssociateContext(client))
             {
@@ -90,6 +93,10 @@ namespace Pomelo.Net.Gateway.Association
                     catch (Exception ex)
                     {
 
+                    }
+                    finally
+                    {
+                        streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
                     }
                 }
             }

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pomelo.Net.Gateway.EndpointCollection\Pomelo.Net.Gateway.EndpointCollection.csproj" />
+  </ItemGroup>
+
+</Project>

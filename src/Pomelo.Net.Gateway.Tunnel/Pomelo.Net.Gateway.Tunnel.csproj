@@ -4,4 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Pomelo.Net.Gateway.Association.Token\Pomelo.Net.Gateway.Association.Token.csproj" />
+    <ProjectReference Include="..\Pomelo.Net.Gateway.Shared\Pomelo.Net.Gateway.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

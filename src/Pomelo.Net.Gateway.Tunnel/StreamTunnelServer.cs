@@ -34,7 +34,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
-                await HandleClientAcceptAsync(client);
+                HandleClientAcceptAsync(client);
             }
         }
 
@@ -53,7 +53,6 @@ namespace Pomelo.Net.Gateway.Tunnel
                 {
                     _authenticationBuffer.Span[0] = 0x00;
                     await stream.WriteAsync(_authenticationBuffer.Slice(0, 1));
-
                 }
                 else
                 {
@@ -64,6 +63,16 @@ namespace Pomelo.Net.Gateway.Tunnel
                     return;
                 }
                 context.LeftClient = client;
+
+                /*
+                // Forward header
+                tunnel
+
+                // Start tunneling
+                await Task.WhenAll(new[] 
+                {
+                    
+                });*/
             }
         }
 

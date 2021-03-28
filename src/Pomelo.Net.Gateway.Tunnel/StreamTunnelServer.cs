@@ -54,12 +54,21 @@ namespace Pomelo.Net.Gateway.Tunnel
             {
                 try
                 {
+                    // Handshake
+                    // +-----------------+--------------------------+
+                    // | Token (8 bytes) | Connection ID (16 bytes) |
+                    // +-----------------+--------------------------+
                     var _authenticationBuffer = authenticationBuffer.Memory.Slice(0, 8 + 16);
                     await stream.ReadExAsync(_authenticationBuffer);
                     var token = BitConverter.ToInt64(_authenticationBuffer.Slice(0, 8).Span);
                     connectionId = new Guid(_authenticationBuffer.Slice(8, 16).Span);
                     var context = streamTunnelContextFactory.GetContextById(connectionId);
                     var result = await tokenValidator.ValidateAsync(token, context.UserIdentifier);
+
+                    // +-----------------+
+                    // | Result (1 byte) |
+                    // +-----------------+
+                    // 0=OK, 1=Failed
                     if (result)
                     {
                         _authenticationBuffer.Span[0] = 0x00;
@@ -71,6 +80,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                         await stream.WriteAsync(_authenticationBuffer.Slice(0, 1));
                         client.Close();
                         client.Dispose();
+                        connectionId = default;
                         return;
                     }
                     context.LeftClient = client;

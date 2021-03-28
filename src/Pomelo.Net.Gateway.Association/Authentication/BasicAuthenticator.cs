@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +8,8 @@ namespace Pomelo.Net.Gateway.Association.Authentication
 {
     public abstract class BasicAuthenticator : IAuthenticator
     {
+        private static Random random = new Random();
+
         public async ValueTask<Credential> AuthenticateAsync(Memory<byte> body, CancellationToken cancellationToken = default)
         {
             // 0: Length of Username
@@ -17,6 +18,7 @@ namespace Pomelo.Net.Gateway.Association.Authentication
             // 3 + len(username) ~ 3 + len(username) + len(password): ASCII Encoded Password
 
             Credential ret = new Credential();
+            using (var tokenBuffer = MemoryPool<byte>.Shared.Rent(8))
             using (var memoryOwner = MemoryPool<byte>.Shared.Rent(128))
             {
                 var credential = ParseCredentialFromBuffer(body);
@@ -25,6 +27,11 @@ namespace Pomelo.Net.Gateway.Association.Authentication
                 {
                     ret.IsSucceeded = true;
                     ret.Identifier = credential.Username;
+                    while (ret.Token == 0)
+                    {
+                        random.NextBytes(tokenBuffer.Memory.Slice(0, 8).Span);
+                        ret.Token = BitConverter.ToInt64(tokenBuffer.Memory.Slice(0, 8).Span);
+                    }
                 }
             }
             return ret;

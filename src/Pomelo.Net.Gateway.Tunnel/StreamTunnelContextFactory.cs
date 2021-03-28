@@ -44,9 +44,9 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer)
+        public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier)
         {
-            var context = new StreamTunnelContext(headerBuffer);
+            var context = new StreamTunnelContext(headerBuffer, userIdentifier);
             tunnels.TryAdd(context.ConnectionId, context);
             return context;
         }

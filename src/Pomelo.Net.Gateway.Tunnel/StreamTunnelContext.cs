@@ -15,14 +15,17 @@ namespace Pomelo.Net.Gateway.Tunnel
         private Guid connectionId;
         private DateTime createdTime;
         private IMemoryOwner<byte> headerBuffer;
+        private string userIdentifier;
 
         public TcpClient LeftClient { get; set; }
         public TcpClient RightClient { get; set; }
         public DateTime CreatedTimeUtc => createdTime;
+        public string UserIdentifier => userIdentifier;
         
-        internal StreamTunnelContext(IMemoryOwner<byte> headerBuffer)
+        internal StreamTunnelContext(IMemoryOwner<byte> headerBuffer, string userIdentifier)
         {
             this.headerBuffer = headerBuffer;
+            this.userIdentifier = userIdentifier;
             this.connectionId = Guid.NewGuid();
             this.createdTime = DateTime.UtcNow;
         }

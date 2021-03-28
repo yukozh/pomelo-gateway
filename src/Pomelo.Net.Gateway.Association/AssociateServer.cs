@@ -156,7 +156,6 @@ namespace Pomelo.Net.Gateway.Association
             AssociateContext context)
         {
             var routers = services.GetServices<IStreamRouter>();
-
         }
 
         public void Dispose()

@@ -6,5 +6,6 @@ namespace Pomelo.Net.Gateway.Association.Authentication
     {
         public bool IsSucceeded;
         public string Identifier;
+        public long Token;
     }
 }

@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
@@ -24,6 +21,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.router = router;
             server = new TcpListener(endpoint);
             server.Start();
+            StartAcceptAsync();
         }
 
         private async ValueTask StartAcceptAsync()
@@ -46,7 +44,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 client.Close();
                 client.Dispose();
             }
-            var tunnel = streamTunnelContextFactory.Create(buffer);
+            var tunnel = streamTunnelContextFactory.Create(buffer, result.Identifier);
+            tunnel.RightClient = client;
             await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnel.ConnectionId);
         }
 

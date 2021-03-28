@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pomelo.Net.Gateway.Association.Token\Pomelo.Net.Gateway.Association.Token.csproj" />
+    <ProjectReference Include="..\Pomelo.Net.Gateway.Router\Pomelo.Net.Gateway.Router.csproj" />
     <ProjectReference Include="..\Pomelo.Net.Gateway.Shared\Pomelo.Net.Gateway.Shared.csproj" />
   </ItemGroup>
 

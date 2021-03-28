@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
@@ -116,8 +117,15 @@ namespace Pomelo.Net.Gateway.Association
                     await HandleBasicAuthLoginCommandAsync(authenticator, clients, body, context);
                     break;
                 case AssociateOpCode.ListStreamRouters:
-
+                    await HandleListStreamRoutersCommandAsync(services, context);
                     break;
+                case AssociateOpCode.ListPacketRouters:
+                    throw new NotImplementedException();
+                case AssociateOpCode.ListStreamTunnels:
+                    await HandleListStreamTunnelsCommandAsync(services, context);
+                    break;
+                case AssociateOpCode.ListPacketTunnels:
+                    throw new NotImplementedException();
                 default:
                     return false;
             }
@@ -163,6 +171,57 @@ namespace Pomelo.Net.Gateway.Association
             AssociateContext context)
         {
             var routers = services.GetServices<IStreamRouter>();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+            {
+                // +-----------------------+
+                // | Router Count (1 byte) |
+                // +-----------------------+
+
+                // Send router count
+                buffer.Memory.Span[0] = (byte)routers.Count();
+                await context.Stream.WriteAsync(buffer.Memory.Slice(0, 1));
+
+                // Send router info
+                foreach (var router in routers)
+                {
+                    // +----------------------+----------------------+--------------+
+                    // | Name Length (1 byte) | Router ID (16 bytes) | Name in UTF8 |
+                    // +----------------------+----------------------+--------------+
+                    router.Id.TryWriteBytes(buffer.Memory.Slice(1, 16).Span);
+                    var length = (byte)Encoding.UTF8.GetBytes(router.Name, buffer.Memory.Slice(17).Span);
+                    buffer.Memory.Span[0] = length;
+                    await context.Stream.WriteAsync(buffer.Memory.Slice(0, 17 + length));
+                }
+            }
+        }
+
+        internal static async ValueTask HandleListStreamTunnelsCommandAsync(
+            IServiceProvider services,
+            AssociateContext context)
+        {
+            var tunnels = services.GetServices<IStreamTunnel>();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+            {
+                // +-----------------------+
+                // | Tunnel Count (1 byte) |
+                // +-----------------------+
+
+                // Send tunnel count
+                buffer.Memory.Span[0] = (byte)tunnels.Count();
+                await context.Stream.WriteAsync(buffer.Memory.Slice(0, 1));
+
+                // Send tunnel info
+                foreach (var tunnel in tunnels)
+                {
+                    // +----------------------+----------------------+--------------+
+                    // | Name Length (1 byte) | Tunnel ID (16 bytes) | Name in UTF8 |
+                    // +----------------------+----------------------+--------------+
+                    tunnel.Id.TryWriteBytes(buffer.Memory.Slice(1, 16).Span);
+                    var length = (byte)Encoding.UTF8.GetBytes(tunnel.Name, buffer.Memory.Slice(17).Span);
+                    buffer.Memory.Span[0] = length;
+                    await context.Stream.WriteAsync(buffer.Memory.Slice(0, 17 + length));
+                }
+            }
         }
 
         public void Dispose()

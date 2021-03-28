@@ -6,13 +6,8 @@
 
     public enum AssociateOpCode : byte
     {
-        Version             = 0x00,
-        BasicAuthLogin      = 0x01,
-        ListStreamRouters   = 0x02,
-        ListPacketRouters   = 0x03,
-        ListStreamTunnels   = 0x04,
-        ListPacketTunnels   = 0x05,
-        SetRules            = 0x06,
-        CleanUpRules        = 0x07
+        BasicAuthLogin      = 0x00,
+        SetRules            = 0x01,
+        CleanUpRules        = 0x02s
     }
 }

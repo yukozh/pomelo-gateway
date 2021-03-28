@@ -110,22 +110,15 @@ namespace Pomelo.Net.Gateway.Association
         {
             switch (code)
             {
-                case AssociateOpCode.Version:
-                    await HandleVersionCommandAsync(Version, body, context);
-                    break;
                 case AssociateOpCode.BasicAuthLogin:
+                    // +--------------+----------------+----------------+----------------+
+                    // | Login Result | Server Version | Stream Routers | Stream Tunnels |
+                    // +--------------+----------------+----------------+----------------+
                     await HandleBasicAuthLoginCommandAsync(authenticator, clients, body, context);
-                    break;
-                case AssociateOpCode.ListStreamRouters:
+                    await HandleVersionCommandAsync(Version, body, context);
                     await HandleListStreamRoutersCommandAsync(services, context);
-                    break;
-                case AssociateOpCode.ListPacketRouters:
-                    throw new NotImplementedException();
-                case AssociateOpCode.ListStreamTunnels:
                     await HandleListStreamTunnelsCommandAsync(services, context);
                     break;
-                case AssociateOpCode.ListPacketTunnels:
-                    throw new NotImplementedException();
                 default:
                     return false;
             }
@@ -138,6 +131,9 @@ namespace Pomelo.Net.Gateway.Association
             Memory<byte> buffer, 
             AssociateContext context)
         {
+            // +-----------------+---------+
+            // | Length (1 byte) | Version |
+            // +-----------------+---------+
             var _version = version.Split(".").Select(x => Convert.ToByte(x)).ToArray();
             var length = _version.Length;
             context.ResponseBuffer.Span[0] = (byte)length;

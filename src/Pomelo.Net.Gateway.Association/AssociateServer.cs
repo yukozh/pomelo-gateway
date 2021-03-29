@@ -10,12 +10,13 @@ using System.Net.Sockets;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association.Authentication;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
-    public class AssociateServer : IDisposable
+    public class AssociateServer : ITunnelCreationNotifier, IDisposable 
     {
         public const string Version = "0.9.0";
 
@@ -150,16 +151,30 @@ namespace Pomelo.Net.Gateway.Association
             Memory<byte> buffer, 
             AssociateContext context)
         {
+            // +-----------------+-----------------+
+            // | Result (1 byte) | Token (8 bytes) |
+            // +-----------------+-----------------+
             context.Credential = await authenticator.AuthenticateAsync(buffer);
             context.ResponseBuffer.Span[0] = context.Credential.IsSucceeded ? (byte)0x00 : (byte)0x01;
             if (context.Credential.IsSucceeded)
             {
                 if (!clients.TryAdd(context.Credential.Identifier, context))
                 {
+                    context.ResponseBuffer.Span[0] = 0x02;
+                    await context.Stream.WriteAsync(context.ResponseBuffer.Slice(0, 1));
                     throw new AssociateClientConflictException($"Client {context.Credential.Identifier} already connected");
                 }
             }
             await context.Stream.WriteAsync(context.ResponseBuffer.Slice(0, 1));
+
+            if (!context.Credential.IsSucceeded)
+            {
+                throw new AssociateInvalidCredentialException($"Invalid Credential");
+            }
+
+            // Send token
+            BitConverter.TryWriteBytes(context.ResponseBuffer.Slice(0, 8).Span, context.Credential.Token);
+            await context.Stream.WriteAsync(context.ResponseBuffer.Slice(0, 8));
         }
 
         internal static async ValueTask HandleListStreamRoutersCommandAsync(
@@ -223,6 +238,24 @@ namespace Pomelo.Net.Gateway.Association
         public void Dispose()
         {
             server?.Stop();
+        }
+
+        public async ValueTask NotifyStreamTunnelCreationAsync(string userIdentifier, Guid connectionId, CancellationToken cancellationToken = default)
+        {
+            using (var buffer = MemoryPool<byte>.Shared.Rent(17))
+            {
+                var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
+                var stream = context.Client.GetStream();
+                var _buffer = buffer.Memory.Slice(0, 17);
+                _buffer.Span[0] = (byte)Protocol.TCP;
+                connectionId.TryWriteBytes(_buffer.Slice(1, 16).Span);
+                await stream.WriteAsync(_buffer, cancellationToken);
+            }
+        }
+
+        public ValueTask NotifyPacketTunnelCreationAsync(string userIdentifier, Guid connectionId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

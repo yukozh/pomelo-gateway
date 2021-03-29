@@ -42,10 +42,14 @@ namespace Pomelo.Net.Gateway.Association
 
         public void Dispose()
         {
-            header.Dispose();
-            body.Dispose();
-            response.Dispose();
+            header?.Dispose();
+            header = null;
+            body?.Dispose();
+            body = null;
+            response?.Dispose();
+            response = null;
             client?.Dispose();
+            client = null;
             OnDispose?.Invoke(this);
         }
     }

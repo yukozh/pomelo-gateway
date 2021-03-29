@@ -2,9 +2,8 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Router;
 
 namespace Pomelo.Net.Gateway.Tunnel
@@ -13,35 +12,40 @@ namespace Pomelo.Net.Gateway.Tunnel
     {
         public const int TunnelCreateTimeoutSeconds = 60;
         private ConcurrentDictionary<Guid, StreamTunnelContext> tunnels;
+        private ILogger<StreamTunnelContextFactory> logger;
 
-        public StreamTunnelContextFactory()
+        public StreamTunnelContextFactory(ILogger<StreamTunnelContextFactory> logger)
         {
             this.tunnels = new ConcurrentDictionary<Guid, StreamTunnelContext>();
-            CollectAsync();
+            this.logger = logger;
+            RecycleAsync();
         }
 
         public IEnumerable<StreamTunnelContext> EnumerateContexts() => tunnels.Values;
 
-        private async ValueTask CollectAsync()
+        private async ValueTask RecycleAsync()
         {
             while (true)
             {
                 try 
                 {
+                    logger.LogInformation("Recycling tunnels...");
                     foreach (var context in EnumerateContexts())
                     {
                         if (context.CreatedTimeUtc.AddSeconds(TunnelCreateTimeoutSeconds) < DateTime.UtcNow
                             && context.Status == StreamTunnelStatus.WaitingForClient)
                         {
                             tunnels.Remove(context.ConnectionId, out var _);
+                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled");
                             context.Dispose();
                         }
                     }
                 } 
                 catch (Exception ex)
-                { 
-                
+                {
+                    logger.LogError(ex.ToString());
                 }
+                logger.LogInformation("Sleep 1 minute...");
                 await Task.Delay(1000 * 60);
             }
         }
@@ -62,7 +66,11 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public void Delete(Guid connectionId)
         {
-            tunnels.TryRemove(connectionId, out var _);
+            if (tunnels.TryRemove(connectionId, out var context))
+            {
+                logger.LogInformation($"Disposing tunnel {connectionId}");
+                context?.Dispose();
+            }
         }
 
         public void DestroyContextsForUserIdentifier(string identifier)
@@ -71,8 +79,11 @@ namespace Pomelo.Net.Gateway.Tunnel
             {
                 if (context.UserIdentifier == identifier)
                 {
-                    tunnels.TryRemove(context.ConnectionId, out var _);
-                    context.Dispose();
+                    if (tunnels.TryRemove(context.ConnectionId, out var _))
+                    {
+                        logger.LogInformation($"Disposing tunnel {context.ConnectionId}");
+                        context?.Dispose();
+                    }
                 }
             }
         }

@@ -9,14 +9,16 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Authentication;
+using Pomelo.Net.Gateway.Association.Token;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
-    public class AssociateServer : ITunnelCreationNotifier, IDisposable 
+    public class AssociateServer : ITunnelCreationNotifier, ITokenValidator, IDisposable 
     {
         public const string Version = "0.9.0";
 
@@ -25,6 +27,7 @@ namespace Pomelo.Net.Gateway.Association
         private IPEndPoint endpoint;
         private IAuthenticator authenticator;
         private StreamTunnelContextFactory streamTunnelContextFactory;
+        private ILogger<AssociateServer> logger;
         private IServiceProvider services;
 
         private AssociateServer(IServiceProvider services)
@@ -33,6 +36,7 @@ namespace Pomelo.Net.Gateway.Association
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            this.logger = services.GetRequiredService<ILogger<AssociateServer>>();
         }
 
         public AssociateServer(IPEndPoint endpoint, IServiceProvider services)
@@ -41,16 +45,12 @@ namespace Pomelo.Net.Gateway.Association
             this.endpoint = endpoint;
         }
 
-        public AssociateServer(int port, IServiceProvider services)
-            : this(services)
-        {
-            this.endpoint = new IPEndPoint(IPAddress.Any, port);
-        }
-
         public void Start()
         {
+            logger.LogInformation("Starting associate server...");
             server = new TcpListener(endpoint);
             server.Start();
+            logger.LogInformation($"Associate server is listening on {endpoint}...");
             LoopAcceptAsync();
         }
 
@@ -62,6 +62,7 @@ namespace Pomelo.Net.Gateway.Association
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
+                logger.LogInformation($"Accepted client from {client.Client.RemoteEndPoint}");
                 HandleClientAcceptAsync(client);
             }
         }
@@ -70,14 +71,6 @@ namespace Pomelo.Net.Gateway.Association
         {
             using (var context = new AssociateContext(client))
             {
-                context.OnDispose += (context) => 
-                {
-                    if (context.IsAuthenticated)
-                    {
-                        clients.TryRemove(context.Credential.Identifier, out var _);
-                    }
-                };
-
                 while (true)
                 {
                     try
@@ -88,19 +81,18 @@ namespace Pomelo.Net.Gateway.Association
                         await context.Stream.ReadExAsync(context.BodyBuffer, cancellationToken);
                         await HandleOpCommandAsync(operation, context.BodyBuffer.Slice(0, length), context);
                     }
-                    catch (IOException ex)
-                    {
-
-                    }
                     catch (Exception ex)
                     {
-
+                        logger.LogError(ex.ToString());
+                        break;
                     }
                     finally
                     {
                         streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
+                        logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
                     }
                 }
+                clients.TryRemove(context.Credential.Identifier, out var _);
             }
         }
 
@@ -109,6 +101,7 @@ namespace Pomelo.Net.Gateway.Association
             Memory<byte> body, 
             AssociateContext context)
         {
+            logger.LogInformation($"{context.Client.Client.RemoteEndPoint}: {code.ToString()}");
             switch (code)
             {
                 case AssociateOpCode.BasicAuthLogin:
@@ -120,7 +113,11 @@ namespace Pomelo.Net.Gateway.Association
                     await HandleListStreamRoutersCommandAsync(services, context);
                     await HandleListStreamTunnelsCommandAsync(services, context);
                     break;
+                case AssociateOpCode.SetRules:
+
+                    break;
                 default:
+                    logger.LogInformation($"{context.Client.Client.RemoteEndPoint}: Invalid OpCode");
                     return false;
             }
 
@@ -240,7 +237,7 @@ namespace Pomelo.Net.Gateway.Association
             server?.Stop();
         }
 
-        public async ValueTask NotifyStreamTunnelCreationAsync(
+        public virtual async ValueTask NotifyStreamTunnelCreationAsync(
             string userIdentifier, 
             Guid connectionId, 
             IPEndPoint from, 
@@ -262,13 +259,23 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        public ValueTask NotifyPacketTunnelCreationAsync(
+        public virtual ValueTask NotifyPacketTunnelCreationAsync(
             string userIdentifier, 
             Guid connectionId, 
             IPEndPoint from, 
             CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
+        }
+
+        public virtual async ValueTask<bool> ValidateAsync(long token, string userIdentifier)
+        {
+            var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
+            if (context == null)
+            {
+                return false;
+            }
+            return context.Credential.Token == token;
         }
     }
 }

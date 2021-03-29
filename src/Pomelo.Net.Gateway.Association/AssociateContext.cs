@@ -10,7 +10,6 @@ namespace Pomelo.Net.Gateway.Association
         private TcpClient client;
         private NetworkStream stream;
         private IMemoryOwner<byte> header, body, response;
-        public event Action<AssociateContext> OnDispose;
 
         public AssociateContext(TcpClient client)
         {
@@ -50,7 +49,6 @@ namespace Pomelo.Net.Gateway.Association
             response = null;
             client?.Dispose();
             client = null;
-            OnDispose?.Invoke(this);
         }
     }
 }

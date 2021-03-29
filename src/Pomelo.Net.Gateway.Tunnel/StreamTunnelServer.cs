@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Token;
-using Pomelo.Net.Gateway.Router;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -21,13 +19,11 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public StreamTunnelServer(
             IPEndPoint endpoint, 
-            StreamTunnelContextFactory streamTunnelContextFactory, 
-            ITokenValidator tokenValidator,
             IServiceProvider services)
         {
             server = new TcpListener(endpoint);
-            this.streamTunnelContextFactory = streamTunnelContextFactory;
-            this.tokenValidator = tokenValidator;
+            this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             this.services = services;
         }
 

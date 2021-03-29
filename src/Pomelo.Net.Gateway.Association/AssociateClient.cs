@@ -99,27 +99,54 @@ namespace Pomelo.Net.Gateway.Association
             try
             {
                 client.Connect(associateServerEndpoint);
-                HandshakeAsync(client.GetStream())
-                    .ContinueWith(async (task) => await Task.WhenAll(new[] 
+                Task.Factory.StartNew(async ()=> 
+                {
+                    try
                     {
-                        ReceiveNotificationAsync(),
-                        SendRulesAsync()
-                    }));
+                        await HandshakeAsync();
+                        await Task.WhenAll(new[]
+                        {
+                            ReceiveNotificationAsync(),
+                            SendRulesAsync()
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex.ToString());
+                        logger.LogError($"Retry after sleep {retryDelay}ms");
+                        await Task.Delay(retryDelay);
+                        retryDelay += 1000;
+                        if (retryDelay > 10000)
+                        {
+                            retryDelay = 1000;
+                        }
+                        Reset();
+                    }
+                });
             }
             catch (SocketException ex)
             {
                 logger.LogWarning(ex.ToString());
-                return false;
+                logger.LogError($"Retry after sleep {retryDelay}ms");
+                Task.Delay(retryDelay).Wait();
+                retryDelay += 1000;
+                if (retryDelay > 10000)
+                {
+                    retryDelay = 1000;
+                }
+                Reset();
             }
 
             logger.LogInformation("Associate Client Reset");
             return true;
         }
 
-        private async Task HandshakeAsync(NetworkStream stream)
+        private async Task HandshakeAsync()
         {
             try
             {
+                var stream = client.GetStream();
+                logger.LogInformation($"Connected to associate server {associateServerEndpoint}");
                 logger.LogInformation("Handshaking...");
                 using (var buffer = MemoryPool<byte>.Shared.Rent(256))
                 {
@@ -132,7 +159,7 @@ namespace Pomelo.Net.Gateway.Association
                     // +--------------+----------------+----------------+----------------+
 
                     // 1. Login Result
-                    logger.LogError("Handshake: Sending authentication packet");
+                    logger.LogInformation("Handshake: Sending authentication packet");
                     await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
                     switch (buffer.Memory.Span[0])
                     {

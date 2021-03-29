@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Pomelo.Net.Gateway.Association.Token\Pomelo.Net.Gateway.Association.Token.csproj" />
     <ProjectReference Include="..\Pomelo.Net.Gateway.EndpointCollection\Pomelo.Net.Gateway.EndpointCollection.csproj" />
+    <ProjectReference Include="..\Pomelo.Net.Gateway.EndpointManager\Pomelo.Net.Gateway.EndpointManager.csproj" />
     <ProjectReference Include="..\Pomelo.Net.Gateway.Router\Pomelo.Net.Gateway.Router.csproj" />
     <ProjectReference Include="..\Pomelo.Net.Gateway.Shared\Pomelo.Net.Gateway.Shared.csproj" />
     <ProjectReference Include="..\Pomelo.Net.Gateway.Tunnel\Pomelo.Net.Gateway.Tunnel.csproj" />

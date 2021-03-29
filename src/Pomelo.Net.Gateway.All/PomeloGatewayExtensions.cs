@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Pomelo.Net.Gateway
@@ -38,7 +40,20 @@ namespace Pomelo.Net.Gateway
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<Tunnel.ITunnelCreationNotifier>(services 
                     => services.GetRequiredService<Association.AssociateServer>())
-                .AddSingleton<EndpointManager.TcpEndpointManager>();
+                .AddSingleton<EndpointManager.TcpEndpointManager>()
+                .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
+                .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>();
+        }
+
+        public static void RunPomeloGatewayServer(this IServiceProvider services)
+        {
+            services.GetRequiredService<Association.AssociateServer>().Start();
+            services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();
+        }
+
+        public static void RunPomeloGatewayClient(this IServiceProvider services)
+        {
+            services.GetRequiredService<Association.AssociateClient>();
         }
     }
 }

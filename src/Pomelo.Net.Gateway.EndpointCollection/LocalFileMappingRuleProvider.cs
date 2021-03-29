@@ -21,7 +21,9 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         {
             rules.Clear();
             var jsonText = File.ReadAllText(path);
-            rules.AddRange(JsonConvert.DeserializeObject<IEnumerable<MappingRule>>(jsonText));
+            var settings = new JsonSerializerSettings();
+            settings.Converters.Add(new IPEndPointConverter());
+            rules.AddRange(JsonConvert.DeserializeObject<IEnumerable<MappingRule>>(jsonText, settings));
         }
     }
 }

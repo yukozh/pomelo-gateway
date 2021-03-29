@@ -15,12 +15,11 @@ namespace Pomelo.Net.Gateway.Router
         public Guid Id => Guid.Parse("6486995f-b40c-47db-96e5-4e50443a47a3");
         public string Name => nameof(DefaultStreamRouter);
         public int ExpectedBufferSize => 0;
+        private IServiceProvider services;
 
-        private RuleContext context;
-
-        public DefaultStreamRouter(RuleContext context)
+        public DefaultStreamRouter(IServiceProvider services)
         {
-            this.context = context;
+            this.services = services;
         }
 
         public async ValueTask<RouteResult> DetermineIdentifierAsync(
@@ -29,24 +28,28 @@ namespace Pomelo.Net.Gateway.Router
             IPEndPoint endpoint, 
             CancellationToken cancellationToken = default)
         {
-            var _endpoint = await context.Endpoints
-                .Include(x => x.Users)
-                .SingleOrDefaultAsync(x =>
-                    x.Address == endpoint.Address.ToString()
-                    && x.Protocol == Protocol.TCP
-                    && x.Port == (ushort)endpoint.Port);
-
-            if (_endpoint == null)
+            using (var scope = services.CreateScope())
             {
-                return default;
+                var _endpoint = await scope.ServiceProvider.GetRequiredService<RuleContext>()
+                    .Endpoints
+                    .Include(x => x.Users)
+                    .SingleOrDefaultAsync(x =>
+                        x.Address == endpoint.Address.ToString()
+                        && x.Protocol == Protocol.TCP
+                        && x.Port == (ushort)endpoint.Port);
+
+                if (_endpoint == null)
+                {
+                    return default;
+                }
+
+                return new RouteResult
+                {
+                    IsSucceeded = true,
+                    HeaderLength = 0,
+                    Identifier = _endpoint.Users.FirstOrDefault()?.UserIdentifier
+                };
             }
-
-            return new RouteResult
-            {
-                IsSucceeded = true,
-                HeaderLength = 0,
-                Identifier = _endpoint.Users.FirstOrDefault()?.UserIdentifier
-            };
         }
     }
 

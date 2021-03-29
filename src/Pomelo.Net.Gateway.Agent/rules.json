@@ -1,0 +1,10 @@
+﻿[
+  {
+    "Protocol": "TCP",
+    "LocalEndpoint": "127.0.0.1:80",
+    "RemoteEndpoint": "0.0.0.0:8080",
+    "LocalTunnelId": "4048bf29-0997-4f9d-827b-fe29ceb0e4fe",
+    "RemoteTunnelId": "4048bf29-0997-4f9d-827b-fe29ceb0e4fe",
+    "RemoteRouterId": "6486995f-b40c-47db-96e5-4e50443a47a3"
+  }
+]

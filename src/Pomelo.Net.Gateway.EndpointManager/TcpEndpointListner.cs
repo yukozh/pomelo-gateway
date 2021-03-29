@@ -16,6 +16,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
     {
         private TcpListener server;
         private StreamTunnelContextFactory streamTunnelContextFactory;
+        private IServiceScope scope;
         private IStreamRouter router;
         private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
@@ -23,8 +24,11 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
         public TcpEndpointListner(IPEndPoint endpoint, IServiceProvider services)
         {
+            this.scope = services.CreateScope();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
-            var ruleContext = services.GetRequiredService<RuleContext>();
+            this.logger = services.GetRequiredService<ILogger<TcpEndpointListner>>();
+            this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
+            var ruleContext = scope.ServiceProvider.GetRequiredService<RuleContext>();
             var _endpoint = ruleContext.Endpoints.SingleOrDefault(x => x.Address == endpoint.Address.ToString() && x.Protocol == Protocol.TCP && x.Port == endpoint.Port);
             if (_endpoint == null)
             {
@@ -48,7 +52,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
             server = new TcpListener(endpoint);
             server.Start();
-            logger.LogError($"TCP Endpoitn Listener is listening on {endpoint}...");
+            logger.LogInformation($"TCP Endpoitn Listener is listening on {endpoint}...");
             StartAcceptAsync();
         }
 
@@ -57,7 +61,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
-                logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} connected...");
+                logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} connected...");
                 HandleClientAcceptAsync(client);
             }
         }
@@ -66,27 +70,30 @@ namespace Pomelo.Net.Gateway.EndpointManager
         {
             var stream = client.GetStream();
             var buffer = MemoryPool<byte>.Shared.Rent(router.ExpectedBufferSize);
-            logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
+            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
             var result = await router.DetermineIdentifierAsync(stream, buffer.Memory, server.LocalEndpoint as IPEndPoint);
             if (!result.IsSucceeded)
             {
-                logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");
+                logger.LogWarning($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");
                 buffer.Dispose();
                 client.Close();
                 client.Dispose();
             }
-            logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
+            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
             var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
-            logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
+            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
-            logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
+            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
             await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
         }
 
         public void Dispose()
         {
-            logger.LogError($"TCP Endpoitn Listener<{server.LocalEndpoint}>: Stopping...");
+            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: Stopping...");
             server?.Stop();
+            server = null;
+            scope?.Dispose();
+            scope = null;
         }
     }
 }

@@ -34,9 +34,43 @@ namespace Pomelo.Net.Gateway.EndpointManager
             scope = null;
         }
 
-        public TcpEndpointListner GetOrCreateListenerForEndpoint(IPEndPoint endpoint, Guid routerId, Guid tunnelId)
+        public TcpEndpointListner GetOrCreateListenerForEndpoint(
+            IPEndPoint endpoint, 
+            Guid routerId, 
+            Guid tunnelId,
+            string userIdentifier)
         {
             logger.LogInformation($"Creating TCP Endpoint Listener {endpoint}");
+            var _endpoint = context.Endpoints
+                .Include(x => x.Users)
+                .SingleOrDefault(x => x.Address == endpoint.Address.ToString() 
+                    && x.Port == endpoint.Port 
+                    && x.Protocol == Protocol.TCP);
+            if (_endpoint == null)
+            {
+                _endpoint = new Endpoint
+                {
+                    Id = Guid.NewGuid(),
+                    Address = endpoint.Address.ToString(),
+                    Protocol = Protocol.TCP,
+                    Port = (ushort)endpoint.Port,
+                    RouterId = routerId,
+                    TunnelId = tunnelId
+                };
+                context.Endpoints.Add(_endpoint);
+                context.SaveChanges();
+            }
+            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id && userIdentifier == userIdentifier))
+            {
+                logger.LogInformation($"User {userIdentifier} is using the endpoint {endpoint}");
+                _endpoint.Users.Add(new EndpointUser
+                {
+                    EndpointId = _endpoint.Id,
+                    UserIdentifier = userIdentifier
+                });
+                context.SaveChanges();
+            }
+
             return listeners.GetOrAdd(endpoint, (key) => 
             {
                 return new TcpEndpointListner(key, services);

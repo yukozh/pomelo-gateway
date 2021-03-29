@@ -16,6 +16,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         private StreamTunnelContextFactory streamTunnelContextFactory;
         private ITokenValidator tokenValidator;
         private IServiceProvider services;
+        private ILogger<StreamTunnelServer> logger;
 
         public StreamTunnelServer(
             IPEndPoint endpoint, 
@@ -24,12 +25,14 @@ namespace Pomelo.Net.Gateway.Tunnel
             server = new TcpListener(endpoint);
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
+            this.logger = services.GetRequiredService<ILogger<StreamTunnelServer>>();
             this.services = services;
         }
 
         public void Start()
         {
             server.Start();
+            logger.LogInformation($"Stream Tunnel Server is listening on {server.LocalEndpoint}...");
             StartAcceptAsync();
         }
 

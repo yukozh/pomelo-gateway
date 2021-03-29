@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Token;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Tunnel;
 
@@ -27,6 +28,7 @@ namespace Pomelo.Net.Gateway.Association
         private IPEndPoint endpoint;
         private IAuthenticator authenticator;
         private StreamTunnelContextFactory streamTunnelContextFactory;
+        private TcpEndpointManager tcpEndpointManager;
         private ILogger<AssociateServer> logger;
         private IServiceProvider services;
 
@@ -36,6 +38,7 @@ namespace Pomelo.Net.Gateway.Association
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            this.tcpEndpointManager = services.GetRequiredService<TcpEndpointManager>();
             this.logger = services.GetRequiredService<ILogger<AssociateServer>>();
         }
 
@@ -69,30 +72,46 @@ namespace Pomelo.Net.Gateway.Association
 
         private async ValueTask HandleClientAcceptAsync(TcpClient client, CancellationToken cancellationToken = default)
         {
-            using (var context = new AssociateContext(client))
+            try
             {
-                while (true)
+                using (var context = new AssociateContext(client))
                 {
-                    try
+                    while (true)
                     {
-                        await context.Stream.ReadExAsync(context.HeaderBuffer, cancellationToken);
-                        var operation = (AssociateOpCode)context.HeaderBuffer.Span[0];
-                        int length = context.HeaderBuffer.Span[1];
-                        await context.Stream.ReadExAsync(context.BodyBuffer, cancellationToken);
-                        await HandleOpCommandAsync(operation, context.BodyBuffer.Slice(0, length), context);
+                        try
+                        {
+                            await context.Stream.ReadExAsync(context.HeaderBuffer, cancellationToken);
+                            var operation = (AssociateOpCode)context.HeaderBuffer.Span[0];
+                            int length = context.HeaderBuffer.Span[1];
+                            await context.Stream.ReadExAsync(context.BodyBuffer.Slice(0, length), cancellationToken);
+                            await HandleOpCommandAsync(operation, context.BodyBuffer.Slice(0, length), context);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex.ToString());
+                            break;
+                        }
+                        finally
+                        {
+                            streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
+                            logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
+                        }
                     }
-                    catch (Exception ex)
+
+                    if (context.Credential.IsSucceeded)
                     {
-                        logger.LogError(ex.ToString());
-                        break;
-                    }
-                    finally
-                    {
-                        streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
-                        logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
+                        clients.TryRemove(context.Credential.Identifier, out var _);
                     }
                 }
-                clients.TryRemove(context.Credential.Identifier, out var _);
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex.ToString());
+                throw;
+            }
+            finally
+            {
+                client.Dispose();
             }
         }
 
@@ -114,7 +133,10 @@ namespace Pomelo.Net.Gateway.Association
                     await HandleListStreamTunnelsCommandAsync(services, context);
                     break;
                 case AssociateOpCode.SetRule:
-
+                    HandleSetRuleCommand(body, tcpEndpointManager, context.Credential.Identifier);
+                    break;
+                case AssociateOpCode.CleanRules:
+                    await HandleCleanRulesCommandAsync(tcpEndpointManager, context.Credential.Identifier);
                     break;
                 default:
                     logger.LogInformation($"{context.Client.Client.RemoteEndPoint}: Invalid OpCode");
@@ -232,6 +254,30 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
+        internal static void HandleSetRuleCommand(
+            Memory<byte> body, 
+            TcpEndpointManager tcpEndpointManager, 
+            string userIdentifier)
+        {
+            var endpoint = RuleParser.ParseRulePacket(body);
+            if (endpoint.Protocol == Protocol.UDP)
+            {
+                throw new NotSupportedException();
+            }
+            tcpEndpointManager.GetOrCreateListenerForEndpoint(
+                new IPEndPoint(endpoint.IPAddress, endpoint.Port), 
+                endpoint.RouterId, 
+                endpoint.TunnelId, 
+                userIdentifier);
+        }
+
+        internal static async ValueTask HandleCleanRulesCommandAsync(
+            TcpEndpointManager tcpEndpointManager, 
+            string userIdentifier)
+        {
+            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(userIdentifier);
+        }
+
         public void Dispose()
         {
             server?.Stop();
@@ -248,14 +294,16 @@ namespace Pomelo.Net.Gateway.Association
             // +-------------------+-+------------------------+----------+--------+
             // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
             // +---------------------+-----------------------------------+
-            using (var buffer = MemoryPool<byte>.Shared.Rent(17))
+            using (var buffer = MemoryPool<byte>.Shared.Rent(36))
             {
                 var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
                 var stream = context.Client.GetStream();
-                var _buffer = buffer.Memory.Slice(0, 17);
-                _buffer.Span[0] = (byte)Protocol.TCP;
-                connectionId.TryWriteBytes(_buffer.Slice(1, 16).Span);
-                await stream.WriteAsync(_buffer, cancellationToken);
+                buffer.Memory.Span[0] = (byte)Protocol.TCP;
+                connectionId.TryWriteBytes(buffer.Memory.Slice(1, 16).Span);
+                BitConverter.TryWriteBytes(buffer.Memory.Slice(18, 2).Span, (ushort)from.Port);
+                from.Address.TryWriteBytes(buffer.Memory.Slice(20).Span, out var length);
+                buffer.Memory.Span[17] = length == 4 ? (byte)0x00 : (byte)0x01;
+                await stream.WriteAsync(buffer.Memory.Slice(0, 20 + length), cancellationToken);
             }
         }
 

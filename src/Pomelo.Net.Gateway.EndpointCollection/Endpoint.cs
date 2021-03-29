@@ -27,7 +27,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 
         public Guid TunnelId { get; set; }
 
-        public virtual ICollection<EndpointUser> Users { get; set; }
+        public virtual ICollection<EndpointUser> Users { get; set; } = new List<EndpointUser>();
 
         [NotMapped]
         public IPAddress IPAddress 

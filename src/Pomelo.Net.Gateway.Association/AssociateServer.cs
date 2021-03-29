@@ -91,17 +91,16 @@ namespace Pomelo.Net.Gateway.Association
                             logger.LogError(ex.ToString());
                             break;
                         }
-                        finally
-                        {
-                            streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
-                            logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
-                        }
                     }
 
                     if (context.Credential.IsSucceeded)
                     {
                         clients.TryRemove(context.Credential.Identifier, out var _);
                     }
+
+                    await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(context.Credential.Identifier);
+                    streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
+                    logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
                 }
             }
             catch(Exception ex)

@@ -62,7 +62,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                     await stream.ReadExAsync(_authenticationBuffer);
                     var token = BitConverter.ToInt64(_authenticationBuffer.Slice(0, 8).Span);
                     connectionId = new Guid(_authenticationBuffer.Slice(8, 16).Span);
-                    var context = streamTunnelContextFactory.GetContextById(connectionId);
+                    var context = streamTunnelContextFactory.GetContextByConnectionId(connectionId);
                     var result = await tokenValidator.ValidateAsync(token, context.UserIdentifier);
 
                     // +-----------------+

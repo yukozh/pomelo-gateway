@@ -8,6 +8,6 @@
     {
         BasicAuthLogin      = 0x00,
         SetRules            = 0x01,
-        CleanUpRules        = 0x02s
+        CleanUpRules        = 0x02
     }
 }

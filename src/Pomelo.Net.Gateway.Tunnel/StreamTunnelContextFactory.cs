@@ -70,7 +70,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public StreamTunnelContext GetContextById(Guid id) => tunnels.ContainsKey(id) ? tunnels[id] : null;
+        public StreamTunnelContext GetContextByConnectionId(Guid id) => tunnels.ContainsKey(id) ? tunnels[id] : null;
 
         public void Dispose()
         {

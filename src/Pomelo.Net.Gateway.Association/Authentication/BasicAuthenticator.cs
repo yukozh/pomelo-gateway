@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +9,17 @@ namespace Pomelo.Net.Gateway.Association.Authentication
 {
     public abstract class BasicAuthenticator : IAuthenticator
     {
+        private string username, password;
         private static Random random = new Random();
+
+        public BasicAuthenticator()
+        { }
+
+        public BasicAuthenticator(string username, string password)
+        {
+            this.username = username;
+            this.password = password;
+        }
 
         public async ValueTask<Credential> AuthenticateAsync(Memory<byte> body, CancellationToken cancellationToken = default)
         {
@@ -44,14 +55,31 @@ namespace Pomelo.Net.Gateway.Association.Authentication
             return (username, password);
         }
 
-        public static void BuildCredentialPacket(Memory<byte> buffer, string username, string password)
+        public static int BuildCredentialPacket(Memory<byte> buffer, string username, string password)
         {
             buffer.Span[0] = (byte)username.Length;
             Encoding.ASCII.GetBytes(username, buffer.Slice(1, username.Length).Span);
             buffer.Span[1 + username.Length] = (byte)password.Length;
             Encoding.ASCII.GetBytes(password, buffer.Slice(2 + username.Length, password.Length).Span);
+            return 2 + username.Length + password.Length;
         }
 
         public abstract ValueTask<bool> ValidateUserNameAndPasswordAsync(string username, string password, CancellationToken cancellationToken = default);
+
+        public async ValueTask SendAuthenticatePacketAsync(Stream stream)
+        {
+            if (username == null || password == null)
+            {
+                throw new ArgumentNullException("Missing username or password");
+            }
+
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+            {
+                buffer.Memory.Span[0] = (byte)AssociateOpCode.BasicAuthLogin;
+                var length = (byte)BuildCredentialPacket(buffer.Memory.Slice(2), username, password);
+                buffer.Memory.Span[1] = length;
+                await stream.WriteAsync(buffer.Memory.Slice(0, 2 + length));
+            }
+        }
     }
 }

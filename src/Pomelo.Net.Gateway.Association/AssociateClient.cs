@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
@@ -17,9 +18,11 @@ namespace Pomelo.Net.Gateway.Association
     public class AssociateClient : IDisposable
     {
         private TcpClient client;
-        private IPEndPoint serverEndpoint;
+        private IPEndPoint associateServerEndpoint;
+        private IPEndPoint tunnelServerEndpoint;
         private IServiceProvider services;
         private IAuthenticator authenticator;
+        private IMappingRuleProvider mappingRuleProvider;
         private StreamTunnelContextFactory streamTunnelContextFactory;
         private int retryDelay = 1000;
         private string serverVersion = "Unknown";
@@ -33,15 +36,16 @@ namespace Pomelo.Net.Gateway.Association
         public IReadOnlyList<Interface> Routers => routers;
 
         public AssociateClient(
-            IPEndPoint serverEndpoint, 
-            IServiceProvider services,
-            IAuthenticator authenticator, 
-            StreamTunnelContextFactory streamTunnelContextFactory)
+            IPEndPoint associateServerEndpoint, 
+            IPEndPoint tunnelServerEndpoint,
+            IServiceProvider services)
         {
-            this.serverEndpoint = serverEndpoint;
+            this.associateServerEndpoint = associateServerEndpoint;
+            this.tunnelServerEndpoint = tunnelServerEndpoint;
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            this.mappingRuleProvider = services.GetRequiredService<IMappingRuleProvider>();
             this.tunnels = new List<Interface>();
             this.routers = new List<Interface>();
             this.Reset();
@@ -55,9 +59,9 @@ namespace Pomelo.Net.Gateway.Association
             client = new TcpClient();
             try
             {
-                client.Connect(serverEndpoint);
+                client.Connect(associateServerEndpoint);
                 HandshakeAsync(client.GetStream())
-                    .ContinueWith(async (task) => await ReceiveNotificationAsync(client.GetStream()));
+                    .ContinueWith(async (task) => await ReceiveNotificationAsync(client));
             }
             catch (SocketException)
             {
@@ -146,10 +150,11 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        private async Task ReceiveNotificationAsync(NetworkStream stream)
+        private async Task ReceiveNotificationAsync(TcpClient client)
         {
             try
             {
+                var stream = client.GetStream();
                 using (var buffer = MemoryPool<byte>.Shared.Rent(256))
                 {
                     // Begin Receive Notifications
@@ -161,23 +166,38 @@ namespace Pomelo.Net.Gateway.Association
                         // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
                         // +---------------------+-----------------------------------+
                         await stream.ReadExAsync(buffer.Memory.Slice(0, 24));
-                        if (buffer.Memory.Span[17] != 0x00) // Is IPv6, read more 12 bytes
+                        var isIPv6 = buffer.Memory.Span[17] != 0x00;
+                        if (isIPv6) // Is IPv6, read more 12 bytes
                         {
                             await stream.ReadExAsync(buffer.Memory.Slice(24, 12));
                         }
 
-                        // Parse notification body
-                        streamTunnelContextFactory.Create(
-                            new Guid(buffer.Memory.Slice(1, 16).Span),
-                            authenticator.UserIdentifier,
-                            null,
-                            );
+                        var from = new IPEndPoint(
+                            isIPv6 
+                                ? new IPAddress(buffer.Memory.Slice(20, 16).Span) 
+                                : new IPAddress(buffer.Memory.Slice(20, 4).Span),
+                            BitConverter.ToUInt16(buffer.Memory.Slice(18, 2).Span));
+                        if (buffer.Memory.Span[0] == (byte)Protocol.TCP)
+                        {
+                            // Parse notification body
+                            var context = streamTunnelContextFactory.Create(
+                                null,
+                                authenticator.UserIdentifier,
+                                null,
+                                FindStreamTunnelById(FindMappingRuleByFromEndpoint(from).LocalTunnelId),
+                                new Guid(buffer.Memory.Slice(1, 16).Span));
+
+                            CreateStreamTunnelAsync(context, from);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException();
+                        }
                     }
                 }
             }
             catch 
             {
-
                 await Task.Delay(retryDelay);
                 retryDelay += 1000;
                 if (retryDelay > 10000)
@@ -186,6 +206,38 @@ namespace Pomelo.Net.Gateway.Association
                 }
                 Reset();
             }
+        }
+
+        private MappingRule FindMappingRuleByFromEndpoint(IPEndPoint endpoint)
+            => mappingRuleProvider.Rules.Single(x => x.RemoteEndpoint.Equals(endpoint));
+
+        private IStreamTunnel FindStreamTunnelById(Guid id)
+            => services.GetServices<IStreamTunnel>().Single(x => x.Id == id);
+
+        private async ValueTask CreateStreamTunnelAsync(StreamTunnelContext context, IPEndPoint from)
+        {
+            try
+            {
+                var rule = FindMappingRuleByFromEndpoint(from);
+                context.LeftClient = new TcpClient();
+                context.RightClient = new TcpClient();
+                await Task.WhenAll(new[] 
+                {
+                    context.LeftClient.ConnectAsync(rule.LocalEndpoint.Address, rule.LocalEndpoint.Port),
+                    context.RightClient.ConnectAsync(tunnelServerEndpoint.Address, tunnelServerEndpoint.Port),
+                });
+
+            }
+            finally
+            {
+                streamTunnelContextFactory.Delete(context.ConnectionId);
+                context.Dispose();
+            }
+        }
+
+        private async ValueTask HandshakeWithTunnelServerAsync(TcpClient client)
+        { 
+            
         }
 
         public void Dispose()

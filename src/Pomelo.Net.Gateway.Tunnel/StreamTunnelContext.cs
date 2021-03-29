@@ -64,7 +64,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                : StreamTunnelStatus.WaitingForClient;
 
         public HeaderStream GetHeaderStream() 
-            => new HeaderStream(headerBuffer.Memory);
+            => headerBuffer == null ? null : new HeaderStream(headerBuffer.Memory);
 
         public void DestroyHeaderBuffer()
         {

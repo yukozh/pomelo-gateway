@@ -7,7 +7,7 @@
     public enum AssociateOpCode : byte
     {
         BasicAuthLogin  = 0x00,
-        SetRules        = 0x01,
+        SetRule        = 0x01,
         CleanRules      = 0x02
     }
 }

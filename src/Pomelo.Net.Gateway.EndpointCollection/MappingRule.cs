@@ -5,7 +5,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 {
     public class MappingRule
     {
-        Protocol Protocol { get; set; }
+        public Protocol Protocol { get; set; }
         public IPEndPoint LocalEndpoint { get; set; }
         public IPEndPoint RemoteEndpoint { get; set; }
         public Guid LocalTunnelId { get; set; }

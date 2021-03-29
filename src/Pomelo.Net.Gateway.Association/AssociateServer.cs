@@ -113,7 +113,7 @@ namespace Pomelo.Net.Gateway.Association
                     await HandleListStreamRoutersCommandAsync(services, context);
                     await HandleListStreamTunnelsCommandAsync(services, context);
                     break;
-                case AssociateOpCode.SetRules:
+                case AssociateOpCode.SetRule:
 
                     break;
                 default:

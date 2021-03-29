@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Models;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
@@ -54,6 +55,41 @@ namespace Pomelo.Net.Gateway.Association
             this.Reset();
         }
 
+        public async Task SendRulesAsync()
+        {
+            var stream = client.GetStream();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+            {
+                foreach (var rule in mappingRuleProvider.Rules)
+                {
+                    var length = RuleParser.BuildRulePacket(new Endpoint 
+                    {
+                        IPAddress = rule.RemoteEndpoint.Address,
+                        Port = (ushort)rule.RemoteEndpoint.Port,
+                        RouterId = rule.RemoteRouterId,
+                        TunnelId = rule.RemoteTunnelId,
+                        Protocol = rule.Protocol
+                    }, buffer.Memory.Slice(2));
+                    buffer.Memory.Span[0] = (byte)AssociateOpCode.SetRule;
+                    buffer.Memory.Span[1] = (byte)length;
+                    await stream.WriteAsync(buffer.Memory.Slice(0, 2 + length));
+                }
+            }
+        }
+
+        public async Task ReloadAndSendRulesAsync()
+        {
+            var stream = client.GetStream();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(2))
+            { 
+                buffer.Memory.Span[0] = (byte)AssociateOpCode.CleanRules;
+                buffer.Memory.Span[1] = 0x00;
+                await stream.WriteAsync(buffer.Memory.Slice(0, 2));
+            }
+            mappingRuleProvider.Reload();
+            await SendRulesAsync();
+        }
+
         private bool Reset()
         {
             tunnels.Clear();
@@ -64,7 +100,11 @@ namespace Pomelo.Net.Gateway.Association
             {
                 client.Connect(associateServerEndpoint);
                 HandshakeAsync(client.GetStream())
-                    .ContinueWith(async (task) => await ReceiveNotificationAsync(client));
+                    .ContinueWith(async (task) => await Task.WhenAll(new[] 
+                    {
+                        ReceiveNotificationAsync(),
+                        SendRulesAsync()
+                    }));
             }
             catch (SocketException ex)
             {
@@ -168,7 +208,7 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        private async Task ReceiveNotificationAsync(TcpClient client)
+        private async Task ReceiveNotificationAsync()
         {
             try
             {

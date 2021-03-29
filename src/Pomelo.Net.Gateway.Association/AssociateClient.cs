@@ -24,7 +24,7 @@ namespace Pomelo.Net.Gateway.Association
         private IAuthenticator authenticator;
         private IMappingRuleProvider mappingRuleProvider;
         private StreamTunnelContextFactory streamTunnelContextFactory;
-        private int retryDelay = 1000;
+        private int retryDelay = 1000; // 1~10s
         private string serverVersion = "Unknown";
         private long token = 0;
         private List<Interface> tunnels;
@@ -221,12 +221,23 @@ namespace Pomelo.Net.Gateway.Association
                 var rule = FindMappingRuleByFromEndpoint(from);
                 context.LeftClient = new TcpClient();
                 context.RightClient = new TcpClient();
+
+                // Connect
                 await Task.WhenAll(new[] 
                 {
                     context.LeftClient.ConnectAsync(rule.LocalEndpoint.Address, rule.LocalEndpoint.Port),
                     context.RightClient.ConnectAsync(tunnelServerEndpoint.Address, tunnelServerEndpoint.Port),
                 });
 
+                // Handshake
+                await HandshakeWithTunnelServerAsync(context.RightClient, context.ConnectionId);
+
+                // Forwarding
+                await Task.WhenAll(new[]
+                {
+                    context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream()).AsTask(),
+                    context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream()).AsTask()
+                });
             }
             finally
             {
@@ -235,9 +246,28 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        private async ValueTask HandshakeWithTunnelServerAsync(TcpClient client)
-        { 
-            
+        private async ValueTask HandshakeWithTunnelServerAsync(TcpClient client, Guid connectionId)
+        {
+            using (var buffer = MemoryPool<byte>.Shared.Rent(24))
+            {
+                var stream = client.GetStream();
+                // +-----------------+--------------------------+
+                // | Token (8 bytes) | Connection ID (16 bytes) |
+                // +-----------------+--------------------------+
+                BitConverter.TryWriteBytes(buffer.Memory.Slice(0, 8).Span, token);
+                connectionId.TryWriteBytes(buffer.Memory.Slice(8, 16).Span);
+                await stream.WriteAsync(buffer.Memory.Slice(0, 24));
+
+                // +-----------------+
+                // | Result (1 byte) |
+                // +-----------------+
+                // 0=OK, 1=Failed
+                await stream.ReadAsync(buffer.Memory.Slice(0, 1));
+                if (buffer.Memory.Span[0] != 0x00)
+                {
+                    throw new AssociateInvalidCredentialException("Invalid Credential");
+                }
+            }
         }
 
         public void Dispose()

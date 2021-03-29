@@ -37,7 +37,8 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Association.Token.ITokenValidator>(services 
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<Tunnel.ITunnelCreationNotifier>(services 
-                    => services.GetRequiredService<Association.AssociateServer>());
+                    => services.GetRequiredService<Association.AssociateServer>())
+                .AddSingleton<EndpointManager.TcpEndpointManager>();
         }
     }
 }

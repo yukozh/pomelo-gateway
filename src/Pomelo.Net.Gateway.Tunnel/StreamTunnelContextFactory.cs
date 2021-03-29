@@ -53,6 +53,13 @@ namespace Pomelo.Net.Gateway.Tunnel
             return context;
         }
 
+        public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier, IStreamRouter router, IStreamTunnel tunnel, Guid connectionId)
+        {
+            var context = new StreamTunnelContext(connectionId, headerBuffer, userIdentifier, router, tunnel);
+            tunnels.TryAdd(context.ConnectionId, context);
+            return context;
+        }
+
         public void Delete(Guid connectionId)
         {
             tunnels.TryRemove(connectionId, out var _);

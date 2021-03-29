@@ -240,8 +240,17 @@ namespace Pomelo.Net.Gateway.Association
             server?.Stop();
         }
 
-        public async ValueTask NotifyStreamTunnelCreationAsync(string userIdentifier, Guid connectionId, CancellationToken cancellationToken = default)
+        public async ValueTask NotifyStreamTunnelCreationAsync(
+            string userIdentifier, 
+            Guid connectionId, 
+            IPEndPoint from, 
+            CancellationToken cancellationToken = default)
         {
+            // +-------------------+--------------------------+-------------------+
+            // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
+            // +-------------------+-+------------------------+----------+--------+
+            // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
+            // +---------------------+-----------------------------------+
             using (var buffer = MemoryPool<byte>.Shared.Rent(17))
             {
                 var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
@@ -253,7 +262,11 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        public ValueTask NotifyPacketTunnelCreationAsync(string userIdentifier, Guid connectionId, CancellationToken cancellationToken = default)
+        public ValueTask NotifyPacketTunnelCreationAsync(
+            string userIdentifier, 
+            Guid connectionId, 
+            IPEndPoint from, 
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

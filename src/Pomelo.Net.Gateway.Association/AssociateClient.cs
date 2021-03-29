@@ -7,8 +7,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
@@ -16,7 +18,9 @@ namespace Pomelo.Net.Gateway.Association
     {
         private TcpClient client;
         private IPEndPoint serverEndpoint;
+        private IServiceProvider services;
         private IAuthenticator authenticator;
+        private StreamTunnelContextFactory streamTunnelContextFactory;
         private int retryDelay = 1000;
         private string serverVersion = "Unknown";
         private long token = 0;
@@ -28,10 +32,16 @@ namespace Pomelo.Net.Gateway.Association
         public IReadOnlyList<Interface> Tunnels => tunnels;
         public IReadOnlyList<Interface> Routers => routers;
 
-        public AssociateClient(IPEndPoint serverEndpoint, IAuthenticator authenticator)
+        public AssociateClient(
+            IPEndPoint serverEndpoint, 
+            IServiceProvider services,
+            IAuthenticator authenticator, 
+            StreamTunnelContextFactory streamTunnelContextFactory)
         {
             this.serverEndpoint = serverEndpoint;
-            this.authenticator = authenticator;
+            this.services = services;
+            this.authenticator = services.GetRequiredService<IAuthenticator>();
+            this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.tunnels = new List<Interface>();
             this.routers = new List<Interface>();
             this.Reset();
@@ -46,7 +56,8 @@ namespace Pomelo.Net.Gateway.Association
             try
             {
                 client.Connect(serverEndpoint);
-                StartCommunicationAsync(client.GetStream());
+                HandshakeAsync(client.GetStream())
+                    .ContinueWith(async (task) => await ReceiveNotificationAsync(client.GetStream()));
             }
             catch (SocketException)
             {
@@ -56,13 +67,13 @@ namespace Pomelo.Net.Gateway.Association
             return true;
         }
 
-        public async ValueTask StartCommunicationAsync(NetworkStream stream)
+        private async Task HandshakeAsync(NetworkStream stream)
         {
             try
             {
                 using (var buffer = MemoryPool<byte>.Shared.Rent(256))
                 {
-                    // Authentication
+                    // Handshake
                     await authenticator.SendAuthenticatePacketAsync(stream);
 
                     // Receive Server Info
@@ -121,16 +132,52 @@ namespace Pomelo.Net.Gateway.Association
                             Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
                         });
                     }
+                }
+            }
+            catch 
+            {
+                await Task.Delay(retryDelay);
+                retryDelay += 1000;
+                if (retryDelay > 10000)
+                {
+                    retryDelay = 1000;
+                }
+                Reset();
+            }
+        }
 
+        private async Task ReceiveNotificationAsync(NetworkStream stream)
+        {
+            try
+            {
+                using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+                {
                     // Begin Receive Notifications
                     while (true)
                     {
+                        // +-------------------+--------------------------+-------------------+
+                        // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
+                        // +-------------------+-+------------------------+----------+--------+
+                        // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
+                        // +---------------------+-----------------------------------+
+                        await stream.ReadExAsync(buffer.Memory.Slice(0, 24));
+                        if (buffer.Memory.Span[17] != 0x00) // Is IPv6, read more 12 bytes
+                        {
+                            await stream.ReadExAsync(buffer.Memory.Slice(24, 12));
+                        }
 
+                        // Parse notification body
+                        streamTunnelContextFactory.Create(
+                            new Guid(buffer.Memory.Slice(1, 16).Span),
+                            authenticator.UserIdentifier,
+                            null,
+                            );
                     }
                 }
             }
             catch 
             {
+
                 await Task.Delay(retryDelay);
                 retryDelay += 1000;
                 if (retryDelay > 10000)

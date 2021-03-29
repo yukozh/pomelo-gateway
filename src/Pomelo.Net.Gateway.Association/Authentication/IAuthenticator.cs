@@ -7,6 +7,7 @@ namespace Pomelo.Net.Gateway.Association.Authentication
 {
     public interface IAuthenticator
     {
+        public string UserIdentifier { get; }
         public ValueTask<Credential> AuthenticateAsync(Memory<byte> body, CancellationToken cancellationToken = default);
         public ValueTask SendAuthenticatePacketAsync(Stream stream);
     }

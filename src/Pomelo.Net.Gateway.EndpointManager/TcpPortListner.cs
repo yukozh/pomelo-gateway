@@ -68,7 +68,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             }
             var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
             tunnelContext.RightClient = client;
-            await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId);
+            await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
         }
 
         public void Dispose()

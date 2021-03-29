@@ -28,7 +28,22 @@ namespace Pomelo.Net.Gateway.Tunnel
         public IStreamTunnel Tunnel => tunnel;
         
         internal StreamTunnelContext(
-            IMemoryOwner<byte> headerBuffer, 
+            Guid connectionId,
+            IMemoryOwner<byte> headerBuffer,
+            string userIdentifier,
+            IStreamRouter router,
+            IStreamTunnel tunnel)
+        {
+            this.headerBuffer = headerBuffer;
+            this.userIdentifier = userIdentifier;
+            this.router = router;
+            this.tunnel = tunnel;
+            this.connectionId = connectionId;
+            this.createdTime = DateTime.UtcNow;
+        }
+
+        internal StreamTunnelContext(
+            IMemoryOwner<byte> headerBuffer,
             string userIdentifier,
             IStreamRouter router,
             IStreamTunnel tunnel)

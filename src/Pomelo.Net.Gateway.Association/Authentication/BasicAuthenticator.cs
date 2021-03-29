@@ -12,6 +12,8 @@ namespace Pomelo.Net.Gateway.Association.Authentication
         private string username, password;
         private static Random random = new Random();
 
+        public string UserIdentifier => username;
+
         public BasicAuthenticator()
         { }
 

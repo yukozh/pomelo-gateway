@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Net;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Pomelo.Net.Gateway.EndpointCollection
 {
     public class MappingRule
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public Protocol Protocol { get; set; }
         public IPEndPoint LocalEndpoint { get; set; }
         public IPEndPoint RemoteEndpoint { get; set; }

@@ -18,6 +18,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         {
             this.rules = new List<MappingRule>();
             this.path = path;
+            this.settings = new JsonSerializerSettings();
             this.settings.Converters.Add(new IPEndPointConverter());
             Reload();
         }

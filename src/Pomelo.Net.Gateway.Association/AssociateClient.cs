@@ -116,6 +116,8 @@ namespace Pomelo.Net.Gateway.Association
             routers.Clear();
             client?.Dispose();
             client = new TcpClient();
+            client.ReceiveTimeout = 1000 * 30;
+            client.SendTimeout = 1000 * 30;
             try
             {
                 client.Connect(associateServerEndpoint);
@@ -305,7 +307,11 @@ namespace Pomelo.Net.Gateway.Association
                 var rule = FindMappingRuleByFromEndpoint(from);
                 logger.LogInformation($"[{context.ConnectionId}] Tunnel left={rule.LocalEndpoint}, Tunnel right={from}, Tunnel ID = {rule.LocalTunnelId}");
                 context.LeftClient = new TcpClient();
+                context.LeftClient.ReceiveTimeout = 1000 * 30;
+                context.LeftClient.SendTimeout = 1000 * 30;
                 context.RightClient = new TcpClient();
+                context.RightClient.ReceiveTimeout = 1000 * 30;
+                context.RightClient.SendTimeout = 1000 * 30;
 
                 // Connect
                 logger.LogInformation($"[{context.ConnectionId}] Tunnel connecting...");

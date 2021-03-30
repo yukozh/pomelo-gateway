@@ -51,6 +51,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             }
 
             server = new TcpListener(endpoint);
+            server.Server.ReceiveTimeout = 1000 * 30;
+            server.Server.SendTimeout = 1000 * 30;
             server.Start();
             logger.LogInformation($"TCP Endpoitn Listener is listening on {endpoint}...");
             StartAcceptAsync();

@@ -52,6 +52,8 @@ namespace Pomelo.Net.Gateway.Association
         {
             logger.LogInformation("Starting associate server...");
             server = new TcpListener(endpoint);
+            server.Server.ReceiveTimeout = 1000 * 30;
+            server.Server.SendTimeout = 1000 * 30;
             server.Start();
             logger.LogInformation($"Associate server is listening on {endpoint}...");
             LoopAcceptAsync();
@@ -290,21 +292,32 @@ namespace Pomelo.Net.Gateway.Association
             IPEndPoint from, 
             CancellationToken cancellationToken = default)
         {
-            // +-------------------+--------------------------+-------------------+
-            // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
-            // +-------------------+-+------------------------+----------+--------+
-            // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
-            // +---------------------+-----------------------------------+
-            using (var buffer = MemoryPool<byte>.Shared.Rent(36))
+            try
             {
-                var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
-                var stream = context.Client.GetStream();
-                buffer.Memory.Span[0] = (byte)Protocol.TCP;
-                connectionId.TryWriteBytes(buffer.Memory.Slice(1, 16).Span);
-                BitConverter.TryWriteBytes(buffer.Memory.Slice(18, 2).Span, (ushort)from.Port);
-                from.Address.TryWriteBytes(buffer.Memory.Slice(20).Span, out var length);
-                buffer.Memory.Span[17] = length == 4 ? (byte)0x00 : (byte)0x01;
-                await stream.WriteAsync(buffer.Memory.Slice(0, 20 + length), cancellationToken);
+                // +-------------------+--------------------------+-------------------+
+                // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
+                // +-------------------+-+------------------------+----------+--------+
+                // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
+                // +---------------------+-----------------------------------+
+                using (var buffer = MemoryPool<byte>.Shared.Rent(36))
+                {
+                    var context = this.GetAssociateContextByUserIdentifier(userIdentifier);
+                    var stream = context.Client.GetStream();
+                    buffer.Memory.Span[0] = (byte)Protocol.TCP;
+                    connectionId.TryWriteBytes(buffer.Memory.Slice(1, 16).Span);
+                    BitConverter.TryWriteBytes(buffer.Memory.Slice(18, 2).Span, (ushort)from.Port);
+                    from.Address.TryWriteBytes(buffer.Memory.Slice(20).Span, out var length);
+                    buffer.Memory.Span[17] = length == 4 ? (byte)0x00 : (byte)0x01;
+                    await stream.WriteAsync(buffer.Memory.Slice(0, 20 + length), cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Closing associate connection for {userIdentifier} due to error");
+                if (clients.TryRemove(userIdentifier, out var context))
+                {
+                    context?.Dispose();
+                }
             }
         }
 

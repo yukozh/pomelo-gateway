@@ -23,6 +23,8 @@ namespace Pomelo.Net.Gateway.Tunnel
             IServiceProvider services)
         {
             server = new TcpListener(endpoint);
+            server.Server.ReceiveTimeout = 1000 * 30;
+            server.Server.SendTimeout = 1000 * 30;
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             this.logger = services.GetRequiredService<ILogger<StreamTunnelServer>>();

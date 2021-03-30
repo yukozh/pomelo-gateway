@@ -39,7 +39,7 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Tunnel()
         {
             return View();
         }

@@ -72,9 +72,9 @@ namespace Pomelo.Net.Gateway.Association
 
         private async ValueTask HandleClientAcceptAsync(TcpClient client, CancellationToken cancellationToken = default)
         {
-            try
+            using (var context = new AssociateContext(client))
             {
-                using (var context = new AssociateContext(client))
+                try
                 {
                     while (true)
                     {
@@ -102,15 +102,17 @@ namespace Pomelo.Net.Gateway.Association
                     streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
                     logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
                 }
-            }
-            catch(Exception ex)
-            {
-                logger.LogError(ex.ToString());
-                throw;
-            }
-            finally
-            {
-                client.Dispose();
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.ToString());
+                    logger.LogError($"User {context.Credential.Identifier} is disconnected due to error, recycled its resources.");
+                    throw;
+                }
+                finally
+                {
+                    clients.TryRemove(context.Credential.Identifier, out var _);
+                    client?.Dispose();
+                }
             }
         }
 

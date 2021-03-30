@@ -141,6 +141,8 @@ namespace Pomelo.Net.Gateway.Association
                 case AssociateOpCode.CleanRules:
                     await HandleCleanRulesCommandAsync(tcpEndpointManager, context.Credential.Identifier);
                     break;
+                case AssociateOpCode.HeartBeat:
+                    break;
                 default:
                     logger.LogInformation($"{context.Client.Client.RemoteEndPoint}: Invalid OpCode");
                     return false;

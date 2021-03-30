@@ -60,6 +60,7 @@ namespace Pomelo.Net.Gateway.Association
 
         public void Start()
         {
+            this.HeartBeatAsync();
             this.Reset();
         }
 
@@ -107,6 +108,34 @@ namespace Pomelo.Net.Gateway.Association
             }
             mappingRuleProvider.Reload();
             await SendRulesAsync();
+        }
+
+        private async ValueTask HeartBeatAsync()
+        {
+            using (var buffer = MemoryPool<byte>.Shared.Rent(2))
+            {
+                while (true)
+                {
+                    try
+                    {
+                        if (client != null && client.Connected)
+                        {
+                            var stream = client.GetStream();
+                            buffer.Memory.Span[0] = (byte)AssociateOpCode.HeartBeat;
+                            buffer.Memory.Span[1] = 0;
+                            await stream.WriteAsync(buffer.Memory.Slice(0, 2));
+                            logger.LogInformation("Heart beat...");
+                        }
+                        await Task.Delay(1000 * 30);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError("An error occured when sending heart beat packet.");
+                        logger.LogError(ex.ToString());
+                        await Task.Delay(1000 * 30);
+                    }
+                }
+            }
         }
 
         private bool Reset()

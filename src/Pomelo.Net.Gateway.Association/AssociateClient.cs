@@ -77,6 +77,17 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
+        public async Task SendCleanRulesAsync()
+        {
+            var stream = client.GetStream();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(2))
+            {
+                buffer.Memory.Span[0] = (byte)AssociateOpCode.CleanRules;
+                buffer.Memory.Span[1] = 0x00;
+                await stream.WriteAsync(buffer.Memory.Slice(0, 2));
+            }
+        }
+
         public async Task ReloadAndSendRulesAsync()
         {
             var stream = client.GetStream();

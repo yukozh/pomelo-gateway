@@ -114,6 +114,10 @@ namespace Pomelo.Net.Gateway.Association
             connected = false;
             tunnels.Clear();
             routers.Clear();
+            if (client?.Connected ?? false)
+            {
+                client?.Close();
+            }
             client?.Dispose();
             client = new TcpClient();
             client.ReceiveTimeout = 1000 * 30;
@@ -375,6 +379,10 @@ namespace Pomelo.Net.Gateway.Association
 
         public void Dispose()
         {
+            if (client?.Connected ?? false)
+            {
+                client?.Close();
+            }
             client?.Dispose();
             client = null;
         }

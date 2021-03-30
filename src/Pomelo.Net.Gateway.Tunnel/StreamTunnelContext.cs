@@ -8,7 +8,7 @@ namespace Pomelo.Net.Gateway.Tunnel
     public enum StreamTunnelStatus
     { 
         WaitingForClient,
-        Running
+        Connected
     }
 
     public class StreamTunnelContext : IDisposable
@@ -58,10 +58,15 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public Guid ConnectionId => connectionId;
 
-        public StreamTunnelStatus Status 
-            => (LeftClient != null && RightClient != null) 
-               ? StreamTunnelStatus.Running 
-               : StreamTunnelStatus.WaitingForClient;
+        public StreamTunnelStatus Status
+        {
+            get 
+            {
+                return LeftClient != null && LeftClient.Connected && RightClient != null && RightClient.Connected 
+                    ? StreamTunnelStatus.Connected 
+                    : StreamTunnelStatus.WaitingForClient;
+            }
+        }
 
         public HeaderStream GetHeaderStream() 
             => headerBuffer == null ? null : new HeaderStream(headerBuffer.Memory);
@@ -75,8 +80,10 @@ namespace Pomelo.Net.Gateway.Tunnel
         public void Dispose()
         {
             DestroyHeaderBuffer();
+            LeftClient?.Close();
             LeftClient?.Dispose();
             LeftClient = null;
+            RightClient?.Close();
             RightClient?.Dispose();
             RightClient = null;
         }

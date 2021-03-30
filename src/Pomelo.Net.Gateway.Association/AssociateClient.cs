@@ -119,7 +119,7 @@ namespace Pomelo.Net.Gateway.Association
             try
             {
                 client.Connect(associateServerEndpoint);
-                Task.Factory.StartNew(async ()=> 
+                Task.Factory.StartNew(async () => 
                 {
                     try
                     {
@@ -144,7 +144,7 @@ namespace Pomelo.Net.Gateway.Association
                     }
                 });
             }
-            catch (SocketException ex)
+            catch (Exception ex)
             {
                 logger.LogWarning(ex.ToString());
                 logger.LogError($"Retry after sleep {retryDelay}ms");
@@ -163,161 +163,131 @@ namespace Pomelo.Net.Gateway.Association
 
         private async Task HandshakeAsync()
         {
-            try
+            var stream = client.GetStream();
+            logger.LogInformation($"Connected to associate server {associateServerEndpoint}");
+            logger.LogInformation("Handshaking...");
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
             {
-                var stream = client.GetStream();
-                logger.LogInformation($"Connected to associate server {associateServerEndpoint}");
-                logger.LogInformation("Handshaking...");
-                using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+                // Handshake
+                await authenticator.SendAuthenticatePacketAsync(stream);
+
+                // Receive Server Info
+                // +--------------+----------------+----------------+----------------+
+                // | Login Result | Server Version | Stream Routers | Stream Tunnels |
+                // +--------------+----------------+----------------+----------------+
+
+                // 1. Login Result
+                logger.LogInformation("Handshake: Sending authentication packet");
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                switch (buffer.Memory.Span[0])
                 {
-                    // Handshake
-                    await authenticator.SendAuthenticatePacketAsync(stream);
-
-                    // Receive Server Info
-                    // +--------------+----------------+----------------+----------------+
-                    // | Login Result | Server Version | Stream Routers | Stream Tunnels |
-                    // +--------------+----------------+----------------+----------------+
-
-                    // 1. Login Result
-                    logger.LogInformation("Handshake: Sending authentication packet");
-                    await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
-                    switch (buffer.Memory.Span[0])
-                    {
-                        case 0x00:
-                            await stream.ReadExAsync(buffer.Memory.Slice(0, 8));
-                            token = BitConverter.ToInt64(buffer.Memory.Slice(0, 8).Span);
-                            logger.LogInformation($"Handshake: Authenticate succeeded, token = {token}");
-                            break;
-                        case 0x01:
-                            logger.LogError("Handshake failed, invalid credential");
-                            throw new AssociateInvalidCredentialException("Credential is invalid");
-                        case 0x02:
-                            logger.LogError("The current credential is using in another place");
-                            throw new AssociateClientConflictException("The current credential is using in another place");
-                    }
-
-                    // 2. Server Version
-                    await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
-                    await stream.ReadExAsync(buffer.Memory.Slice(1, buffer.Memory.Span[0]));
-                    serverVersion = string.Join(
-                        '.', 
-                        buffer.Memory.Slice(1, buffer.Memory.Span[0]).Span
-                            .ToArray()
-                            .Select(x => ((int)x)
-                            .ToString()));
-                    logger.LogInformation($"Pomelo Gateway Server {serverVersion}");
-
-                    // 3. Stream Router List
-                    await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
-                    var count = (int)buffer.Memory.Span[0];
-                    for (var i = 0; i < count; ++i)
-                    {
-                        await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
-                        await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
-                        var item = new Interface
-                        {
-                            Id = new Guid(buffer.Memory.Slice(1, 16).Span),
-                            Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
-                        };
-                        routers.Add(item);
-                        logger.LogInformation($"Server Side Stream Router: name={item.Name}, id={item.Id}");
-                    }
-
-                    // 4. Stream Tunnel List
-                    await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
-                    count = (int)buffer.Memory.Span[0];
-                    for (var i = 0; i < count; ++i)
-                    {
-                        await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
-                        await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
-                        var item = new Interface
-                        {
-                            Id = new Guid(buffer.Memory.Slice(1, 16).Span),
-                            Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
-                        };
-                        tunnels.Add(item);
-                        logger.LogInformation($"Server Side Stream Tunnel: name={item.Name}, id={item.Id}");
-                    }
-                    logger.LogInformation("Handshake finished");
+                    case 0x00:
+                        await stream.ReadExAsync(buffer.Memory.Slice(0, 8));
+                        token = BitConverter.ToInt64(buffer.Memory.Slice(0, 8).Span);
+                        logger.LogInformation($"Handshake: Authenticate succeeded, token = {token}");
+                        break;
+                    case 0x01:
+                        logger.LogError("Handshake failed, invalid credential");
+                        throw new AssociateInvalidCredentialException("Credential is invalid");
+                    case 0x02:
+                        logger.LogError("The current credential is using in another place");
+                        throw new AssociateClientConflictException("The current credential is using in another place");
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.ToString());
-                logger.LogError($"Retry after sleep {retryDelay}ms");
-                await Task.Delay(retryDelay);
-                retryDelay += 1000;
-                if (retryDelay > 10000)
+
+                // 2. Server Version
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                await stream.ReadExAsync(buffer.Memory.Slice(1, buffer.Memory.Span[0]));
+                serverVersion = string.Join(
+                    '.',
+                    buffer.Memory.Slice(1, buffer.Memory.Span[0]).Span
+                        .ToArray()
+                        .Select(x => ((int)x)
+                        .ToString()));
+                logger.LogInformation($"Pomelo Gateway Server {serverVersion}");
+
+                // 3. Stream Router List
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                var count = (int)buffer.Memory.Span[0];
+                for (var i = 0; i < count; ++i)
                 {
-                    retryDelay = 1000;
+                    await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
+                    await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
+                    var item = new Interface
+                    {
+                        Id = new Guid(buffer.Memory.Slice(1, 16).Span),
+                        Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
+                    };
+                    routers.Add(item);
+                    logger.LogInformation($"Server Side Stream Router: name={item.Name}, id={item.Id}");
                 }
-                Reset();
+
+                // 4. Stream Tunnel List
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                count = (int)buffer.Memory.Span[0];
+                for (var i = 0; i < count; ++i)
+                {
+                    await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
+                    await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
+                    var item = new Interface
+                    {
+                        Id = new Guid(buffer.Memory.Slice(1, 16).Span),
+                        Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
+                    };
+                    tunnels.Add(item);
+                    logger.LogInformation($"Server Side Stream Tunnel: name={item.Name}, id={item.Id}");
+                }
+                logger.LogInformation("Handshake finished");
             }
         }
 
         private async Task ReceiveNotificationAsync()
         {
-            try
+            logger.LogInformation("Begin receiving tunnel creation notifications...");
+            var stream = client.GetStream();
+            using (var buffer = MemoryPool<byte>.Shared.Rent(256))
             {
-                logger.LogInformation("Begin receiving tunnel creation notifications...");
-                var stream = client.GetStream();
-                using (var buffer = MemoryPool<byte>.Shared.Rent(256))
+                connected = true;
+
+                // Begin Receive Notifications
+                while (true)
                 {
-                    connected = true;
-
-                    // Begin Receive Notifications
-                    while (true)
+                    // +-------------------+--------------------------+-------------------+
+                    // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
+                    // +-------------------+-+------------------------+----------+--------+
+                    // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
+                    // +---------------------+-----------------------------------+
+                    await stream.ReadExAsync(buffer.Memory.Slice(0, 24));
+                    var isIPv6 = buffer.Memory.Span[17] != 0x00;
+                    if (isIPv6) // Is IPv6, read more 12 bytes
                     {
-                        // +-------------------+--------------------------+-------------------+
-                        // | Protocol (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) | 
-                        // +-------------------+-+------------------------+----------+--------+
-                        // | From Port (2 bytes) | From Address (4 bytes / 16 bytes) |
-                        // +---------------------+-----------------------------------+
-                        await stream.ReadExAsync(buffer.Memory.Slice(0, 24));
-                        var isIPv6 = buffer.Memory.Span[17] != 0x00;
-                        if (isIPv6) // Is IPv6, read more 12 bytes
-                        {
-                            await stream.ReadExAsync(buffer.Memory.Slice(24, 12));
-                        }
+                        await stream.ReadExAsync(buffer.Memory.Slice(24, 12));
+                    }
 
-                        var from = new IPEndPoint(
-                            isIPv6 
-                                ? new IPAddress(buffer.Memory.Slice(20, 16).Span) 
-                                : new IPAddress(buffer.Memory.Slice(20, 4).Span),
-                            BitConverter.ToUInt16(buffer.Memory.Slice(18, 2).Span));
+                    var from = new IPEndPoint(
+                        isIPv6
+                            ? new IPAddress(buffer.Memory.Slice(20, 16).Span)
+                            : new IPAddress(buffer.Memory.Slice(20, 4).Span),
+                        BitConverter.ToUInt16(buffer.Memory.Slice(18, 2).Span));
 
-                        if (buffer.Memory.Span[0] == (byte)Protocol.TCP)
-                        {
-                            // Parse notification body
-                            var context = streamTunnelContextFactory.Create(
-                                null,
-                                authenticator.UserIdentifier,
-                                null,
-                                FindStreamTunnelById(FindMappingRuleByFromEndpoint(from).LocalTunnelId),
-                                new Guid(buffer.Memory.Slice(1, 16).Span));
+                    if (buffer.Memory.Span[0] == (byte)Protocol.TCP)
+                    {
+                        // Parse notification body
+                        var context = streamTunnelContextFactory.Create(
+                            null,
+                            authenticator.UserIdentifier,
+                            null,
+                            FindStreamTunnelById(FindMappingRuleByFromEndpoint(from).LocalTunnelId),
+                            new Guid(buffer.Memory.Slice(1, 16).Span));
 
-                            logger.LogInformation($"Tunnel creating, id={context.ConnectionId}, protocol=TCP, from={from}");
-                            CreateStreamTunnelAsync(context, from);
-                        }
-                        else
-                        {
-                            logger.LogError("Protocol not supported");
-                            throw new NotSupportedException();
-                        }
+                        logger.LogInformation($"Tunnel creating, id={context.ConnectionId}, protocol=TCP, from={from}");
+                        CreateStreamTunnelAsync(context, from);
+                    }
+                    else
+                    {
+                        logger.LogError("Protocol not supported");
+                        throw new NotSupportedException();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.ToString());
-                logger.LogError($"Retry after sleep {retryDelay}ms");
-                await Task.Delay(retryDelay);
-                retryDelay += 1000;
-                if (retryDelay > 10000)
-                {
-                    retryDelay = 1000;
-                }
-                Reset();
             }
         }
 

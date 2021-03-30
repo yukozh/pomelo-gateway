@@ -1,8 +1,106 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@inject Pomelo.Net.Gateway.Association.AssociateClient client 
+@{
+    ViewData["Title"] = "Overview";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="d-flex align-items-center p-3 my-3 text-white-50 bg-purple rounded shadow-sm" style="background: @(client.Connected ? "#28a745" : "#dc3545")">
+    <img class="mr-3" src="~/img/logo.png" style="border-radius: 8px" alt="" width="48" height="48">
+    <div class="lh-100">
+        <h6 class="mb-0 text-white lh-100">Pomelo Gateway Agent</h6>
+        @if (client.Connected)
+        {
+            <small>Connected</small>
+        }
+        else
+        {
+            <small>Failed to connect to associate server</small>
+        }
+    </div>
+</div>
+
+<div class="my-3 p-3 bg-white rounded shadow-sm">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Configurations</h6>
+    <div class="media text-muted pt-3">
+        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">Associate Server</strong>
+            @client.AssociateServer
+        </p>
+    </div>
+    <div class="media text-muted pt-3">
+        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">Tunnel Server</strong>
+            @client.TunnelServer
+        </p>
+    </div>
+    <small class="d-block text-right mt-3">
+        <a asp-area="" asp-controller="Home" asp-action="Rule">Configure Rules</a>
+    </small>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="my-3 p-3 bg-white rounded shadow-sm">
+            <h6 class="border-bottom border-gray pb-2 mb-0">Local Tunnel Providers</h6>
+            @foreach (var x in ViewBag.StreamTunnels)
+            {
+                <div class="media text-muted pt-3">
+                    <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+                    <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                        <strong class="d-block text-gray-dark">@x.Name</strong>
+                        <span style="color: #000">Stream Tunnel</span> @x.Id
+                    </p>
+                </div>
+            }
+            @foreach (var x in ViewBag.PacketTunnels)
+            {
+                <div class="media text-muted pt-3">
+                    <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+                    <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                        <strong class="d-block text-gray-dark">@x.Name</strong>
+                        <span style="color: #000">Packet Tunnel</span> @x.Id
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="my-3 p-3 bg-white rounded shadow-sm">
+            <h6 class="border-bottom border-gray pb-2 mb-0">Remote Tunnel & Router Providers</h6>
+            @if (!client.Connected)
+            {
+                <small>Not connected</small>
+            }
+            else
+            {
+                @foreach (var x in client.Tunnels)
+                {
+                    <div class="media text-muted pt-3">
+                        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+                        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                            <strong class="d-block text-gray-dark">@x.Name</strong>
+                            <span style="color: #000">Stream Tunnel</span> @x.Id
+                        </p>
+                    </div>
+                }
+                @foreach (var x in client.Routers)
+                {
+                    <div class="media text-muted pt-3">
+                        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+                        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                            <strong class="d-block text-gray-dark">@x.Name</strong>
+                            <span style="color: #000">Stream Router</span> @x.Id
+                        </p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
 </div>

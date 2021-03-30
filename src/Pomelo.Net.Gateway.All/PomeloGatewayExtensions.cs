@@ -47,13 +47,19 @@ namespace Pomelo.Net.Gateway
 
         public static void RunPomeloGatewayServer(this IServiceProvider services)
         {
-            services.GetRequiredService<Association.AssociateServer>().Start();
-            services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();
+            Task.Factory.StartNew(() =>
+            {
+                services.GetRequiredService<Association.AssociateServer>().Start();
+                services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();
+            }, TaskCreationOptions.LongRunning);
         }
 
         public static void RunPomeloGatewayClient(this IServiceProvider services)
         {
-            services.GetRequiredService<Association.AssociateClient>();
+            Task.Factory.StartNew(() =>
+            {
+                services.GetRequiredService<Association.AssociateClient>().Start();
+            }, TaskCreationOptions.LongRunning);
         }
     }
 }

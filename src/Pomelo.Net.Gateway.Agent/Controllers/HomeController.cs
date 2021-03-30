@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Pomelo.Net.Gateway.Agent.Models;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Pomelo.Net.Gateway.Agent.Models;
+using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Agent.Controllers
 {
@@ -18,8 +19,23 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index([FromServices] IServiceProvider services)
         {
+            ViewBag.StreamTunnels = services.GetServices<IStreamTunnel>()
+                   .Select(x => new Interface
+                   {
+                       Id = x.Id,
+                       Name = x.Name
+                   })
+                   .ToList();
+            ViewBag.PacketTunnels = services.GetServices<IPacketTunnel>()
+                   .Select(x => new Interface
+                   {
+                       Id = x.Id,
+                       Name = x.Name
+                   })
+                   .ToList();
+
             return View();
         }
 

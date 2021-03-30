@@ -32,8 +32,12 @@ namespace Pomelo.Net.Gateway.Association
         private long token = 0;
         private List<Interface> tunnels;
         private List<Interface> routers;
+        private bool connected;
 
+        public bool Connected => connected;
         public string ServerVersion => serverVersion;
+        public IPEndPoint AssociateServer => associateServerEndpoint;
+        public IPEndPoint TunnelServer => tunnelServerEndpoint;
         public long Token => token;
         public IReadOnlyList<Interface> Tunnels => tunnels;
         public IReadOnlyList<Interface> Routers => routers;
@@ -52,6 +56,10 @@ namespace Pomelo.Net.Gateway.Association
             this.logger = services.GetRequiredService<ILogger<AssociateClient>>();
             this.tunnels = new List<Interface>();
             this.routers = new List<Interface>();
+        }
+
+        public void Start()
+        {
             this.Reset();
         }
 
@@ -103,6 +111,7 @@ namespace Pomelo.Net.Gateway.Association
 
         private bool Reset()
         {
+            connected = false;
             tunnels.Clear();
             routers.Clear();
             client?.Dispose();
@@ -254,6 +263,8 @@ namespace Pomelo.Net.Gateway.Association
                 var stream = client.GetStream();
                 using (var buffer = MemoryPool<byte>.Shared.Rent(256))
                 {
+                    connected = true;
+
                     // Begin Receive Notifications
                     while (true)
                     {

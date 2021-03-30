@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\img\" />
+  </ItemGroup>
+
 </Project>

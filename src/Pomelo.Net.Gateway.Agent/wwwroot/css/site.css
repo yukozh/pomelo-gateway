@@ -81,3 +81,12 @@ body {
 p.media-body {
     line-height: 16px;
 }
+
+.table {
+    width: 100%;
+    font-size: 12px;
+}
+
+    .table .form-control {
+        zoom: 0.8;
+    }

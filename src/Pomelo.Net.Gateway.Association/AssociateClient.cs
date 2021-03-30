@@ -30,8 +30,8 @@ namespace Pomelo.Net.Gateway.Association
         private int retryDelay = 1000; // 1~10s
         private string serverVersion = "Unknown";
         private long token = 0;
-        private List<Interface> tunnels;
-        private List<Interface> routers;
+        private List<Interface> serverStreamTunnelProviders;
+        private List<Interface> serverStreamRouters;
         private bool connected;
 
         public bool Connected => connected;
@@ -39,8 +39,8 @@ namespace Pomelo.Net.Gateway.Association
         public IPEndPoint AssociateServer => associateServerEndpoint;
         public IPEndPoint TunnelServer => tunnelServerEndpoint;
         public long Token => token;
-        public IReadOnlyList<Interface> Tunnels => tunnels;
-        public IReadOnlyList<Interface> Routers => routers;
+        public IReadOnlyList<Interface> ServerStreamTunnelProviders => serverStreamTunnelProviders;
+        public IReadOnlyList<Interface> ServerStreamRouters => serverStreamRouters;
 
         public AssociateClient(
             IPEndPoint associateServerEndpoint, 
@@ -54,8 +54,8 @@ namespace Pomelo.Net.Gateway.Association
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.mappingRuleProvider = services.GetRequiredService<IMappingRuleProvider>();
             this.logger = services.GetRequiredService<ILogger<AssociateClient>>();
-            this.tunnels = new List<Interface>();
-            this.routers = new List<Interface>();
+            this.serverStreamTunnelProviders = new List<Interface>();
+            this.serverStreamRouters = new List<Interface>();
         }
 
         public void Start()
@@ -112,8 +112,8 @@ namespace Pomelo.Net.Gateway.Association
         private bool Reset()
         {
             connected = false;
-            tunnels.Clear();
-            routers.Clear();
+            serverStreamTunnelProviders.Clear();
+            serverStreamRouters.Clear();
             if (client?.Connected ?? false)
             {
                 client?.Close();
@@ -223,7 +223,7 @@ namespace Pomelo.Net.Gateway.Association
                         Id = new Guid(buffer.Memory.Slice(1, 16).Span),
                         Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
                     };
-                    routers.Add(item);
+                    serverStreamRouters.Add(item);
                     logger.LogInformation($"Server Side Stream Router: name={item.Name}, id={item.Id}");
                 }
 
@@ -239,7 +239,7 @@ namespace Pomelo.Net.Gateway.Association
                         Id = new Guid(buffer.Memory.Slice(1, 16).Span),
                         Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
                     };
-                    tunnels.Add(item);
+                    serverStreamTunnelProviders.Add(item);
                     logger.LogInformation($"Server Side Stream Tunnel: name={item.Name}, id={item.Id}");
                 }
                 logger.LogInformation("Handshake finished");

@@ -1,0 +1,108 @@
+﻿@inject Pomelo.Net.Gateway.Association.AssociateClient client
+@{
+    ViewData["Title"] = "Rules";
+}
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Rules</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Protocol</th>
+                <th>Local Endpoint</th>
+                <th>Remote Endpoint</th>
+                <th>Local Tunnel</th>
+                <th>Remote Tunnel</th>
+                <th>Remote Router</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(rule, i) in rules">
+                <td>
+                    <select class="form-control" v-model="rule.protocol">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP (Not Supported)</option>
+                    </select>
+                </td>
+                <td><input class="form-control" type="text" v-model="rule.localEndpoint" /></td>
+                <td><input class="form-control" type="text" v-model="rule.remoteEndpoint" /></td>
+                <td>
+                    <select class="form-control" v-model="rule.localTunnelId">
+                        @foreach (var tunnel in ViewBag.LocalStreamTunnelProviders)
+                        {
+                            <option value="@tunnel.Id">@tunnel.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    @if (client.Connected)
+                    {
+                        <select class="form-control" v-model="rule.remoteTunnelId">
+                            @foreach (var tunnel in client.ServerStreamTunnelProviders)
+                            {
+                                <option value="@tunnel.Id">@tunnel.Name</option>
+                            }
+                        </select>
+                    }
+                    else
+                    { 
+                        <input class="form-control" type="text" v-model="rule.remoteTunnelId" />
+                    }
+                </td>
+                <td>
+                    @if (client.Connected)
+                    {
+                        <select class="form-control" v-model="rule.remoteRouterId">
+                            @foreach (var router in client.ServerStreamRouters)
+                            {
+                                <option value="@router.Id">@router.Name</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <input class="form-control" type="text" v-model="rule.remoteRouterId" />
+                    }
+                </td>
+                <td>
+                    <a class="btn btn-sm btn-warning" v-on:click="rules.splice(i, 1)">Remove</a>
+                </td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7">
+                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchRules">Save</a>
+                    <a v-on:click="rules.push({ protocol: 'TCP', localEndpoint: '127.0.0.1:8888', remoteEndpoint: '0.0.0.0:8888', localTunnelId: null, remoteTunnelId: null, remoteRouterId: null })" class="btn btn-sm btn-primary" style="color: #fff">New Rule</a>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@section  Scripts{ 
+    <script>
+        var app = new Vue({
+            data: {
+                rules: []
+            },
+            created: function () {
+                this.loadRules();
+            },
+            methods: {
+                loadRules: function () {
+                    var self = this;
+                    return qv.get('/api/rule').then(data => {
+                        self.rules = data;
+                    });
+                },
+                patchRules: function () {
+                    return qv.post('/api/rule', { rules: this.rules }).then(data => {
+                        alert('Rules updated');
+                    });
+                }
+            }
+        });
+        app.$mount('#app');
+    </script>
+}

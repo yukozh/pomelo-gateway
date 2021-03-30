@@ -44,6 +44,19 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
             return View();
         }
 
+        public IActionResult Rule([FromServices] IServiceProvider services)
+        {
+            ViewBag.LocalStreamTunnelProviders = services
+                .GetServices<IStreamTunnel>()
+                .Select(x => new Interface 
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

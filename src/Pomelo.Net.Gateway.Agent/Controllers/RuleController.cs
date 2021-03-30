@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Pomelo.Net.Gateway.Agent.Models;
 using Pomelo.Net.Gateway.Association;
 using Pomelo.Net.Gateway.EndpointCollection;
 
@@ -22,17 +25,28 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
         [HttpPut]
         [HttpPost]
         [HttpPatch]
-        public async ValueTask<IEnumerable<MappingRule>> Post(
+        public async ValueTask<IEnumerable<MappingRule2>> Post(
             [FromServices] IMappingRuleProvider mappingRuleProvider,
             [FromServices] AssociateClient associateClient,
-            [FromBody] IEnumerable<MappingRule> rules,
+            [FromBody] SetRulesRequestViewModel rules,
             CancellationToken cancellationToken = default)
         {
-            await mappingRuleProvider.SetRulesAsync(rules, cancellationToken);
+            await mappingRuleProvider.SetRulesAsync(rules.Rules.Select(x => new MappingRule 
+            {
+                Protocol = x.Protocol,
+                LocalEndpoint = IPEndPoint.Parse(x.LocalEndpoint),
+                RemoteEndpoint = IPEndPoint.Parse(x.RemoteEndpoint),
+                LocalTunnelId = x.LocalTunnelId,
+                RemoteRouterId = x.RemoteRouterId,
+                RemoteTunnelId = x.RemoteTunnelId
+            }), cancellationToken);
             mappingRuleProvider.Reload();
-            await associateClient.SendCleanRulesAsync();
-            await associateClient.SendRulesAsync();
-            return rules;
+            if (associateClient.Connected)
+            {
+                await associateClient.SendCleanRulesAsync();
+                await associateClient.SendRulesAsync();
+            }
+            return rules.Rules;
         }
     }
 }

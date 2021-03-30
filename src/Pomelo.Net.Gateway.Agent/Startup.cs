@@ -1,10 +1,12 @@
 using System.Net;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.Agent.Authentication;
 
 namespace Pomelo.Net.Gateway.Agent
 {
@@ -19,6 +21,8 @@ namespace Pomelo.Net.Gateway.Agent
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             services.AddControllersWithViews()
                 .AddNewtonsoftJson(x => 
                 {
@@ -46,8 +50,8 @@ namespace Pomelo.Net.Gateway.Agent
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(

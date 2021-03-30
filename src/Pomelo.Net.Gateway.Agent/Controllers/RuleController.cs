@@ -1,17 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Pomelo.Net.Gateway.Agent.Models;
 using Pomelo.Net.Gateway.Association;
 using Pomelo.Net.Gateway.EndpointCollection;
 
 namespace Pomelo.Net.Gateway.Agent.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RuleController : ControllerBase

@@ -1,15 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association.Models;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Agent.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TunnelController : ControllerBase

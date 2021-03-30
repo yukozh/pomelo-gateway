@@ -60,7 +60,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 context.Endpoints.Add(_endpoint);
                 context.SaveChanges();
             }
-            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id && userIdentifier == userIdentifier))
+            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id 
+                && x.UserIdentifier == userIdentifier))
             {
                 logger.LogInformation($"User {userIdentifier} is using the endpoint {endpoint}");
                 _endpoint.Users.Add(new EndpointUser

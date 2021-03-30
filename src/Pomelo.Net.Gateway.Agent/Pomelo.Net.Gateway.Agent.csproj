@@ -2,7 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <ApplicationIcon>client.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.4" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj" />

@@ -17,7 +17,8 @@ namespace Pomelo.Net.Gateway.Server.Models
                 Users.Add(new User 
                 {
                     Username = "admin",
-                    Password = "123456"
+                    Password = "123456",
+                    Role = UserRole.Admin
                 });
                 await SaveChangesAsync();
             }

@@ -2,6 +2,12 @@
 
 namespace Pomelo.Net.Gateway.Server.Models
 {
+    public enum UserRole
+    { 
+        User,
+        Admin
+    }
+
     public class User
     {
         [Key]
@@ -10,5 +16,7 @@ namespace Pomelo.Net.Gateway.Server.Models
 
         [MaxLength(64)]
         public string Password { get; set; }
+
+        public UserRole Role { get; set; }
     }
 }

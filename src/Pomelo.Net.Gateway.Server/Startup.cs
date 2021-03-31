@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Net;
 using Pomelo.Net.Gateway.Association.Authentication;
+using Pomelo.Net.Gateway.Server.Authentication;
 using Pomelo.Net.Gateway.Server.Authenticator;
 using Pomelo.Net.Gateway.Server.Models;
 
@@ -22,6 +24,8 @@ namespace Pomelo.Net.Gateway.Server
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             services.AddControllersWithViews();
             services.AddDbContext<ServerContext>(x => x.UseSqlite(Configuration["DB"]));
             services.AddPomeloGatewayServer(
@@ -46,6 +50,7 @@ namespace Pomelo.Net.Gateway.Server
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

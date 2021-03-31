@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -31,6 +32,9 @@ namespace Pomelo.Net.Gateway.Association
         private TcpEndpointManager tcpEndpointManager;
         private ILogger<AssociateServer> logger;
         private IServiceProvider services;
+
+        public IEnumerable<AssociateContext> Clients => clients.Values;
+        public IPEndPoint Endpoint => endpoint;
 
         private AssociateServer(IServiceProvider services)
         {

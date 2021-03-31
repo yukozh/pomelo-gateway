@@ -1,0 +1,43 @@
+﻿@model IEnumerable<Pomelo.Net.Gateway.EndpointCollection.Endpoint>
+@{
+    ViewData["Title"] = "Endpoints";
+}
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Endpoint Listeners</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Destinations</th>
+                <th>Tunnel Provider</th>
+                <th>Router</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in Model)
+            {
+            <tr>
+                <td>@x.Protocol.ToString() @x.Address:@x.Port</td>
+                <td>@x.Users.Count</td>
+                @if (x.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP)
+                {
+                    <td>@(ViewBag.StreamTunnels.ContainsKey(x.TunnelId) ? ViewBag.StreamTunnels[x.TunnelId].Name : "Unknown")</td>
+                    <td>@(ViewBag.StreamRouters.ContainsKey(x.RouterId) ? ViewBag.StreamRouters[x.RouterId].Name : "Unknown")</td>
+                }
+                else
+                {
+                    <td>@(ViewBag.PacketTunnels.ContainsKey(x.TunnelId) ? ViewBag.PacketTunnels[x.TunnelId].Name : "Unknown")</td>
+                    <td>@(ViewBag.PacketRouters.ContainsKey(x.RouterId) ? ViewBag.PacketRouters[x.RouterId].Name : "Unknown")</td>
+                }
+            </tr>
+            }
+            @if (!Model.Any())
+            { 
+                <tr>
+                    <td colspan="5">No endpoint listner created</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

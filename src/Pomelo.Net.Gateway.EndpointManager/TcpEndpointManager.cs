@@ -13,7 +13,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 {
     public class TcpEndpointManager : IDisposable
     {
-        private RuleContext context;
+        private EndpointContext context;
         private ILogger<TcpEndpointManager> logger;
         private IServiceProvider services;
         private IServiceScope scope;
@@ -23,7 +23,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         {
             this.services = services;
             this.scope = services.CreateScope();
-            this.context = scope.ServiceProvider.GetService<RuleContext>();
+            this.context = scope.ServiceProvider.GetService<EndpointContext>();
             this.logger = services.GetRequiredService<ILogger<TcpEndpointManager>>();
             this.listeners = new ConcurrentDictionary<IPEndPoint, TcpEndpointListner>();
         }

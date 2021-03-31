@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Server.Models;
 using Pomelo.Net.Gateway.Tunnel;
@@ -55,9 +57,47 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Tunnel()
         {
             return View();
+        }
+
+        public async ValueTask<IActionResult> Endpoint(
+            [FromServices] IServiceProvider services, 
+            [FromServices] EndpointContext db)
+        {
+            ViewBag.StreamTunnels = services.GetServices<IStreamTunnel>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToDictionary(x => x.Id);
+            ViewBag.StreamRouters = services.GetServices<IStreamRouter>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToDictionary(x => x.Id);
+            ViewBag.PacketTunnels = services.GetServices<IPacketTunnel>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToDictionary(x => x.Id);
+            ViewBag.PacketRouters = services.GetServices<IPacketRouter>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToDictionary(x => x.Id);
+
+            return View(await db.Endpoints
+                .Include(x => x.Users)
+                .ToListAsync());
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

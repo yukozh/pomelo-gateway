@@ -30,7 +30,7 @@ namespace Pomelo.Net.Gateway.Router
         {
             using (var scope = services.CreateScope())
             {
-                var _endpoint = await scope.ServiceProvider.GetRequiredService<RuleContext>()
+                var _endpoint = await scope.ServiceProvider.GetRequiredService<EndpointContext>()
                     .Endpoints
                     .Include(x => x.Users)
                     .SingleOrDefaultAsync(x =>

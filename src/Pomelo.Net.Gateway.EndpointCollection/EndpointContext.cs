@@ -2,9 +2,9 @@
 
 namespace Pomelo.Net.Gateway.EndpointCollection
 {
-    public class RuleContext : DbContext
+    public class EndpointContext : DbContext
     {
-        public RuleContext(DbContextOptions<RuleContext> opt) : base(opt)
+        public EndpointContext(DbContextOptions<EndpointContext> opt) : base(opt)
         { }
 
         public DbSet<Endpoint> Endpoints { get; set; }

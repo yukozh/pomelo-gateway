@@ -28,7 +28,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.logger = services.GetRequiredService<ILogger<TcpEndpointListner>>();
             this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
-            var ruleContext = scope.ServiceProvider.GetRequiredService<RuleContext>();
+            var ruleContext = scope.ServiceProvider.GetRequiredService<EndpointContext>();
             var _endpoint = ruleContext.Endpoints.SingleOrDefault(x => x.Address == endpoint.Address.ToString() && x.Protocol == Protocol.TCP && x.Port == endpoint.Port);
             if (_endpoint == null)
             {

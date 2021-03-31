@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddPomeloGatewayEndpointCollection(this IServiceCollection services)
         {
-            return services.AddDbContext<RuleContext>(x => x.UseInMemoryDatabase("pomelo-gateway"));
+            return services.AddDbContext<EndpointContext>(x => x.UseInMemoryDatabase("pomelo-gateway"));
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Pomelo.Net.Gateway.Agent
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls("http://*:16249");
+                    webBuilder.UseUrls(Environment.GetEnvironmentVariable("POMELO_GATEWAY_AGENT_WEB") ?? "http://127.0.0.1:16249");
                     webBuilder.UseStartup<Startup>();
                 });
     }

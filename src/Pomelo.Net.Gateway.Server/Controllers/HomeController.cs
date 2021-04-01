@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -99,6 +100,13 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             return View(await db.Endpoints
                 .Include(x => x.Users)
                 .ToListAsync());
+        }
+
+        public async ValueTask<IActionResult> User(
+            [FromServices] ServerContext db,
+            CancellationToken cancellationToken = default)
+        {
+            return View(await db.Users.OrderByDescending(x => x.Role).ToListAsync());
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

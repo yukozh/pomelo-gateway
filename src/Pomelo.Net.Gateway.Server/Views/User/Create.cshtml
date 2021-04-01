@@ -1,0 +1,38 @@
+﻿@model Pomelo.Net.Gateway.Server.Models.User
+@{
+    ViewData["Title"] = "Create User";
+}
+
+<form method="post" asp-action="Create" class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Edit User</h6>
+    <table class="table">
+        <tbody>
+            <tr>
+                <td><strong>Username</strong></td>
+                <td>
+                    <input type="text" name="username" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Password</strong></td>
+                <td>
+                    <input type="password" name="password" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Role</strong></td>
+                <td>
+                    <select class="form-control" name="role">
+                        <!option>User</!option>
+                        <!option>Admin</!option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>

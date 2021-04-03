@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Router;
@@ -22,6 +23,8 @@ namespace Pomelo.Net.Gateway.Tunnel
         }
 
         public IEnumerable<StreamTunnelContext> EnumerateContexts() => tunnels.Values;
+
+        public IEnumerable<StreamTunnelContext> EnumerateContexts(string userIdentifier) => tunnels.Values.Where(x => x.UserIdentifier == userIdentifier);
 
         private async ValueTask RecycleAsync()
         {

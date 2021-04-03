@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<Pomelo.Net.Gateway.Server.Models.User>
 @inject Pomelo.Net.Gateway.Association.AssociateServer server
+@inject Pomelo.Net.Gateway.Tunnel.StreamTunnelContextFactory streamTunnelContextFactory
 @{
     ViewData["Title"] = "Users";
 }
@@ -12,6 +13,7 @@
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Tunnels</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -29,7 +31,11 @@
                 {
                     <td><span style="color: #e83e8c">Online</span></td>
                 }
-                <td><a asp-action="Edit" asp-route-id="@x.Username">Edit</a></td>
+                <td>@streamTunnelContextFactory.EnumerateContexts(x.Username).Count()</td>
+                <td>
+                    <a asp-action="Tunnel" asp-controller="Home" asp-route-id="@x.Username">Tunnels</a>
+                    <a asp-action="Edit" asp-route-id="@x.Username">Edit</a>
+                </td>
             </tr>
             }
             @if (!Model.Any())
@@ -39,7 +45,7 @@
                 </tr>
             }
             <tr>
-                <td colspan="4">
+                <td colspan="5">
                     <a asp-action="Create">Create User</a>
                 </td>
             </tr>

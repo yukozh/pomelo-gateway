@@ -59,8 +59,9 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             return View();
         }
 
-        public IActionResult Tunnel()
+        public IActionResult Tunnel(string id)
         {
+            ViewBag.Identifier = string.IsNullOrWhiteSpace(id) ? null : id;
             return View();
         }
 

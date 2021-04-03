@@ -9,7 +9,7 @@ namespace Pomelo.Net.Gateway.Tunnel
     {
         Guid Id { get; }
         string Name { get; }
-        ValueTask ForwardAsync(Stream leftToTunnelStream, Stream tunnelToRightStream, CancellationToken cancellationToken = default);
-        ValueTask BackwardAsync(Stream rightToTunnelStream, Stream tunnelToLeftStream, CancellationToken cancellationToken = default);
+        ValueTask ForwardAsync(Stream leftToTunnelStream, Stream tunnelToRightStream, StreamTunnelContext context, CancellationToken cancellationToken = default);
+        ValueTask BackwardAsync(Stream rightToTunnelStream, Stream tunnelToLeftStream, StreamTunnelContext context, CancellationToken cancellationToken = default);
     }
 }

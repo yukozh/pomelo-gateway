@@ -22,6 +22,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public TcpClient LeftClient { get; set; }
         public TcpClient RightClient { get; set; }
+        public DateTime LastCommunicationTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc => createdTime;
         public string UserIdentifier => userIdentifier;
         public IStreamRouter Router => router;

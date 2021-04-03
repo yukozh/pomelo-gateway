@@ -15,7 +15,11 @@ namespace Pomelo.Net.Gateway.Tunnel
         public Guid Id => Guid.Parse("4048bf29-0997-4f9d-827b-fe29ceb0e4fe");
         public string Name => nameof(DefaultStreamTunnel);
 
-        public async ValueTask BackwardAsync(Stream rightToTunnelStream, Stream tunnelToLeftStream, CancellationToken cancellationToken = default)
+        public async ValueTask BackwardAsync(
+            Stream rightToTunnelStream, 
+            Stream tunnelToLeftStream, 
+            StreamTunnelContext context,
+            CancellationToken cancellationToken = default)
         {
             if (!tunnelToLeftStream.CanWrite)
             {
@@ -31,12 +35,17 @@ namespace Pomelo.Net.Gateway.Tunnel
                     {
                         break;
                     }
+                    context.LastCommunicationTimeUtc = DateTime.UtcNow;
                     await tunnelToLeftStream.WriteAsync(buffer.Memory.Slice(0, length));
                 }
             }
         }
 
-        public async ValueTask ForwardAsync(Stream leftToTunnelStream, Stream tunnelToRightStream, CancellationToken cancellationToken = default)
+        public async ValueTask ForwardAsync(
+            Stream leftToTunnelStream, 
+            Stream tunnelToRightStream, 
+            StreamTunnelContext context,
+            CancellationToken cancellationToken = default)
         {
             if (!tunnelToRightStream.CanWrite)
             {
@@ -52,6 +61,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                     {
                         break;
                     }
+                    context.LastCommunicationTimeUtc = DateTime.UtcNow;
                     await tunnelToRightStream.WriteAsync(buffer.Memory.Slice(0, length));
                 }
             }

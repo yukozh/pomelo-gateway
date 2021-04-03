@@ -39,7 +39,14 @@ namespace Pomelo.Net.Gateway.Tunnel
                             && context.Status == StreamTunnelStatus.WaitingForClient)
                         {
                             tunnels.Remove(context.ConnectionId, out var _);
-                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled");
+                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled due to agent has not connected");
+                            context.Dispose();
+                        }
+
+                        if (context.LastCommunicationTimeUtc.AddMinutes(5) < DateTime.UtcNow)
+                        {
+                            tunnels.Remove(context.ConnectionId, out var _);
+                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled due to the tunnel idle for a long time");
                             context.Dispose();
                         }
                     }

@@ -358,12 +358,12 @@ namespace Pomelo.Net.Gateway.Association
                 logger.LogInformation($"[{context.ConnectionId}] Handshaking...");
                 await HandshakeWithTunnelServerAsync(context.RightClient, context.ConnectionId);
 
-                logger.LogInformation($"[{context.ConnectionId}] Forwarding...");
                 // Forwarding
+                logger.LogInformation($"[{context.ConnectionId}] Forwarding...");
                 await Task.WhenAll(new[]
                 {
-                    context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream()).AsTask(),
-                    context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream()).AsTask()
+                    context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream(), context).AsTask(),
+                    context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream(), context).AsTask()
                 });
                 logger.LogInformation($"[{context.ConnectionId}] Closed");
             }

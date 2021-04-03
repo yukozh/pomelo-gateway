@@ -91,14 +91,14 @@ namespace Pomelo.Net.Gateway.Tunnel
                     context.LeftClient = client;
 
                     // Forward header
-                    await context.Tunnel.ForwardAsync(context.GetHeaderStream(), context.RightClient.GetStream());
+                    await context.Tunnel.ForwardAsync(context.GetHeaderStream(), context.RightClient.GetStream(), context);
                     context.DestroyHeaderBuffer();
 
                     // Start tunneling
                     await Task.WhenAll(new[]
                     {
-                        context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream()).AsTask(),
-                        context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream()).AsTask()
+                        context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream(), context).AsTask(),
+                        context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream(), context).AsTask()
                     });
                 }
                 finally

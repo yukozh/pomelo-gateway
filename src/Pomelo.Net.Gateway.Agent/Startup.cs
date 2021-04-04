@@ -30,8 +30,8 @@ namespace Pomelo.Net.Gateway.Agent
                 });
 
             services.AddPomeloGatewayClient(
-                IPEndPoint.Parse(Configuration["AssociationServer"]), 
-                IPEndPoint.Parse(Configuration["TunnelServer"]));
+                AddressHelper.ParseAddressAsync(Configuration["AssociationServer"], 12646).Result, 
+                AddressHelper.ParseAddressAsync(Configuration["TunnelServer"], 12647).Result);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

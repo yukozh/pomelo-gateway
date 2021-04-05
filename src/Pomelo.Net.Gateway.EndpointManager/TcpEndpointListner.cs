@@ -21,6 +21,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
         private ILogger<TcpEndpointListner> logger;
+        private TcpEndpointManager manager;
 
         public TcpEndpointListner(IPEndPoint endpoint, IServiceProvider services)
         {
@@ -28,6 +29,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.logger = services.GetRequiredService<ILogger<TcpEndpointListner>>();
             this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
+            this.manager = services.GetRequiredService<TcpEndpointManager>();
             var ruleContext = scope.ServiceProvider.GetRequiredService<EndpointContext>();
             var _endpoint = ruleContext.Endpoints.SingleOrDefault(x => x.Address == endpoint.Address.ToString() && x.Protocol == Protocol.TCP && x.Port == endpoint.Port);
             if (_endpoint == null)
@@ -85,8 +87,46 @@ namespace Pomelo.Net.Gateway.EndpointManager
             var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
             logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
-            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
-            await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
+            var user = await manager.GetEndpointUserByIdentifierAsync(result.Identifier);
+            if (user.Type == EndpointUserType.NonPublic)
+            {
+                logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
+                await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
+            }
+            else
+            {
+                try
+                {
+                    var preCreateEndpoint = await manager.GetPreCreateEndpointByIdentifierAsync(result.Identifier);
+                    tunnelContext.LeftClient = new TcpClient();
+                    tunnelContext.LeftClient.ReceiveTimeout = 1000 * 30;
+                    tunnelContext.LeftClient.SendTimeout = 1000 * 30;
+                    // Right: Server
+                    // Left: Destination
+                    var destEndpoint = IPEndPoint.Parse(preCreateEndpoint.DestinationEndpoint);
+                    await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
+
+                    // TODO: Start forwarding
+                    await tunnelContext.Tunnel.BackwardAsync(
+                        tunnelContext.GetHeaderStream(),
+                        tunnelContext.LeftClient.GetStream(), tunnelContext);
+
+                    await Task.WhenAll(new[]
+                    {
+                        tunnelContext.Tunnel.ForwardAsync(tunnelContext.LeftClient.GetStream(), tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
+                        tunnelContext.Tunnel.BackwardAsync(tunnelContext.RightClient.GetStream(), tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
+                    });
+                    
+                }
+                catch (Exception ex)
+                {
+
+                }
+                finally
+                {
+                    tunnelContext.Dispose();
+                }
+            }
         }
 
         public void Dispose()

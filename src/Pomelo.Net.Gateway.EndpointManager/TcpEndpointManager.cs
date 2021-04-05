@@ -38,7 +38,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             IPEndPoint endpoint, 
             Guid routerId, 
             Guid tunnelId,
-            string userIdentifier)
+            string userIdentifier,
+            EndpointUserType userType = EndpointUserType.NonPublic)
         {
             logger.LogInformation($"Creating TCP Endpoint Listener {endpoint}");
             var _endpoint = context.Endpoints
@@ -67,7 +68,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 _endpoint.Users.Add(new EndpointUser
                 {
                     EndpointId = _endpoint.Id,
-                    UserIdentifier = userIdentifier
+                    UserIdentifier = userIdentifier,
+                    Type = userType
                 });
                 context.SaveChanges();
             }
@@ -95,6 +97,57 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 context.Endpoints.RemoveRange(endpointsToRecycle);
                 await context.SaveChangesAsync(cancellationToken);
             }
+        }
+
+        public async ValueTask InsertPreCreateEndpointRule(
+            string identifier,
+            Protocol protocol,
+            IPEndPoint serverEndpoint,
+            IPEndPoint destinationEndpoint,
+            Guid routerId,
+            Guid tunnelId,
+            CancellationToken cancellationToken = default)
+        {
+            context.PreCreateEndpoints.Add(new PreCreateEndpoint
+            {
+                DestinationEndpoint = destinationEndpoint.ToString(),
+                ServerEndpoint = serverEndpoint.ToString(),
+                Identifier = identifier,
+                Protocol = protocol,
+                RouterId = routerId,
+                TunnelId = tunnelId
+            });
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async ValueTask EnsurePreCreateEndpointsAsync()
+        {
+            var endpoints = await context.PreCreateEndpoints.ToListAsync();
+            foreach (var endpoint in endpoints)
+            {
+                GetOrCreateListenerForEndpoint(
+                    IPEndPoint.Parse(endpoint.ServerEndpoint),
+                    endpoint.RouterId,
+                    endpoint.TunnelId,
+                    endpoint.Identifier,
+                    EndpointUserType.Public);
+            }
+        }
+
+        public async ValueTask<EndpointUser> GetEndpointUserByIdentifierAsync(
+            string identifier,
+            CancellationToken cancellationToken = default)
+        {
+            return await context.EndpointUsers
+                .SingleAsync(x => x.UserIdentifier == identifier, cancellationToken);
+        }
+
+        public async ValueTask<PreCreateEndpoint> GetPreCreateEndpointByIdentifierAsync(
+            string identifier,
+            CancellationToken cancellationToken = default)
+        {
+            return await context.PreCreateEndpoints
+                .SingleAsync(x => x.Identifier == identifier, cancellationToken);
         }
 
         private void RecycleEndpoint(Endpoint endpoint)

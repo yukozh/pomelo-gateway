@@ -11,6 +11,8 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 
         public DbSet<EndpointUser> EndpointUsers { get; set; }
 
+        public DbSet<PreCreateEndpoint> PreCreateEndpoints { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -23,6 +25,13 @@ namespace Pomelo.Net.Gateway.EndpointCollection
             builder.Entity<EndpointUser>(e => 
             {
                 e.HasKey(x => new { x.EndpointId, x.UserIdentifier });
+            });
+
+            builder.Entity<PreCreateEndpoint>(e =>
+            {
+                e.HasIndex(x => x.Protocol);
+                e.HasIndex(x => x.ServerEndpoint);
+                e.HasIndex(x => x.DestinationEndpoint);
             });
         }
     }

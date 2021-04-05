@@ -4,6 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Pomelo.Net.Gateway.EndpointCollection
 {
+    public enum EndpointUserType
+    {
+        NonPublic,
+        Public
+    }
+
     public class EndpointUser
     {
         [ForeignKey("Endpoint")]
@@ -13,5 +19,8 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 
         [MaxLength(256)]
         public string UserIdentifier { get; set; }
+
+
+        public EndpointUserType Type { get; set; }
     }
 }

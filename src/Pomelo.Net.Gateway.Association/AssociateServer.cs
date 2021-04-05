@@ -66,6 +66,14 @@ namespace Pomelo.Net.Gateway.Association
         public AssociateContext GetAssociateContextByUserIdentifier(string identifier) 
             => clients.ContainsKey(identifier) ? clients[identifier] : null;
 
+        public void DisconnectWithIdentifier(string identifier)
+        {
+            if (clients.TryRemove(identifier, out var context))
+            {
+                context.Dispose();
+            }
+        }
+
         private async ValueTask LoopAcceptAsync()
         {
             while (true)

@@ -14,4 +14,7 @@
     <ProjectReference Include="..\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Controllers\UserController.cs" />
+  </ItemGroup>
 </Project>

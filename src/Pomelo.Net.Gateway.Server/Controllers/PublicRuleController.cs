@@ -122,7 +122,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
 
             db.PublicRules.Add(model);
             await db.SaveChangesAsync();
-            tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+            await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                 model.Id,
                 model.Protocol,
                 serverEndpoint,
@@ -137,6 +137,46 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 model.Id,
                 EndpointCollection.EndpointUserType.Public);
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async ValueTask<IActionResult> Edit(
+            string id,
+            [FromServices] IServiceProvider services,
+            [FromServices] ServerContext db,
+            CancellationToken cancellationToken = default)
+        {
+            ViewBag.StreamTunnels = services.GetServices<IStreamTunnel>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
+            ViewBag.StreamRouters = services.GetServices<IStreamRouter>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
+            ViewBag.PacketTunnels = services.GetServices<IPacketTunnel>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
+            ViewBag.PacketRouters = services.GetServices<IPacketRouter>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
+
+            var rule = await db.PublicRules.SingleAsync(x => x.Id == id, cancellationToken);
+            return View(rule);
         }
     }
 }

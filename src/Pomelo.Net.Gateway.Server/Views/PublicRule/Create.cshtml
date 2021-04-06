@@ -1,0 +1,66 @@
+﻿@model Pomelo.Net.Gateway.Server.Models.PublicRule
+@{
+    ViewData["Title"] = "Create Public Rule";
+}
+
+<form method="post" asp-action="Create" class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Create Public Rule</h6>
+    <table class="table">
+        <tbody>
+            <tr>
+                <td><strong>Rule ID</strong></td>
+                <td>
+                    <input type="text" name="id" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Protocol</strong></td>
+                <td>
+                    <select class="form-control" name="protocol">
+                        <option>TCP</option>
+                        <option>UDP</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Server Endpoint</strong></td>
+                <td>
+                    <input type="text" name="serverEndpoint" class="form-control" placeholder="Example: 0.0.0.0:8443" />
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Destination Endpoint</strong></td>
+                <td>
+                    <input type="text" name="destinationEndpoint" class="form-control" placeholder="Example: yuko.me:443" />
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Stream Tunnel Provider</strong></td>
+                <td>
+                    <select class="form-control" name="tunnelId">
+                        @foreach (var x in ViewBag.StreamTunnels)
+                        {
+                            <option value="@x.Id">@x.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Stream Router</strong></td>
+                <td>
+                    <select class="form-control" name="routerId">
+                        @foreach (var x in ViewBag.StreamRouters)
+                        {
+                            <option value="@x.Id">@x.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>

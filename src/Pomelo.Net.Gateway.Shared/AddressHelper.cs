@@ -9,14 +9,21 @@ namespace System.Net
             string address,
             int defaultPort)
         {
-            if (!address.Contains(":"))
+            try
             {
-                address += ":" + defaultPort;
+                return IPEndPoint.Parse(address);
             }
+            catch
+            {
+                if (!address.Contains(":"))
+                {
+                    address += ":" + defaultPort;
+                }
 
-            var splited = address.Split(':');
-            var entry = await Dns.GetHostEntryAsync(splited[0]);
-            return IPEndPoint.Parse($"{entry.AddressList.Last()}:{splited[1]}");
+                var splited = address.Split(':');
+                var entry = await Dns.GetHostEntryAsync(splited[0]);
+                return new IPEndPoint(entry.AddressList.Last(), Convert.ToInt32(splited[1]));
+            }
         }
     }
 }

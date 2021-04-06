@@ -13,6 +13,8 @@
                 <th>ID</th>
                 <th>Server Endpoint</th>
                 <th>Destination Endpoint</th>
+                <th>Stream Tunnel Provider</th>
+                <th>Stream Router</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -23,6 +25,8 @@
                 <td>@x.Id</td>
                 <td>@x.ServerEndpoint</td>
                 <td>@x.DestinationEndpoint</td>
+                <td>@ViewBag.StreamTunnels[x.TunnelId].Name</td>
+                <td>@ViewBag.StreamRouters[x.RouterId].Name</td>
                 <td>
                     <a>Edit</a>
                 </td>
@@ -31,7 +35,7 @@
             @if (!Model.Any())
             { 
                 <tr>
-                    <td colspan="5">No public rule created</td>
+                    <td colspan="6">No public rule created</td>
                 </tr>
             }
             <tr>

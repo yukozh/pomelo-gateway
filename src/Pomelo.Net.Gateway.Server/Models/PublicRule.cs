@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Pomelo.Net.Gateway.EndpointCollection;
 
 namespace Pomelo.Net.Gateway.Server.Models
@@ -15,5 +16,9 @@ namespace Pomelo.Net.Gateway.Server.Models
 
         [MaxLength(256)]
         public string DestinationEndpoint { get; set; }
+
+        public Guid TunnelId { get; set; }
+
+        public Guid RouterId { get; set; }
     }
 }

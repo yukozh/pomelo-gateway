@@ -120,6 +120,20 @@ namespace Pomelo.Net.Gateway.EndpointManager
             await context.SaveChangesAsync(cancellationToken);
         }
 
+        public async ValueTask RemovePreCreateEndpointRuleAsync(
+            string identifier,
+            CancellationToken cancellationToken = default)
+        {
+            var endpoint = await context.PreCreateEndpoints.SingleOrDefaultAsync(
+                x => x.Identifier == identifier,
+                cancellationToken);
+            if (endpoint != null)
+            {
+                context.PreCreateEndpoints.Remove(endpoint);
+                await context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         public async ValueTask EnsurePreCreateEndpointsAsync()
         {
             var endpoints = await context.PreCreateEndpoints.ToListAsync();

@@ -178,5 +178,56 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             var rule = await db.PublicRules.SingleAsync(x => x.Id == id, cancellationToken);
             return View(rule);
         }
+
+        [HttpPost]
+        public async ValueTask<IActionResult> Edit(
+            PublicRule model,
+            [FromServices] IServiceProvider services,
+            [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] ServerContext db,
+            CancellationToken cancellationToken = default)
+        {
+            var rule = await db.PublicRules.SingleAsync(x => x.Id == model.Id, cancellationToken);
+            rule.Protocol = model.Protocol;
+            rule.RouterId = model.RouterId;
+            rule.TunnelId = model.TunnelId;
+            IPEndPoint serverEndpoint, destinationEndpoint;
+            try
+            {
+                serverEndpoint = IPEndPoint.Parse(model.ServerEndpoint);
+                destinationEndpoint = await AddressHelper.ParseAddressAsync(model.DestinationEndpoint, 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                ViewBag.Info = "Endpoint is invalid";
+                return await Edit(model.Id, services, db, cancellationToken);
+            }
+            rule.DestinationEndpoint = destinationEndpoint.ToString();
+            rule.ServerEndpoint = serverEndpoint.ToString();
+            await db.SaveChangesAsync(cancellationToken);
+
+            // Remove old rule
+            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(model.Id, cancellationToken);
+            await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(model.Id);
+
+            // Create rule
+            await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                model.Id,
+                model.Protocol,
+                serverEndpoint,
+                destinationEndpoint,
+                model.RouterId,
+                model.TunnelId,
+                cancellationToken);
+            tcpEndpointManager.GetOrCreateListenerForEndpoint(
+                serverEndpoint,
+                model.RouterId,
+                model.TunnelId,
+                model.Id,
+                EndpointCollection.EndpointUserType.Public);
+            ViewBag.Info = "Succeeded";
+            return await Edit(model.Id, services, db, cancellationToken);
+        }
     }
 }

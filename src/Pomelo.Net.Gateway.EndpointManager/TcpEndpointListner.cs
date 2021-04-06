@@ -103,7 +103,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     tunnelContext.LeftClient.SendTimeout = 1000 * 30;
                     // Right: Server
                     // Left: Destination
-                    var destEndpoint = IPEndPoint.Parse(preCreateEndpoint.DestinationEndpoint);
+                    var destEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
                     await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
 
                     // TODO: Start forwarding
@@ -120,7 +120,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 }
                 catch (Exception ex)
                 {
-
+                    logger.LogError(ex.ToString());
                 }
                 finally
                 {

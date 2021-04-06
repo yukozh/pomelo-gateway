@@ -15,6 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\UserController.cs" />
+    <Folder Include="Views\PublicRule\" />
   </ItemGroup>
 </Project>

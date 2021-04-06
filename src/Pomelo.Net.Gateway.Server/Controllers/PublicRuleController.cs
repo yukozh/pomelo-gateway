@@ -122,7 +122,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
 
             db.PublicRules.Add(model);
             await db.SaveChangesAsync();
-            tcpEndpointManager.InsertPreCreateEndpointRule(
+            tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                 model.Id,
                 model.Protocol,
                 serverEndpoint,

@@ -1,3 +1,5 @@
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -5,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Net;
 using Pomelo.Net.Gateway.Association.Authentication;
+using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Server.Authentication;
 using Pomelo.Net.Gateway.Server.Authenticator;
 using Pomelo.Net.Gateway.Server.Models;
@@ -36,7 +38,29 @@ namespace Pomelo.Net.Gateway.Server
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.ApplicationServices.RunPomeloGatewayServer();
+            app.ApplicationServices.RunPomeloGatewayServerAsync().ContinueWith((_)=> Task.Run(async ()=>
+            {
+                var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
+                using (var scope = app.ApplicationServices.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
+                    var rules = await db.PublicRules.ToListAsync();
+                    foreach (var rule in rules)
+                    {
+                        if (rule.Protocol == EndpointCollection.Protocol.TCP)
+                        {
+                            await tcp.InsertPreCreateEndpointRuleAsync(
+                                rule.Id,
+                                rule.Protocol,
+                                IPEndPoint.Parse(rule.ServerEndpoint),
+                                await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                                rule.RouterId,
+                                rule.TunnelId);
+                        }
+                    }
+                }
+                tcp.EnsurePreCreateEndpointsAsync();
+            }));
 
             if (env.IsDevelopment())
             {

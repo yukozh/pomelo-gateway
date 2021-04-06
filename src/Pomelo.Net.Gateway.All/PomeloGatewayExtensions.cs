@@ -45,9 +45,9 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>();
         }
 
-        public static void RunPomeloGatewayServer(this IServiceProvider services)
+        public static Task RunPomeloGatewayServerAsync(this IServiceProvider services)
         {
-            Task.Factory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 services.GetRequiredService<Association.AssociateServer>().Start();
                 services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();

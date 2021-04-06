@@ -99,7 +99,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             }
         }
 
-        public async ValueTask InsertPreCreateEndpointRule(
+        public async ValueTask InsertPreCreateEndpointRuleAsync(
             string identifier,
             Protocol protocol,
             IPEndPoint serverEndpoint,

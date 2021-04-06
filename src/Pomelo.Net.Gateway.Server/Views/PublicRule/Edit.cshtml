@@ -60,9 +60,19 @@
             <tr>
                 <td colspan="2">
                     <input type="submit" value="Save" class="btn btn-primary" />
+                    <input type="button" value="Delete" class="btn btn-danger" id="btn-delete-rule" />
                     @ViewBag.Info
                 </td>
             </tr>
         </tbody>
     </table>
 </form>
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post" id="frm-delete"></form>
+@section Scripts {
+    <script>$('#btn-delete-rule').click(deleteUser);
+        function deleteUser() {
+            if (confirm("Are you sure you want to delete this rule?")) {
+                $('#frm-delete').submit();
+            }
+        }</script>
+} 

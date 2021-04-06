@@ -229,5 +229,20 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             ViewBag.Info = "Succeeded";
             return await Edit(model.Id, services, db, cancellationToken);
         }
+
+        [HttpPost]
+        public async ValueTask<IActionResult> Delete(
+            string id,
+            [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] ServerContext db,
+            CancellationToken cancellationToken = default)
+        {
+            var rule = await db.PublicRules.SingleAsync(x => x.Id == id, cancellationToken);
+            db.PublicRules.Remove(rule);
+            await db.SaveChangesAsync(cancellationToken);
+            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(id, cancellationToken);
+            await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

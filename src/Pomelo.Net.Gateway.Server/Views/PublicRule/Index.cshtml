@@ -11,6 +11,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Protocol</th>
                 <th>Server Endpoint</th>
                 <th>Destination Endpoint</th>
                 <th>Stream Tunnel Provider</th>
@@ -23,6 +24,7 @@
             {
             <tr>
                 <td>@x.Id</td>
+                <td>@x.Protocol.ToString()</td>
                 <td>@x.ServerEndpoint</td>
                 <td>@x.DestinationEndpoint</td>
                 <td>@ViewBag.StreamTunnels[x.TunnelId].Name</td>

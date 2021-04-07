@@ -13,7 +13,7 @@ namespace Pomelo.Net.Gateway.Tunnel
     {
         private const int BufferSize = 2048;
         public Guid Id => Guid.Parse("4048bf29-0997-4f9d-827b-fe29ceb0e4fe");
-        public string Name => nameof(DefaultStreamTunnel);
+        public string Name => "Default Stream Tunnel";
 
         public async ValueTask BackwardAsync(
             Stream rightToTunnelStream, 

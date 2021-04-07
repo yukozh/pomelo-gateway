@@ -13,7 +13,7 @@ namespace Pomelo.Net.Gateway.Router
     public class DefaultStreamRouter : IStreamRouter
     {
         public Guid Id => Guid.Parse("6486995f-b40c-47db-96e5-4e50443a47a3");
-        public string Name => nameof(DefaultStreamRouter);
+        public string Name => "Default Stream Router";
         public int ExpectedBufferSize => 0;
         private IServiceProvider services;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using Pomelo.Net.Gateway.Association.Authentication;
 
@@ -34,6 +35,7 @@ namespace Pomelo.Net.Gateway.Association
         }
 
         public Credential Credential { get; set; }
+        public IPEndPoint UdpEndpoint { get; set; }
         public Memory<byte> HeaderBuffer => header.Memory.Slice(0, 2);
         public Memory<byte> BodyBuffer => body.Memory.Slice(0, 256);
         public Memory<byte> ResponseBuffer => response.Memory.Slice(0, 256);

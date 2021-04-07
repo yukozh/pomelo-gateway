@@ -9,6 +9,6 @@ namespace Pomelo.Net.Gateway.Router
     {
         Guid Id { get; }
         string Name { get; }
-        ValueTask<RouteResult> DetermineIdentifierAsync(Memory<byte> packet, IPEndPoint endpoint, CancellationToken cancellationToken = default);
+        ValueTask<string> DetermineIdentifierAsync(ArraySegment<byte> packet, IPEndPoint endpoint, CancellationToken cancellationToken = default);
     }
 }

@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Token;
+using Pomelo.Net.Gateway.Association.Udp;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Router;
@@ -20,7 +21,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
-    public class AssociateServer : ITunnelCreationNotifier, ITokenValidator, IDisposable 
+    public class AssociateServer : ITunnelCreationNotifier, ITokenValidator, IUdpAssociator, IDisposable 
     {
         public const string Version = "0.9.0";
 
@@ -352,6 +353,26 @@ namespace Pomelo.Net.Gateway.Association
                 return false;
             }
             return context.Credential.Token == token;
+        }
+
+        public void SetAgentUdpEndpoint(string identifier, IPEndPoint endpoint)
+        {
+            if (!clients.ContainsKey(identifier))
+            {
+                return;
+            }
+
+            clients[identifier].UdpEndpoint = endpoint;
+        }
+
+        public IPEndPoint FindEndpointByIdentifier(string identifier)
+        {
+            if (!clients.ContainsKey(identifier))
+            {
+                return null;
+            }
+
+            return clients[identifier].UdpEndpoint;
         }
     }
 }

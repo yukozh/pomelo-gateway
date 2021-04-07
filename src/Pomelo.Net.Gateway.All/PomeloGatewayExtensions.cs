@@ -40,6 +40,8 @@ namespace Pomelo.Net.Gateway
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<Tunnel.ITunnelCreationNotifier>(services 
                     => services.GetRequiredService<Association.AssociateServer>())
+                .AddSingleton<Association.Udp.IUdpAssociator>(services
+                    => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<EndpointManager.TcpEndpointManager>()
                 .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
                 .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>();

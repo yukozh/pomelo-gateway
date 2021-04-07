@@ -28,6 +28,7 @@
                 <td>@ViewBag.StreamTunnels[x.TunnelId].Name</td>
                 <td>@ViewBag.StreamRouters[x.RouterId].Name</td>
                 <td>
+                    <a asp-action="Tunnel" asp-controller="Home" asp-route-id="@x.Id">Tunnels</a>
                     <a asp-action="Edit" asp-route-id="@x.Id">Edit</a>
                 </td>
             </tr>

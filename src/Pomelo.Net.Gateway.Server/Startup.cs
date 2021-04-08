@@ -51,7 +51,6 @@ namespace Pomelo.Net.Gateway.Server
                         {
                             await tcp.InsertPreCreateEndpointRuleAsync(
                                 rule.Id,
-                                rule.Protocol,
                                 IPEndPoint.Parse(rule.ServerEndpoint),
                                 await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
                                 rule.RouterId,

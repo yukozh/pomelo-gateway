@@ -12,7 +12,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class TcpEndpointListner : IDisposable
+    public class TcpEndpointListener : IDisposable
     {
         private TcpListener server;
         private StreamTunnelContextFactory streamTunnelContextFactory;
@@ -20,14 +20,14 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IStreamRouter router;
         private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
-        private ILogger<TcpEndpointListner> logger;
+        private ILogger<TcpEndpointListener> logger;
         private TcpEndpointManager manager;
 
-        public TcpEndpointListner(IPEndPoint endpoint, IServiceProvider services)
+        public TcpEndpointListener(IPEndPoint endpoint, IServiceProvider services)
         {
             this.scope = services.CreateScope();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
-            this.logger = services.GetRequiredService<ILogger<TcpEndpointListner>>();
+            this.logger = services.GetRequiredService<ILogger<TcpEndpointListener>>();
             this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
             this.manager = services.GetRequiredService<TcpEndpointManager>();
             var ruleContext = scope.ServiceProvider.GetRequiredService<EndpointContext>();

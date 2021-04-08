@@ -124,7 +124,6 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             await db.SaveChangesAsync();
             await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                 model.Id,
-                model.Protocol,
                 serverEndpoint,
                 destinationEndpoint,
                 model.RouterId,
@@ -214,7 +213,6 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             // Create rule
             await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                 model.Id,
-                model.Protocol,
                 serverEndpoint,
                 destinationEndpoint,
                 model.RouterId,

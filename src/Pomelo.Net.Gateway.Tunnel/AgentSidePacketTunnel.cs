@@ -27,15 +27,22 @@ namespace Pomelo.Net.Gateway.Tunnel
         public int ExpectedBackwardAppendHeaderLength => 17;
         public int ExpectedForwardAppendHeaderLength => 36;
 
-        public async ValueTask BackwardAsync(PomeloUdpClient leftServer, PomeloUdpClient rightServer, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Packet Body |
             // +-----------------+--------------------------+-------------+
 
+            buffer[0] = (byte)PacketTunnelOpCode.AgentToTunnel;
+            context.ConnectionId.TryWriteBytes(buffer.Slice(1, 16));
+            await server.SendAsync(buffer, context.RightEndpoint);
+            if (context != null)
+            {
+                context.LastActionTimeUtc = DateTime.UtcNow;
+            }
         }
 
-        public async ValueTask ForwardAsync(PomeloUdpClient leftServer, PomeloUdpClient rightServer, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-------------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) |
@@ -56,7 +63,11 @@ namespace Pomelo.Net.Gateway.Tunnel
                 // TODO: logging
                 return;
             }
-            await leftServer.SendAsync(buffer.Slice(ExpectedForwardAppendHeaderLength), rule.LocalEndpoint);
+            await server.SendAsync(buffer.Slice(ExpectedForwardAppendHeaderLength), rule.LocalEndpoint);
+            if (context != null)
+            {
+                context.LastActionTimeUtc = DateTime.UtcNow;
+            }
         }
     }
 }

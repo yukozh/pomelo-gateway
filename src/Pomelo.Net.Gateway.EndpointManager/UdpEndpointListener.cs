@@ -9,7 +9,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class UdpEndpointListener
+    public class UdpEndpointListener : IDisposable
     {
         private PomeloUdpClient server;
         private PacketTunnelContextFactory packetTunnelContextFactory;
@@ -50,7 +50,6 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint);
                     context.LeftEndpoint = info.RemoteEndPoint;
                     await tunnel.ForwardAsync(
-                        server,
                         tunnelServer.Server,
                         new ArraySegment<byte>(buffer, 0, info.ReceivedBytes + tunnel.ExpectedForwardAppendHeaderLength),
                         context);
@@ -60,6 +59,12 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     logger.LogError(ex.ToString());
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            server?.Dispose();
+            server = null;
         }
     }
 }

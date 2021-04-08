@@ -11,21 +11,21 @@ using Pomelo.Net.Gateway.EndpointCollection;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class TcpEndpointManager : IDisposable
+    public class UdpEndpointManager : IDisposable
     {
         private EndpointContext context;
-        private ILogger<TcpEndpointManager> logger;
+        private ILogger<UdpEndpointManager> logger;
         private IServiceProvider services;
         private IServiceScope scope;
-        private ConcurrentDictionary<IPEndPoint, TcpEndpointListener> listeners;
+        private ConcurrentDictionary<IPEndPoint, UdpEndpointListener> listeners;
 
-        public TcpEndpointManager(IServiceProvider services)
+        public UdpEndpointManager(IServiceProvider services)
         {
             this.services = services;
             this.scope = services.CreateScope();
             this.context = scope.ServiceProvider.GetService<EndpointContext>();
-            this.logger = services.GetRequiredService<ILogger<TcpEndpointManager>>();
-            this.listeners = new ConcurrentDictionary<IPEndPoint, TcpEndpointListener>();
+            this.logger = services.GetRequiredService<ILogger<UdpEndpointManager>>();
+            this.listeners = new ConcurrentDictionary<IPEndPoint, UdpEndpointListener>();
         }
 
         public void Dispose()
@@ -34,19 +34,19 @@ namespace Pomelo.Net.Gateway.EndpointManager
             scope = null;
         }
 
-        public TcpEndpointListener GetOrCreateListenerForEndpoint(
-            IPEndPoint endpoint, 
-            Guid routerId, 
+        public UdpEndpointListener GetOrCreateListenerForEndpoint(
+            IPEndPoint endpoint,
+            Guid routerId,
             Guid tunnelId,
             string userIdentifier,
             EndpointUserType userType = EndpointUserType.NonPublic)
         {
-            logger.LogInformation($"Creating TCP Endpoint Listener {endpoint}");
+            logger.LogInformation($"Creating UDP Endpoint Listener {endpoint}");
             var _endpoint = context.Endpoints
                 .Include(x => x.Users)
-                .SingleOrDefault(x => x.Address == endpoint.Address.ToString() 
-                    && x.Port == endpoint.Port 
-                    && x.Protocol == Protocol.TCP);
+                .SingleOrDefault(x => x.Address == endpoint.Address.ToString()
+                    && x.Port == endpoint.Port
+                    && x.Protocol == Protocol.UDP);
             if (_endpoint == null)
             {
                 _endpoint = new Endpoint
@@ -61,7 +61,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 context.Endpoints.Add(_endpoint);
                 context.SaveChanges();
             }
-            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id 
+            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id
                 && x.UserIdentifier == userIdentifier))
             {
                 logger.LogInformation($"User {userIdentifier} is using the endpoint {endpoint}");
@@ -74,20 +74,20 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 context.SaveChanges();
             }
 
-            return listeners.GetOrAdd(endpoint, (key) => 
+            return listeners.GetOrAdd(endpoint, (key) =>
             {
-                return new TcpEndpointListener(key, services);
+                return new UdpEndpointListener(key, routerId, tunnelId, services);
             });
         }
 
         public async ValueTask RemoveAllRulesFromUserIdentifierAsync(
-            string identifier, 
+            string identifier,
             CancellationToken cancellationToken = default)
         {
             logger.LogInformation($"Removing rules which created by {identifier}...");
             context.EndpointUsers.RemoveRange(context.EndpointUsers
                 .Where(x => x.UserIdentifier == identifier)
-                .Where(x => x.Endpoint.Protocol == Protocol.TCP));
+                .Where(x => x.Endpoint.Protocol == Protocol.UDP));
             await context.SaveChangesAsync(cancellationToken);
             var endpointsToRecycle = await context.Endpoints
                 .Where(x => x.Users.Count == 0)
@@ -116,7 +116,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 DestinationEndpoint = destinationEndpoint.ToString(),
                 ServerEndpoint = serverEndpoint.ToString(),
                 Identifier = identifier,
-                Protocol = Protocol.TCP,
+                Protocol = Protocol.UDP,
                 RouterId = routerId,
                 TunnelId = tunnelId
             });
@@ -128,7 +128,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             CancellationToken cancellationToken = default)
         {
             var endpoint = await context.PreCreateEndpoints.SingleOrDefaultAsync(
-                x => x.Identifier == identifier && x.Protocol == Protocol.TCP,
+                x => x.Identifier == identifier && x.Protocol == Protocol.UDP,
                 cancellationToken);
             if (endpoint != null)
             {
@@ -140,7 +140,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         public async ValueTask EnsurePreCreateEndpointsAsync()
         {
             var endpoints = await context.PreCreateEndpoints
-                .Where(x => x.Protocol == Protocol.TCP)
+                .Where(x => x.Protocol == Protocol.UDP)
                 .ToListAsync();
             foreach (var endpoint in endpoints)
             {

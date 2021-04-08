@@ -12,14 +12,12 @@ namespace Pomelo.Net.Gateway.Tunnel
         int ExpectedForwardAppendHeaderLength { get; }
         int ExpectedBackwardAppendHeaderLength { get; }
         ValueTask ForwardAsync(
-            PomeloUdpClient leftServer,
-            PomeloUdpClient rightServer,
+            PomeloUdpClient server,
             ArraySegment<byte> buffer,
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);
         ValueTask BackwardAsync(
             PomeloUdpClient leftServer,
-            PomeloUdpClient rightServer,
             ArraySegment<byte> buffer,
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);

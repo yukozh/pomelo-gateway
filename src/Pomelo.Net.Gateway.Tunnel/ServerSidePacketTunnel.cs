@@ -24,7 +24,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         public int ExpectedBackwardAppendHeaderLength => 17;
         public int ExpectedForwardAppendHeaderLength => 36;
 
-        public async ValueTask BackwardAsync(PomeloUdpClient leftServer, PomeloUdpClient rightServer, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Packet Body |
@@ -33,10 +33,10 @@ namespace Pomelo.Net.Gateway.Tunnel
             var connectionId = new Guid(buffer.AsMemory().Slice(1, 16).Span);
             context = packetTunnelContextFactory.GetContextByConnectionId(connectionId);
             context.LastActionTimeUtc = DateTime.UtcNow;
-            await leftServer.SendAsync(buffer.Slice(ExpectedBackwardAppendHeaderLength), context.LeftEndpoint);
+            await server.SendAsync(buffer.Slice(ExpectedBackwardAppendHeaderLength), context.LeftEndpoint);
         }
 
-        public async ValueTask ForwardAsync(PomeloUdpClient leftServer, PomeloUdpClient rightServer, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-------------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) |
@@ -52,7 +52,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             context.ConnectionId.TryWriteBytes(buffer.AsMemory().Slice(1, 16).Span);
             BitConverter.TryWriteBytes(buffer.AsMemory().Slice(34, 2).Span, (ushort)context.LeftEndpoint.Port);
             var endpoint = udpAssociator.FindEndpointByIdentifier(context.Identifier);
-            await rightServer.SendAsync(buffer, endpoint);
+            await server.SendAsync(buffer, endpoint);
             context.LastActionTimeUtc = DateTime.UtcNow;
         }
     }

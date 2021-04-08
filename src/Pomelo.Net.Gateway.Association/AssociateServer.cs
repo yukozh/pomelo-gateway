@@ -279,20 +279,28 @@ namespace Pomelo.Net.Gateway.Association
         }
 
         internal static void HandleSetRuleCommand(
-            Memory<byte> body, 
-            TcpEndpointManager tcpEndpointManager, 
+            Memory<byte> body,
+            TcpEndpointManager tcpEndpointManager,
+            UdpEndpointManager udpEndpointManager,
             string userIdentifier)
         {
             var endpoint = RuleParser.ParseRulePacket(body);
             if (endpoint.Protocol == Protocol.UDP)
             {
-                throw new NotSupportedException();
+                udpEndpointManager.GetOrCreateListenerForEndpoint(
+                    new IPEndPoint(endpoint.IPAddress, endpoint.Port),
+                    endpoint.RouterId,
+                    endpoint.TunnelId,
+                    userIdentifier);
             }
-            tcpEndpointManager.GetOrCreateListenerForEndpoint(
-                new IPEndPoint(endpoint.IPAddress, endpoint.Port), 
-                endpoint.RouterId, 
-                endpoint.TunnelId, 
-                userIdentifier);
+            else
+            {
+                tcpEndpointManager.GetOrCreateListenerForEndpoint(
+                    new IPEndPoint(endpoint.IPAddress, endpoint.Port),
+                    endpoint.RouterId,
+                    endpoint.TunnelId,
+                    userIdentifier);
+            }
         }
 
         internal static async ValueTask HandleCleanRulesCommandAsync(

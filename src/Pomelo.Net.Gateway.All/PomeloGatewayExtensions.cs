@@ -20,7 +20,9 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<EndpointCollection.IMappingRuleProvider, EndpointCollection.LocalFileMappingRuleProvider>(services
                     => new EndpointCollection.LocalFileMappingRuleProvider(ruleJsonPath))
                 .AddSingleton<Association.Authentication.IAuthenticator, Association.Authentication.DefaultBasicAuthenticator>()
-                .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>();
+                .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
+                .AddSingleton<Association.Token.ITokenProvider>(services
+                    => services.GetRequiredService<Association.AssociateClient>());
         }
 
         public static IServiceCollection AddPomeloGatewayServer(

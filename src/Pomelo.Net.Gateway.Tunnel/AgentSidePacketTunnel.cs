@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.Association.Token;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -11,30 +12,34 @@ namespace Pomelo.Net.Gateway.Tunnel
     {
         private PacketTunnelContextFactory packetTunnelContextFactory;
         private IMappingRuleProvider mappingRuleProvider;
+        private ITokenProvider tokenProvider;
 
         public AgentSidePacketTunnel(
             PacketTunnelContextFactory PacketTunnelContextFactory,
-            IMappingRuleProvider mappingRuleProvider)
+            IMappingRuleProvider mappingRuleProvider,
+            ITokenProvider tokenProvider)
         {
             this.packetTunnelContextFactory = PacketTunnelContextFactory;
             this.mappingRuleProvider = mappingRuleProvider;
+            this.tokenProvider = tokenProvider;
         }
 
         public Guid Id => Guid.Parse("9ae9a7ca-f724-4aca-b612-737ee7e9be47");
 
         public string Name => "Agent-side Packet Tunnel";
 
-        public int ExpectedBackwardAppendHeaderLength => 17;
+        public int ExpectedBackwardAppendHeaderLength => 25;
         public int ExpectedForwardAppendHeaderLength => 36;
 
         public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
-            // +-----------------+--------------------------+-------------+
-            // | OpCode (1 byte) | Connection ID (16 bytes) | Packet Body |
-            // +-----------------+--------------------------+-------------+
+            // +-----------------+--------------------------+-----------------+-------------+
+            // | OpCode (1 byte) | Connection ID (16 bytes) | Token (8 bytes) | Packet Body |
+            // +-----------------+--------------------------+-----------------+-------------+
 
             buffer[0] = (byte)PacketTunnelOpCode.AgentToTunnel;
             context.ConnectionId.TryWriteBytes(buffer.Slice(1, 16));
+            BitConverter.TryWriteBytes(buffer.Slice(17, 8), tokenProvider.Token);
             await server.SendAsync(buffer, context.RightEndpoint);
             if (context != null)
             {

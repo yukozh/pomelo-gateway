@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Pomelo.Net.Gateway.Association.Token;
 using Pomelo.Net.Gateway.Association.Udp;
 
 namespace Pomelo.Net.Gateway.Tunnel
@@ -9,31 +10,45 @@ namespace Pomelo.Net.Gateway.Tunnel
     public class ServerSidePacketTunnel : IPacketTunnel
     {
         private IUdpAssociator udpAssociator;
+        private ITokenValidator tokenValidator;
+        private ILogger<ServerSidePacketTunnel> logger;
         private PacketTunnelContextFactory packetTunnelContextFactory;
 
-        public ServerSidePacketTunnel(IUdpAssociator udpAssociator, PacketTunnelContextFactory PacketTunnelContextFactory)
+        public ServerSidePacketTunnel(
+            IUdpAssociator udpAssociator,
+            PacketTunnelContextFactory PacketTunnelContextFactory,
+            ITokenValidator tokenValidator,
+            ILogger<ServerSidePacketTunnel> logger)
         {
             this.udpAssociator = udpAssociator;
             this.packetTunnelContextFactory = PacketTunnelContextFactory;
+            this.tokenValidator = tokenValidator;
+            this.logger = logger;
         }
 
         public Guid Id => Guid.Parse("9ae9a7ca-f724-4aca-b612-737ee7e9be46");
 
         public string Name => "Server-side Packet Tunnel";
 
-        public int ExpectedBackwardAppendHeaderLength => 17;
+        public int ExpectedBackwardAppendHeaderLength => 25;
         public int ExpectedForwardAppendHeaderLength => 36;
 
         public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
-            // +-----------------+--------------------------+-------------+
-            // | OpCode (1 byte) | Connection ID (16 bytes) | Packet Body |
-            // +-----------------+--------------------------+-------------+
+            // +-----------------+--------------------------+-----------------+-------------+
+            // | OpCode (1 byte) | Connection ID (16 bytes) | Token (8 bytes) | Packet Body |
+            // +-----------------+--------------------------+-----------------+-------------+
 
             var connectionId = new Guid(buffer.AsMemory().Slice(1, 16).Span);
             context = packetTunnelContextFactory.GetContextByConnectionId(connectionId);
-            context.LastActionTimeUtc = DateTime.UtcNow;
+            var token = BitConverter.ToInt64(buffer.Slice(17, 8));
+            if (!await tokenValidator.ValidateAsync(token, context.Identifier))
+            {
+                logger.LogInformation($"Token from {connectionId} is invalid");
+                return;
+            }
             await server.SendAsync(buffer.Slice(ExpectedBackwardAppendHeaderLength), context.LeftEndpoint);
+            context.LastActionTimeUtc = DateTime.UtcNow;
         }
 
         public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)

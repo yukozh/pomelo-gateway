@@ -17,6 +17,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IPacketTunnel tunnel;
         private ILogger<UdpEndpointListener> logger;
         private PacketTunnelServer tunnelServer;
+        private UdpEndpointManager manager;
 
         public IPEndPoint Endpoint { get; private set; }
 
@@ -30,6 +31,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
             logger = services.GetRequiredService<ILogger<UdpEndpointListener>>();
             tunnelServer = services.GetRequiredService<PacketTunnelServer>();
+            manager = services.GetRequiredService<UdpEndpointManager>();
             server = new PomeloUdpClient(endpoint);
         }
 
@@ -47,12 +49,23 @@ namespace Pomelo.Net.Gateway.EndpointManager
                         logger.LogWarning($"No available destination found for UDP Listener {Endpoint}");
                         continue;
                     }
+
                     var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint);
                     context.LeftEndpoint = info.RemoteEndPoint;
-                    await tunnel.ForwardAsync(
-                        tunnelServer.Server,
-                        new ArraySegment<byte>(buffer, 0, info.ReceivedBytes + tunnel.ExpectedForwardAppendHeaderLength),
-                        context);
+                    var user = await manager.GetEndpointUserByIdentifierAsync(identifier);
+
+                    if (user.Type == EndpointCollection.EndpointUserType.NonPublic)
+                    {
+                        await tunnel.ForwardAsync(
+                            tunnelServer.Server,
+                            new ArraySegment<byte>(buffer, 0, info.ReceivedBytes + tunnel.ExpectedForwardAppendHeaderLength),
+                            context);
+                    }
+                    else
+                    {
+                        var preCreateEndpoint = await manager.GetPreCreateEndpointByIdentifierAsync(identifier);
+                        context.Client = new PomeloUdpClient();
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -59,6 +59,27 @@ namespace Pomelo.Net.Gateway.Server
                     }
                 }
                 tcp.EnsurePreCreateEndpointsAsync();
+
+
+                var udp = app.ApplicationServices.GetRequiredService<UdpEndpointManager>();
+                using (var scope = app.ApplicationServices.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
+                    var rules = await db.PublicRules.ToListAsync();
+                    foreach (var rule in rules)
+                    {
+                        if (rule.Protocol == EndpointCollection.Protocol.UDP)
+                        {
+                            await udp.InsertPreCreateEndpointRuleAsync(
+                                rule.Id,
+                                IPEndPoint.Parse(rule.ServerEndpoint),
+                                await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                                rule.RouterId,
+                                rule.TunnelId);
+                        }
+                    }
+                }
+                udp.EnsurePreCreateEndpointsAsync();
             }));
 
             if (env.IsDevelopment())

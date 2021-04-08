@@ -11,13 +11,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.Association.Token;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
-    public class AssociateClient : IDisposable
+    public class AssociateClient : ITokenProvider, IDisposable
     {
         private TcpClient client;
         private IPEndPoint associateServerEndpoint;

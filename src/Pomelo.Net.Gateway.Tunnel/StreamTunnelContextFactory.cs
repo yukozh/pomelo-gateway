@@ -78,7 +78,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         {
             if (tunnels.TryRemove(connectionId, out var context))
             {
-                logger.LogInformation($"Disposing tunnel {connectionId}");
+                logger.LogInformation($"Disposing TCP tunnel {connectionId}");
                 context?.Dispose();
             }
         }
@@ -91,7 +91,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                 {
                     if (tunnels.TryRemove(context.ConnectionId, out var _))
                     {
-                        logger.LogInformation($"Disposing tunnel {context.ConnectionId}");
+                        logger.LogInformation($"Disposing TCP tunnel {context.ConnectionId}");
                         context?.Dispose();
                     }
                 }

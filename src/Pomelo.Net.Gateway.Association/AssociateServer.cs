@@ -30,7 +30,9 @@ namespace Pomelo.Net.Gateway.Association
         private IPEndPoint endpoint;
         private IAuthenticator authenticator;
         private StreamTunnelContextFactory streamTunnelContextFactory;
+        private PacketTunnelContextFactory packetTunnelContextFactory;
         private TcpEndpointManager tcpEndpointManager;
+        private UdpEndpointManager udpEndpointManager;
         private ILogger<AssociateServer> logger;
         private IServiceProvider services;
 
@@ -43,7 +45,9 @@ namespace Pomelo.Net.Gateway.Association
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
+            this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
             this.tcpEndpointManager = services.GetRequiredService<TcpEndpointManager>();
+            this.udpEndpointManager = services.GetRequiredService<UdpEndpointManager>();
             this.logger = services.GetRequiredService<ILogger<AssociateServer>>();
         }
 
@@ -114,7 +118,9 @@ namespace Pomelo.Net.Gateway.Association
                     }
 
                     await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(context.Credential.Identifier);
+                    await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(context.Credential.Identifier);
                     streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
+                    packetTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
                     logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
                 }
                 catch (Exception ex)
@@ -152,7 +158,7 @@ namespace Pomelo.Net.Gateway.Association
                     HandleSetRuleCommand(body, tcpEndpointManager, context.Credential.Identifier);
                     break;
                 case AssociateOpCode.CleanRules:
-                    await HandleCleanRulesCommandAsync(tcpEndpointManager, context.Credential.Identifier);
+                    await HandleCleanRulesCommandAsync(tcpEndpointManager, udpEndpointManager, context.Credential.Identifier);
                     break;
                 case AssociateOpCode.HeartBeat:
                     break;
@@ -290,10 +296,12 @@ namespace Pomelo.Net.Gateway.Association
         }
 
         internal static async ValueTask HandleCleanRulesCommandAsync(
-            TcpEndpointManager tcpEndpointManager, 
+            TcpEndpointManager tcpEndpointManager,
+            UdpEndpointManager udpEndpointManager,
             string userIdentifier)
         {
             await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(userIdentifier);
+            await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(userIdentifier);
         }
 
         public void Dispose()

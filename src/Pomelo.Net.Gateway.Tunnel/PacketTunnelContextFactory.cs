@@ -73,6 +73,13 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
+        public PacketTunnelContext Create(string userIdentifier, Guid connectionId)
+        {
+            var context = new PacketTunnelContext(connectionId, userIdentifier);
+            contexts.TryAdd(context.ConnectionId, context);
+            return context;
+        }
+
         private async ValueTask RecycleAsync()
         {
             while (true)

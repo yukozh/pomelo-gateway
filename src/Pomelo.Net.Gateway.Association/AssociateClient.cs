@@ -18,7 +18,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Association
 {
-    public class AssociateClient : ITokenProvider, IDisposable
+    public class AssociateClient : ITokenProvider, IPacketTunnelServerAddressProvider, IDisposable
     {
         private TcpClient client;
         private IPEndPoint associateServerEndpoint;
@@ -28,6 +28,7 @@ namespace Pomelo.Net.Gateway.Association
         private IMappingRuleProvider mappingRuleProvider;
         private ILogger<AssociateClient> logger;
         private StreamTunnelContextFactory streamTunnelContextFactory;
+        private PacketTunnelContextFactory packetTunnelContextFactory;
         private int retryDelay = 1000; // 1~10s
         private string serverVersion = "Unknown";
         private long token = 0;
@@ -42,6 +43,8 @@ namespace Pomelo.Net.Gateway.Association
         public long Token => token;
         public IReadOnlyList<Interface> ServerStreamTunnelProviders => serverStreamTunnelProviders;
         public IReadOnlyList<Interface> ServerStreamRouters => serverStreamRouters;
+        public string UserIdentifier => authenticator.UserIdentifier;
+        public IPEndPoint PacketTunnelServerEndpoint => tunnelServerEndpoint;
 
         public AssociateClient(
             IPEndPoint associateServerEndpoint, 
@@ -320,8 +323,7 @@ namespace Pomelo.Net.Gateway.Association
                     }
                     else
                     {
-                        logger.LogError("Protocol not supported");
-                        throw new NotSupportedException();
+                        logger.LogWarning("Wrong notification packet, UDP is no need to notify.");
                     }
                 }
             }

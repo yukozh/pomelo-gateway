@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,11 +13,13 @@ namespace Pomelo.Net.Gateway.Tunnel
         ValueTask ForwardAsync(
             PomeloUdpClient server,
             ArraySegment<byte> buffer,
+            ReceiveResult from,
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);
         ValueTask BackwardAsync(
             PomeloUdpClient server,
             ArraySegment<byte> buffer,
+            ReceiveResult from,
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);
     }

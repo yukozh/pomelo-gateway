@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Diagnostics;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {

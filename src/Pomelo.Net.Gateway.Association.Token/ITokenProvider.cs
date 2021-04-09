@@ -3,5 +3,6 @@
     public interface ITokenProvider
     {
         long Token { get; }
+        string UserIdentifier { get; }
     }
 }

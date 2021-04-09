@@ -72,9 +72,11 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
                     if (user.Type == EndpointCollection.EndpointUserType.NonPublic)
                     {
+                        // No need to notify
                         await tunnel.ForwardAsync(
                             tunnelServer.Server,
                             new ArraySegment<byte>(buffer, 0, info.ReceivedBytes + tunnel.ExpectedForwardAppendHeaderLength),
+                            info,
                             context);
                     }
                     else
@@ -104,8 +106,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
                                     {
                                         var info = await context.Client.ReceiveAsync(new ArraySegment<byte>(buffer));
                                         await tunnel.BackwardAsync(
-                                            tunnelServer.Server, new ArraySegment<byte>(buffer, tunnel.ExpectedBackwardAppendHeaderLength,
-                                            tunnel.ExpectedBackwardAppendHeaderLength + info.ReceivedBytes),
+                                            tunnelServer.Server, new ArraySegment<byte>(buffer, tunnel.ExpectedBackwardAppendHeaderLength, tunnel.ExpectedBackwardAppendHeaderLength + info.ReceivedBytes),
+                                            info,
                                             context);
                                     }
                                     catch (Exception ex)
@@ -118,7 +120,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                                 }
                             });
                         }
-                        await tunnel.ForwardAsync(context.Client, _buffer, context);
+                        await tunnel.ForwardAsync(context.Client, _buffer, info, context);
                     }
                 }
                 catch (Exception ex)

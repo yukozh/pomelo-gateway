@@ -17,7 +17,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         public int ExpectedForwardAppendHeaderLength => 0;
         public int ExpectedBackwardAppendHeaderLength => 0;
 
-        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, ReceiveResult from, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             await server.SendAsync(buffer, context.LeftEndpoint);
             if (context != null)
@@ -26,7 +26,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, ReceiveResult from, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             await server.SendAsync(buffer, context.RightEndpoint);
             if (context != null)

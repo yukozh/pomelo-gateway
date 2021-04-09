@@ -11,11 +11,14 @@ namespace Pomelo.Net.Gateway
             this IServiceCollection services,
             IPEndPoint associateServerEndpoint,
             IPEndPoint tunnelServerEndpoint,
+            bool enableUdp = true,
             string ruleJsonPath = "rules.json")
         {
             return services.AddLogging()
                 .AddSingleton(services
                     => new Association.AssociateClient(associateServerEndpoint, tunnelServerEndpoint, services))
+                .AddSingleton(services
+                    => new Tunnel.PacketTunnelClient(enableUdp ? tunnelServerEndpoint : null, services))
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
                 .AddSingleton<Tunnel.PacketTunnelContextFactory>()
                 .AddSingleton<EndpointCollection.IMappingRuleProvider, EndpointCollection.LocalFileMappingRuleProvider>(services
@@ -73,6 +76,7 @@ namespace Pomelo.Net.Gateway
             Task.Factory.StartNew(() =>
             {
                 services.GetRequiredService<Association.AssociateClient>().Start();
+                services.GetRequiredService<Tunnel.PacketTunnelClient>().Start();
             }, TaskCreationOptions.LongRunning);
         }
     }

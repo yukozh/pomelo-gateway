@@ -33,7 +33,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         public int ExpectedBackwardAppendHeaderLength => 25;
         public int ExpectedForwardAppendHeaderLength => 36;
 
-        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask BackwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, ReceiveResult from, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-----------------+-------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Token (8 bytes) | Packet Body |
@@ -51,7 +51,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             context.LastActionTimeUtc = DateTime.UtcNow;
         }
 
-        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, PacketTunnelContext context, CancellationToken cancellationToken = default)
+        public async ValueTask ForwardAsync(PomeloUdpClient server, ArraySegment<byte> buffer, ReceiveResult from, PacketTunnelContext context, CancellationToken cancellationToken = default)
         {
             // +-----------------+--------------------------+-------------------+
             // | OpCode (1 byte) | Connection ID (16 bytes) | Is IPv6? (1 byte) |

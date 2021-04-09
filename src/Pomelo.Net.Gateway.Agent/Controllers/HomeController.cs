@@ -56,6 +56,14 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
                     Name = x.Name
                 })
                 .ToList();
+            ViewBag.LocalPacketTunnelProviders = services
+                .GetServices<IPacketTunnel>()
+                .Select(x => new Interface
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToList();
             return View();
         }
 

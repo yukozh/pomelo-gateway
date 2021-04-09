@@ -90,8 +90,9 @@ namespace Pomelo.Net.Gateway.Tunnel
                 {
                     context.Client = new PomeloUdpClient(rule.RemoteEndpoint.AddressFamily);
                 }
+                server = context.Client;
                 context.RightEndpoint = packetTunnelServerAddressProvider.PacketTunnelServerEndpoint;
-                context.LeftEndpoint = rule.RemoteEndpoint;
+                context.LeftEndpoint = rule.LocalEndpoint;
                 Task.Run(async ()=>
                 {
                     var buffer = ArrayPool<byte>.Shared.Rent(PomeloUdpClient.MaxUDPSize);

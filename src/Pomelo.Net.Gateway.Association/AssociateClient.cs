@@ -154,6 +154,8 @@ namespace Pomelo.Net.Gateway.Association
             connected = false;
             serverStreamTunnelProviders.Clear();
             serverStreamRouters.Clear();
+            serverPacketTunnelProviders.Clear();
+            serverPacketRouters.Clear();
             if (client?.Connected ?? false)
             {
                 client?.Close();

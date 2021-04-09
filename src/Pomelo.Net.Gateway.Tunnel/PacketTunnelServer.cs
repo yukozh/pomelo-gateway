@@ -50,6 +50,9 @@ namespace Pomelo.Net.Gateway.Tunnel
                         case PacketTunnelOpCode.Login:
                             await HandleLoginCommandAsync(buffer.AsMemory().Slice(1, info.ReceivedBytes - 1), info.RemoteEndPoint);
                             break;
+                        case PacketTunnelOpCode.AgentToTunnel:
+
+                            break;
                         case PacketTunnelOpCode.HeartBeat:
                             await HandleHeartBeatAsync(new ArraySegment<byte>(buffer, 0, 2), info);
                             break;

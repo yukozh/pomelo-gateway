@@ -111,6 +111,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                         {
                             logger.LogError(ex.ToString());
                             packetTunnelContextFactory.DestroyContext(context.ConnectionId);
+                            throw;
                         }
                         finally
                         {

@@ -12,7 +12,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class UdpEndpointManager : IUdpServerProvider, IDisposable
+    public class UdpEndpointManager : IUdpEndpointListenerFinder, IDisposable
     {
         private EndpointContext context;
         private ILogger<UdpEndpointManager> logger;

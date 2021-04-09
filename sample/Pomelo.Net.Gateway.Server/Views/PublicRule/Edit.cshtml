@@ -17,7 +17,7 @@
             <tr>
                 <td><strong>Protocol</strong></td>
                 <td>
-                    <select class="form-control" name="protocol">
+                    <select class="form-control" name="protocol" disabled>
                         <!option @(Model.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP ? "selected" : "")>TCP</!option>
                         <!option @(Model.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.UDP ? "selected" : "")>UDP</!option>
                     </select>
@@ -36,23 +36,43 @@
                 </td>
             </tr>
             <tr>
-                <td><strong>Stream Tunnel Provider</strong></td>
+                <td><strong>Tunnel Provider</strong></td>
                 <td>
                     <select class="form-control" name="tunnelId">
-                        @foreach (var x in ViewBag.StreamTunnels)
+                        @if (Model.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP)
                         {
-                            <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            @foreach (var x in ViewBag.StreamTunnels)
+                            {
+                                <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var x in ViewBag.PacketTunnels)
+                            {
+                                <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            }
                         }
                     </select>
                 </td>
             </tr>
             <tr>
-                <td><strong>Stream Router</strong></td>
+                <td><strong>Router</strong></td>
                 <td>
                     <select class="form-control" name="routerId">
-                        @foreach (var x in ViewBag.StreamRouters)
+                        @if (Model.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP)
                         {
-                            <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            @foreach (var x in ViewBag.StreamRouters)
+                            {
+                                <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var x in ViewBag.PacketRouters)
+                            {
+                                <!option value="@x.Id" @(Model.TunnelId == x.Id ? "selected" : "")>@x.Name</!option>
+                            }
                         }
                     </select>
                 </td>

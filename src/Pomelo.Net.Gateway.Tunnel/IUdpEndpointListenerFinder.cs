@@ -2,7 +2,7 @@
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
-    public interface IUdpServerProvider
+    public interface IUdpEndpointListenerFinder
     {
         public PomeloUdpClient FindServerByEndpoint(IPEndPoint endpoint);
     }

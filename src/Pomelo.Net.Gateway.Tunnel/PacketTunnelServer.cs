@@ -19,7 +19,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         private ITokenValidator tokenValidator;
         private IUdpAssociator udpAssociator;
         private PacketTunnelContextFactory packetTunnelContextFactory;
-        private IUdpServerProvider udpServerProvider;
+        private IUdpEndpointListenerFinder udpEndpointListenerFinder;
         private IServiceProvider services;
 
         public PomeloUdpClient Server => server;
@@ -32,7 +32,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             this.udpAssociator = services.GetRequiredService<IUdpAssociator>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
-            this.udpServerProvider = services.GetRequiredService<IUdpServerProvider>();
+            this.udpEndpointListenerFinder = services.GetRequiredService<IUdpEndpointListenerFinder>();
             server = new PomeloUdpClient(endpoint);
         }
 
@@ -139,7 +139,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             {
                 logger.LogWarning($"Packet tunnel {context.TunnelId} has not been found");
             }
-            await tunnel.BackwardAsync(udpServerProvider.FindServerByEndpoint(context.EntryEndpoint), buffer, from, context);
+            await tunnel.BackwardAsync(udpEndpointListenerFinder.FindServerByEndpoint(context.EntryEndpoint), buffer, from, context);
         }
     }
 }

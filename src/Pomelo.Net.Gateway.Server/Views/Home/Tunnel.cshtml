@@ -58,14 +58,7 @@
                         <span>Waiting for connect</span>
                     }
                     &lt;-&gt;
-                    @if (context.RightEndpoint != null)
-                    {
-                        <span>@context.RightEndpoint</span>
-                    }
-                    else
-                    {
-                        <span>Waiting for connect</span>
-                    }
+                    <span>@context.EntryEndpoint</span>
                 </strong>
                 Type: Packet Tunnel / Connection ID: @context.ConnectionId / Created at @context.CreatedTimeUtc.ToString("yyyy-MM-dd HH:mm:ss") (UTC) / Duration: @(DateTime.UtcNow - context.CreatedTimeUtc)
             </p>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,15 +18,21 @@ namespace Pomelo.Net.Gateway.Tunnel
         private ILogger<PacketTunnelServer> logger;
         private ITokenValidator tokenValidator;
         private IUdpAssociator udpAssociator;
+        private PacketTunnelContextFactory packetTunnelContextFactory;
+        private IUdpServerProvider udpServerProvider;
+        private IServiceProvider services;
 
         public PomeloUdpClient Server => server;
 
         public PacketTunnelServer(IPEndPoint endpoint, IServiceProvider services)
         {
             this.endpoint = endpoint;
+            this.services = services;
             this.logger = services.GetRequiredService<ILogger<PacketTunnelServer>>();
             this.udpAssociator = services.GetRequiredService<IUdpAssociator>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
+            this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
+            this.udpServerProvider = services.GetRequiredService<IUdpServerProvider>();
             server = new PomeloUdpClient(endpoint);
         }
 
@@ -37,7 +44,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         private async ValueTask StartAsync()
         {
-            var buffer = ArrayPool<byte>.Shared.Rent(256);
+            var buffer = ArrayPool<byte>.Shared.Rent(PomeloUdpClient.MaxUDPSize);
             try
             {
                 while (true)
@@ -51,7 +58,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                             await HandleLoginCommandAsync(buffer.AsMemory().Slice(1, info.ReceivedBytes - 1), info.RemoteEndPoint);
                             break;
                         case PacketTunnelOpCode.AgentToTunnel:
-
+                            await HandleAgentToTunnelCommandAsync(new ArraySegment<byte>(buffer, 0, info.ReceivedBytes), info);
                             break;
                         case PacketTunnelOpCode.HeartBeat:
                             await HandleHeartBeatAsync(new ArraySegment<byte>(buffer, 0, 2), info);
@@ -116,6 +123,23 @@ namespace Pomelo.Net.Gateway.Tunnel
         private async ValueTask HandleHeartBeatAsync(ArraySegment<byte> buffer, ReceiveResult from)
         {
             await server.SendAsync(buffer, from.RemoteEndPoint);
+        }
+
+        private async ValueTask HandleAgentToTunnelCommandAsync(ArraySegment<byte> buffer, ReceiveResult from)
+        {
+            var connectionId = new Guid(buffer.Slice(1, 16));
+            var context = packetTunnelContextFactory.GetContextByConnectionId(connectionId);
+            if (context == null)
+            {
+                logger.LogWarning($"Connection {connectionId} has not been found");
+                return;
+            }
+            var tunnel = services.GetServices<IPacketTunnel>().SingleOrDefault(x => x.Id == context.TunnelId);
+            if (tunnel == null)
+            {
+                logger.LogWarning($"Packet tunnel {context.TunnelId} has not been found");
+            }
+            await tunnel.BackwardAsync(udpServerProvider.FindServerByEndpoint(context.EntryEndpoint), buffer, from, context);
         }
     }
 }

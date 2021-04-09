@@ -8,10 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class UdpEndpointManager : IDisposable
+    public class UdpEndpointManager : IUdpServerProvider, IDisposable
     {
         private EndpointContext context;
         private ILogger<UdpEndpointManager> logger;
@@ -183,5 +184,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.listeners.TryRemove(new IPEndPoint(endpoint.IPAddress, endpoint.Port), out var listener);
             listener?.Dispose();
         }
+
+        public PomeloUdpClient FindServerByEndpoint(IPEndPoint endpoint)
+            => listeners.ContainsKey(endpoint) ? listeners[endpoint].Server : null;
     }
 }

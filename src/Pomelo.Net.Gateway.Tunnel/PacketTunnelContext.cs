@@ -7,6 +7,7 @@ namespace Pomelo.Net.Gateway.Tunnel
     {
         public Guid ConnectionId { get; private set; }
         public string Identifier { get; private set; }
+        public Guid TunnelId { get; private set; }
         public IPEndPoint LeftEndpoint { get; set; }
         public IPEndPoint RightEndpoint { get; set; }
         public IPEndPoint EntryEndpoint { get; set; }
@@ -14,10 +15,11 @@ namespace Pomelo.Net.Gateway.Tunnel
         public DateTime LastActionTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc { get; set; } = DateTime.UtcNow;
 
-        internal PacketTunnelContext(Guid connectionId, string identifier)
+        internal PacketTunnelContext(Guid connectionId, string identifier, Guid tunnelId)
         {
             ConnectionId = connectionId;
             Identifier = identifier;
+            TunnelId = tunnelId;
         }
 
         public void Dispose()

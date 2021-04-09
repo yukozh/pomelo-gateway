@@ -51,6 +51,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             buffer[0] = (byte)PacketTunnelOpCode.AgentToTunnel;
             context.ConnectionId.TryWriteBytes(buffer.Slice(1, 16));
             BitConverter.TryWriteBytes(buffer.Slice(17, 8), tokenProvider.Token);
+            logger.LogInformation($"Backward {context.ConnectionId}");
             await server.SendAsync(buffer, context.RightEndpoint);
             if (context != null)
             {
@@ -79,7 +80,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                 logger.LogWarning($"Packet router has not found the destination from server {serverEndpoint}");
                 return;
             }
-            context = packetTunnelContextFactory.GetOrCreateContext(tokenProvider.UserIdentifier, serverEndpoint);
+            context = packetTunnelContextFactory.GetOrCreateContext(connectionId, tokenProvider.UserIdentifier, serverEndpoint, rule.LocalTunnelId);
             if (context.Client == null)
             {
                 if (OperatingSystem.IsWindows())

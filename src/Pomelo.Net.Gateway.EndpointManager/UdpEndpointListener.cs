@@ -22,6 +22,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private UdpEndpointManager manager;
 
         public IPEndPoint Endpoint { get; private set; }
+        public PomeloUdpClient Server => server;
 
         public UdpEndpointListener(
             IPEndPoint endpoint,
@@ -66,7 +67,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                         continue;
                     }
 
-                    var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint);
+                    var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint, tunnel.Id);
                     context.LeftEndpoint = info.RemoteEndPoint;
                     context.EntryEndpoint = Endpoint;
                     var user = await manager.GetEndpointUserByIdentifierAsync(identifier);

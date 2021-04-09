@@ -20,16 +20,19 @@ namespace Pomelo.Net.Gateway.Tunnel
             RecycleAsync();
         }
 
-        public PacketTunnelContext GetOrCreateContext(string identifier, IPEndPoint remoteEndpoint)
+        public PacketTunnelContext GetOrCreateContext(Guid connectionId, string identifier, IPEndPoint remoteEndpoint, Guid tunnelId)
         {
             var context = FindContextByRemoteEndpoint(remoteEndpoint);
             if (context == null)
             {
-                context = new PacketTunnelContext(Guid.NewGuid(), identifier);
+                context = new PacketTunnelContext(connectionId, identifier, tunnelId);
                 contexts.TryAdd(context.ConnectionId, context);
             }
             return context;
         }
+
+        public PacketTunnelContext GetOrCreateContext(string identifier, IPEndPoint remoteEndpoint, Guid tunnelId)
+            => GetOrCreateContext(Guid.NewGuid(), identifier, remoteEndpoint, tunnelId);
 
         public PacketTunnelContext FindContextByRemoteEndpoint(IPEndPoint remoteEndpoint)
             => contexts.Values.SingleOrDefault(x => x.LeftEndpoint.Equals(remoteEndpoint));
@@ -73,9 +76,9 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public PacketTunnelContext Create(string userIdentifier, Guid connectionId)
+        public PacketTunnelContext Create(string userIdentifier, Guid connectionId, Guid tunnelId)
         {
-            var context = new PacketTunnelContext(connectionId, userIdentifier);
+            var context = new PacketTunnelContext(connectionId, userIdentifier, tunnelId);
             contexts.TryAdd(context.ConnectionId, context);
             return context;
         }

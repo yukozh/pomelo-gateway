@@ -201,7 +201,16 @@ namespace Pomelo.Net.Gateway.Tunnel
                     new IPAddress(buffer.Slice(18, isIPv6 ? 16 : 4).AsSpan()),
                     BitConverter.ToUInt16(buffer.Slice(34, 2).AsSpan()));
                 var rule = mappingRuleProvider.Rules.SingleOrDefault(x => x.RemoteEndpoint.Equals(serverEndpoint));
+                if (rule == null)
+                {
+                    logger.LogWarning($"Packet tunnel rule not found: {serverEndpoint}");
+                    return;
+                }
                 var tunnel = FindPacketTunnelById(rule.LocalTunnelId);
+                if (tunnel == null)
+                {
+                    logger.LogWarning($"Local packet tunnel provider {rule.LocalTunnelId} is not found");
+                }
                 await tunnel.ForwardAsync(null, buffer, from, null);
             }
             catch (Exception ex)

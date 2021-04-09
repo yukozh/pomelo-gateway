@@ -68,6 +68,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
                     var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint);
                     context.LeftEndpoint = info.RemoteEndPoint;
+                    context.EntryEndpoint = Endpoint;
                     var user = await manager.GetEndpointUserByIdentifierAsync(identifier);
 
                     if (user.Type == EndpointCollection.EndpointUserType.NonPublic)

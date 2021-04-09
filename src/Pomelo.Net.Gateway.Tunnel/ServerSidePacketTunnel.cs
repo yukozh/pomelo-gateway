@@ -62,10 +62,10 @@ namespace Pomelo.Net.Gateway.Tunnel
             // +----------------+-------------+
 
             buffer[0] = (byte)PacketTunnelOpCode.TunnelToAgent;
-            context.LeftEndpoint.Address.TryWriteBytes(new ArraySegment<byte>(buffer.Array!, 18, 16), out var count);
+            context.EntryEndpoint.Address.TryWriteBytes(new ArraySegment<byte>(buffer.Array!, 18, 16), out var count);
             buffer[17] = count == 16 ? (byte)0x01 : (byte)0x00;
             context.ConnectionId.TryWriteBytes(buffer.AsMemory().Slice(1, 16).Span);
-            BitConverter.TryWriteBytes(buffer.AsMemory().Slice(34, 2).Span, (ushort)context.LeftEndpoint.Port);
+            BitConverter.TryWriteBytes(buffer.AsMemory().Slice(34, 2).Span, (ushort)context.EntryEndpoint.Port);
             var endpoint = udpAssociator.FindEndpointByIdentifier(context.Identifier);
             await server.SendAsync(buffer, endpoint);
             context.LastActionTimeUtc = DateTime.UtcNow;

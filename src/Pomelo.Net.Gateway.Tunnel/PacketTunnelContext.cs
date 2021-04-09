@@ -9,6 +9,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         public string Identifier { get; private set; }
         public IPEndPoint LeftEndpoint { get; set; }
         public IPEndPoint RightEndpoint { get; set; }
+        public IPEndPoint EntryEndpoint { get; set; }
         public PomeloUdpClient Client { get; set; } // Not used for server
         public DateTime LastActionTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc { get; set; } = DateTime.UtcNow;

@@ -1,12 +1,14 @@
-﻿@inject Pomelo.Net.Gateway.Tunnel.StreamTunnelContextFactory streamTunnelContextFactory 
+﻿@inject Pomelo.Net.Gateway.Tunnel.StreamTunnelContextFactory streamTunnelContextFactory
+@inject Pomelo.Net.Gateway.Tunnel.PacketTunnelContextFactory packetTunnelContextFactory
 @{
     ViewData["Title"] = "Tunnels";
-    var contexts = streamTunnelContextFactory.EnumerateContexts();
+    var streamTunnels = streamTunnelContextFactory.EnumerateContexts();
+    var packetTunnels = packetTunnelContextFactory.EnumerateContexts();
 }
 
 <div class="my-3 p-3 bg-white rounded shadow-sm">
     <h6 class="border-bottom border-gray pb-2 mb-0">Tunnels</h6>
-    @foreach (var context in contexts)
+    @foreach (var context in streamTunnels)
     {
         <div class="media text-muted pt-3">
             <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
@@ -16,9 +18,20 @@
                 Type: Stream Tunnel / Connection ID: @context.ConnectionId / Created at @context.CreatedTimeUtc (UTC) / Duration: @(DateTime.UtcNow - context.CreatedTimeUtc)
             </p>
         </div>
-    } 
-    @if (contexts.Count() == 0)
-    { 
+    }
+    @foreach (var context in packetTunnels)
+    {
+        <div class="media text-muted pt-3">
+            <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#007bff"></rect><text x="50%" y="50%" fill="#007bff" dy=".3em">32x32</text></svg>
+
+            <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <strong class="d-block text-gray-dark">@context.LeftEndpoint &lt;-&gt; @context.RightEndpoint</strong>
+                Type: Packet Tunnel / Connection ID: @context.ConnectionId / Created at @context.CreatedTimeUtc (UTC) / Duration: @(DateTime.UtcNow - context.CreatedTimeUtc)
+            </p>
+        </div>
+    }
+    @if (streamTunnels.Count() + packetTunnels.Count() == 0)
+    {
         <small>No tunnel created</small>
     }
 </div>

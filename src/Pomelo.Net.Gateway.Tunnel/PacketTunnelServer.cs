@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Token;
+using Pomelo.Net.Gateway.Association.Udp;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -15,14 +16,16 @@ namespace Pomelo.Net.Gateway.Tunnel
         private IPEndPoint endpoint;
         private ILogger<PacketTunnelServer> logger;
         private ITokenValidator tokenValidator;
+        private IUdpAssociator udpAssociator;
 
-        public event Action<string, IPEndPoint> SetIdentifierEndpoint;
         public PomeloUdpClient Server => server;
 
         public PacketTunnelServer(IPEndPoint endpoint, IServiceProvider services)
         {
             this.endpoint = endpoint;
             this.logger = services.GetRequiredService<ILogger<PacketTunnelServer>>();
+            this.udpAssociator = services.GetRequiredService<IUdpAssociator>();
+            this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             server = new PomeloUdpClient(endpoint);
         }
 
@@ -45,12 +48,18 @@ namespace Pomelo.Net.Gateway.Tunnel
                     switch (op)
                     {
                         case PacketTunnelOpCode.Login:
-                            HandleLoginCommandAsync(buffer.AsMemory().Slice(1, info.ReceivedBytes - 1), info.RemoteEndPoint);
+                            await HandleLoginCommandAsync(buffer.AsMemory().Slice(1, info.ReceivedBytes - 1), info.RemoteEndPoint);
                             break;
                         case PacketTunnelOpCode.HeartBeat:
+                            await HandleHeartBeatAsync(new ArraySegment<byte>(buffer, 0, 2), info);
                             break;
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.ToString());
+                throw;
             }
             finally
             {
@@ -86,8 +95,24 @@ namespace Pomelo.Net.Gateway.Tunnel
                 }
             }
 
+            var __buffer = ArrayPool<byte>.Shared.Rent(2);
+            try
+            {
+                __buffer[0] = (byte)PacketTunnelOpCode.Login;
+                __buffer[1] = 0x00;
+                await server.SendAsync(new ArraySegment<byte>(__buffer, 0, 2), endpoint);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(__buffer);
+            }
+            udpAssociator.SetAgentUdpEndpoint(identifier, endpoint);
             logger.LogInformation($"{endpoint}<{identifier}> login to packet tunnel server succeeded");
-            SetIdentifierEndpoint(identifier, endpoint);
+        }
+
+        private async ValueTask HandleHeartBeatAsync(ArraySegment<byte> buffer, ReceiveResult from)
+        {
+            await server.SendAsync(buffer, from.RemoteEndPoint);
         }
     }
 }

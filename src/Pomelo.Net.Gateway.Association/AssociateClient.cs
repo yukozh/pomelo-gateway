@@ -29,11 +29,14 @@ namespace Pomelo.Net.Gateway.Association
         private ILogger<AssociateClient> logger;
         private StreamTunnelContextFactory streamTunnelContextFactory;
         private PacketTunnelContextFactory packetTunnelContextFactory;
+        private PacketTunnelClient packetTunnelClient => services.GetRequiredService<PacketTunnelClient>();
         private int retryDelay = 1000; // 1~10s
         private string serverVersion = "Unknown";
         private long token = 0;
         private List<Interface> serverStreamTunnelProviders;
         private List<Interface> serverStreamRouters;
+        private List<Interface> serverPacketTunnelProviders;
+        private List<Interface> serverPacketRouters;
         private bool connected;
 
         public bool Connected => connected;
@@ -43,6 +46,8 @@ namespace Pomelo.Net.Gateway.Association
         public long Token => token;
         public IReadOnlyList<Interface> ServerStreamTunnelProviders => serverStreamTunnelProviders;
         public IReadOnlyList<Interface> ServerStreamRouters => serverStreamRouters;
+        public IReadOnlyList<Interface> ServerPacketTunnelProviders => serverPacketTunnelProviders;
+        public IReadOnlyList<Interface> ServerPacketRouters => serverPacketRouters;
         public string UserIdentifier => authenticator.UserIdentifier;
         public IPEndPoint PacketTunnelServerEndpoint => tunnelServerEndpoint;
 
@@ -60,6 +65,8 @@ namespace Pomelo.Net.Gateway.Association
             this.logger = services.GetRequiredService<ILogger<AssociateClient>>();
             this.serverStreamTunnelProviders = new List<Interface>();
             this.serverStreamRouters = new List<Interface>();
+            this.serverPacketTunnelProviders = new List<Interface>();
+            this.serverPacketRouters = new List<Interface>();
         }
 
         public void Start()
@@ -163,6 +170,7 @@ namespace Pomelo.Net.Gateway.Association
                     try
                     {
                         await HandshakeAsync();
+                        packetTunnelClient.Start();
                         await Task.WhenAll(new[]
                         {
                             ReceiveNotificationAsync(),
@@ -211,9 +219,9 @@ namespace Pomelo.Net.Gateway.Association
                 await authenticator.SendAuthenticatePacketAsync(stream);
 
                 // Receive Server Info
-                // +--------------+----------------+----------------+----------------+
-                // | Login Result | Server Version | Stream Routers | Stream Tunnels |
-                // +--------------+----------------+----------------+----------------+
+                // +--------------+----------------+----------------+----------------+----------------+----------------+
+                // | Login Result | Server Version | Stream Routers | Stream Tunnels | Packet Routers | Packet Tunnels |
+                // +--------------+----------------+----------------+----------------+----------------+----------------+
 
                 // 1. Login Result
                 logger.LogInformation("Handshake: Sending authentication packet");
@@ -275,6 +283,40 @@ namespace Pomelo.Net.Gateway.Association
                     serverStreamTunnelProviders.Add(item);
                     logger.LogInformation($"Server Side Stream Tunnel: name={item.Name}, id={item.Id}");
                 }
+
+                // 5. Packet Router List
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                count = (int)buffer.Memory.Span[0];
+                for (var i = 0; i < count; ++i)
+                {
+                    await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
+                    await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
+                    var item = new Interface
+                    {
+                        Id = new Guid(buffer.Memory.Slice(1, 16).Span),
+                        Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
+                    };
+                    serverPacketRouters.Add(item);
+                    logger.LogInformation($"Server Side Packet Router: name={item.Name}, id={item.Id}");
+                }
+
+                // 6. Packet Tunnel List
+                await stream.ReadExAsync(buffer.Memory.Slice(0, 1));
+                count = (int)buffer.Memory.Span[0];
+                for (var i = 0; i < count; ++i)
+                {
+                    await stream.ReadExAsync(buffer.Memory.Slice(0, 17));
+                    await stream.ReadExAsync(buffer.Memory.Slice(17, buffer.Memory.Span[0]));
+                    var item = new Interface
+                    {
+                        Id = new Guid(buffer.Memory.Slice(1, 16).Span),
+                        Name = Encoding.UTF8.GetString(buffer.Memory.Slice(17, buffer.Memory.Span[0]).Span)
+                    };
+                    serverPacketTunnelProviders.Add(item);
+                    logger.LogInformation($"Server Side Packet Tunnel: name={item.Name}, id={item.Id}");
+                }
+
+                // Done
                 logger.LogInformation("Handshake finished");
             }
         }

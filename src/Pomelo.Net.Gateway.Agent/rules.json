@@ -1,10 +1,1 @@
-﻿[
-  {
-    "Protocol": "TCP",
-    "LocalEndpoint": "127.0.0.1:80",
-    "RemoteEndpoint": "0.0.0.0:8080",
-    "LocalTunnelId": "4048bf29-0997-4f9d-827b-fe29ceb0e4fe",
-    "RemoteTunnelId": "4048bf29-0997-4f9d-827b-fe29ceb0e4fe",
-    "RemoteRouterId": "6486995f-b40c-47db-96e5-4e50443a47a3"
-  }
-]
+[{"Protocol":"UDP","LocalEndpoint":"127.0.0.1:8882","RemoteEndpoint":"127.0.0.1:8881","LocalTunnelId":"4048bf29-0997-4f9d-827b-fe29ceb0e4fe","RemoteTunnelId":"9ae9a7ca-f724-4aca-b612-737ee7e9be46","RemoteRouterId":"73e28de9-dfcd-49c3-a1eb-374528bb4f1e"}]

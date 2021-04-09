@@ -33,6 +33,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             this.logger = services.GetRequiredService<ILogger<PacketTunnelClient>>();
             this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
             this.mappingRuleProvider = services.GetRequiredService<IMappingRuleProvider>();
+            this.tokenProvider = services.GetRequiredService<ITokenProvider>();
         }
 
         public void Start()
@@ -49,6 +50,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                     return;
                 }
 
+                logger.LogInformation("Starting packet tunnel client...");
                 lastHeartBeatTimeUtc = DateTime.UtcNow;
                 Connected = false;
                 if (this.Client != null)
@@ -65,7 +67,9 @@ namespace Pomelo.Net.Gateway.Tunnel
                 {
                     this.Client = new PomeloUdpClient(serverEndpoint.AddressFamily);
                 }
+                logger.LogInformation("Send login packet");
                 await LoginAsync();
+                logger.LogInformation("Start loop to receive packet tunnel operations");
                 StartReceiveAsync();
             }
             catch(Exception ex)
@@ -115,6 +119,8 @@ namespace Pomelo.Net.Gateway.Tunnel
                         logger.LogWarning($"Error packet from {info.RemoteEndPoint}, expected {serverEndpoint}");
                     }
                     var op = (PacketTunnelOpCode)buffer[0];
+
+                    logger.LogInformation($"Received packet tunnel operation {op} from {info.RemoteEndPoint}");
                     switch (op)
                     {
                         case PacketTunnelOpCode.Login:
@@ -149,6 +155,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             {
                 try
                 {
+                    logger.LogInformation("Heart Beat");
                     await Client.SendAsync(buffer, serverEndpoint);
                 }
                 catch (Exception ex)
@@ -167,6 +174,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
             Connected = true;
             lastHeartBeatTimeUtc = DateTime.UtcNow;
+            logger.LogInformation("Packet tunnel client login succeeded.");
             LoopHeartBeatAsync();
         }
 

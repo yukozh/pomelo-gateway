@@ -22,7 +22,7 @@
                 <td>
                     <select class="form-control" v-model="rule.protocol">
                         <option value="TCP">TCP</option>
-                        <option value="UDP">UDP (Not Supported)</option>
+                        <option value="UDP">UDP</option>
                     </select>
                 </td>
                 <td><input class="form-control" type="text" v-model="rule.localEndpoint" /></td>
@@ -38,23 +38,35 @@
                 <td>
                     @if (client.Connected)
                     {
-                        <select class="form-control" v-model="rule.remoteTunnelId">
+                        <select class="form-control" v-model="rule.remoteTunnelId" v-if="rule.protocol == 'TCP'">
                             @foreach (var tunnel in client.ServerStreamTunnelProviders)
+                            {
+                                <option v-if="rule.protocol == 'TCP'" value="@tunnel.Id">@tunnel.Name</option>
+                            }
+                        </select>
+                        <select class="form-control" v-model="rule.remoteTunnelId" v-else>
+                            @foreach (var tunnel in client.ServerPacketTunnelProviders)
                             {
                                 <option value="@tunnel.Id">@tunnel.Name</option>
                             }
                         </select>
                     }
                     else
-                    { 
+                    {
                         <input class="form-control" type="text" v-model="rule.remoteTunnelId" />
                     }
                 </td>
                 <td>
                     @if (client.Connected)
                     {
-                        <select class="form-control" v-model="rule.remoteRouterId">
+                        <select class="form-control" v-model="rule.remoteRouterId" v-if="rule.protocol == 'TCP'">
                             @foreach (var router in client.ServerStreamRouters)
+                            {
+                                <option value="@router.Id">@router.Name</option>
+                            }
+                        </select>
+                        <select class="form-control" v-model="rule.remoteRouterId" v-else>
+                            @foreach (var router in client.ServerPacketRouters)
                             {
                                 <option value="@router.Id">@router.Name</option>
                             }

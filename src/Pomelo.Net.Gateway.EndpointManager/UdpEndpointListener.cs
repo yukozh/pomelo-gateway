@@ -126,6 +126,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 catch (Exception ex)
                 {
                     logger.LogError(ex.ToString());
+                    throw;
                 }
             }
         }

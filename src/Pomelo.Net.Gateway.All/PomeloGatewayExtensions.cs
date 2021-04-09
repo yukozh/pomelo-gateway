@@ -27,6 +27,8 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
                 .AddSingleton<Tunnel.IPacketTunnel, Tunnel.AgentSidePacketTunnel>()
                 .AddSingleton<Association.Token.ITokenProvider>(services
+                    => services.GetRequiredService<Association.AssociateClient>())
+                .AddSingleton<Tunnel.IPacketTunnelServerAddressProvider>(services
                     => services.GetRequiredService<Association.AssociateClient>());
         }
 
@@ -76,7 +78,7 @@ namespace Pomelo.Net.Gateway
             Task.Factory.StartNew(() =>
             {
                 services.GetRequiredService<Association.AssociateClient>().Start();
-                services.GetRequiredService<Tunnel.PacketTunnelClient>().Start();
+                var _ = services.GetRequiredService<Tunnel.PacketTunnelClient>();
             }, TaskCreationOptions.LongRunning);
         }
     }

@@ -16,7 +16,7 @@
             <tr>
                 <td><strong>Protocol</strong></td>
                 <td>
-                    <select class="form-control" name="protocol">
+                    <select class="form-control" name="protocol" id="sel-protocol">
                         <option>TCP</option>
                         <option>UDP</option>
                     </select>
@@ -34,10 +34,10 @@
                     <input type="text" name="destinationEndpoint" class="form-control" placeholder="Example: yuko.me:443" />
                 </td>
             </tr>
-            <tr>
+            <tr class="stream">
                 <td><strong>Stream Tunnel Provider</strong></td>
                 <td>
-                    <select class="form-control" name="tunnelId">
+                    <select class="form-control sel-provider" id="sel-stream-tunnel">
                         @foreach (var x in ViewBag.StreamTunnels)
                         {
                             <option value="@x.Id">@x.Name</option>
@@ -45,11 +45,33 @@
                     </select>
                 </td>
             </tr>
-            <tr>
+            <tr class="stream">
                 <td><strong>Stream Router</strong></td>
                 <td>
-                    <select class="form-control" name="routerId">
+                    <select class="form-control sel-provider" id="sel-stream-router">
                         @foreach (var x in ViewBag.StreamRouters)
+                        {
+                            <option value="@x.Id">@x.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr class="packet">
+                <td><strong>Packet Tunnel Provider</strong></td>
+                <td>
+                    <select class="form-control sel-provider" id="sel-packet-tunnel">
+                        @foreach (var x in ViewBag.PacketTunnels)
+                        {
+                            <option value="@x.Id">@x.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr class="packet">
+                <td><strong>Packet Router</strong></td>
+                <td>
+                    <select class="form-control sel-provider" id="sel-packet-router">
+                        @foreach (var x in ViewBag.PacketRouters)
                         {
                             <option value="@x.Id">@x.Name</option>
                         }
@@ -58,9 +80,42 @@
             </tr>
             <tr>
                 <td colspan="2">
+                    <input type="hidden" name="routerId" id="hid-router-id" />
+                    <input type="hidden" name="tunnelId" id="hid-tunnel-id" />
                     <input type="submit" value="Create" class="btn btn-primary" />
                 </td>
             </tr>
         </tbody>
     </table>
 </form>
+
+@section Scripts {
+<script>
+    function onProtocolChanged() {
+        $('.stream').hide();
+        $('.packet').hide();
+        var protocol = $('#sel-protocol').val();
+        if (protocol == 'TCP') {
+            $('.stream').show();
+        } else {
+            $('.packet').show();
+        }
+        onTunnelOrRouterChanged();
+    }
+
+    function onTunnelOrRouterChanged() {
+        var protocol = $('#sel-protocol').val();
+        if (protocol == 'TCP') {
+            $('#hid-router-id').val($('#sel-stream-router').val());
+            $('#hid-tunnel-id').val($('#sel-stream-tunnel').val());
+        } else {
+            $('#hid-router-id').val($('#sel-packet-router').val());
+            $('#hid-tunnel-id').val($('#sel-packet-tunnel').val());
+        }
+    }
+
+    $('#sel-protocol').change(onProtocolChanged);
+    $('.sel-provider').change(onTunnelOrRouterChanged);
+    onProtocolChanged();
+</script>
+}

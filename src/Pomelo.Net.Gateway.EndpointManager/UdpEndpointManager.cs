@@ -53,7 +53,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 {
                     Id = Guid.NewGuid(),
                     Address = endpoint.Address.ToString(),
-                    Protocol = Protocol.TCP,
+                    Protocol = Protocol.UDP,
                     Port = (ushort)endpoint.Port,
                     RouterId = routerId,
                     TunnelId = tunnelId
@@ -64,7 +64,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id
                 && x.UserIdentifier == userIdentifier))
             {
-                logger.LogInformation($"User {userIdentifier} is using the endpoint {endpoint}");
+                logger.LogInformation($"User {userIdentifier} is using the endpoint UDP:{endpoint}");
                 _endpoint.Users.Add(new EndpointUser
                 {
                     EndpointId = _endpoint.Id,
@@ -139,17 +139,25 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
         public async ValueTask EnsurePreCreateEndpointsAsync()
         {
-            var endpoints = await context.PreCreateEndpoints
-                .Where(x => x.Protocol == Protocol.UDP)
-                .ToListAsync();
-            foreach (var endpoint in endpoints)
+            try
             {
-                GetOrCreateListenerForEndpoint(
-                    IPEndPoint.Parse(endpoint.ServerEndpoint),
-                    endpoint.RouterId,
-                    endpoint.TunnelId,
-                    endpoint.Identifier,
-                    EndpointUserType.Public);
+                var endpoints = await context.PreCreateEndpoints
+                    .Where(x => x.Protocol == Protocol.UDP)
+                    .ToListAsync();
+                foreach (var endpoint in endpoints)
+                {
+                    GetOrCreateListenerForEndpoint(
+                        IPEndPoint.Parse(endpoint.ServerEndpoint),
+                        endpoint.RouterId,
+                        endpoint.TunnelId,
+                        endpoint.Identifier,
+                        EndpointUserType.Public);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.ToString());
+                throw;
             }
         }
 

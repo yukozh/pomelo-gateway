@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -44,18 +45,17 @@ namespace Pomelo.Net.Gateway.Server
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
-                    var rules = await db.PublicRules.ToListAsync();
+                    var rules = await db.PublicRules
+                        .Where(x => x.Protocol == EndpointCollection.Protocol.TCP)
+                        .ToListAsync();
                     foreach (var rule in rules)
                     {
-                        if (rule.Protocol == EndpointCollection.Protocol.TCP)
-                        {
-                            await tcp.InsertPreCreateEndpointRuleAsync(
-                                rule.Id,
-                                IPEndPoint.Parse(rule.ServerEndpoint),
-                                await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
-                                rule.RouterId,
-                                rule.TunnelId);
-                        }
+                        await tcp.InsertPreCreateEndpointRuleAsync(
+                            rule.Id,
+                            IPEndPoint.Parse(rule.ServerEndpoint),
+                            await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                            rule.RouterId,
+                            rule.TunnelId);
                     }
                 }
                 tcp.EnsurePreCreateEndpointsAsync();
@@ -65,18 +65,17 @@ namespace Pomelo.Net.Gateway.Server
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
-                    var rules = await db.PublicRules.ToListAsync();
+                    var rules = await db.PublicRules
+                        .Where(x => x.Protocol == EndpointCollection.Protocol.UDP)
+                        .ToListAsync();
                     foreach (var rule in rules)
                     {
-                        if (rule.Protocol == EndpointCollection.Protocol.UDP)
-                        {
-                            await udp.InsertPreCreateEndpointRuleAsync(
-                                rule.Id,
-                                IPEndPoint.Parse(rule.ServerEndpoint),
-                                await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
-                                rule.RouterId,
-                                rule.TunnelId);
-                        }
+                        await udp.InsertPreCreateEndpointRuleAsync(
+                            rule.Id,
+                            IPEndPoint.Parse(rule.ServerEndpoint),
+                            await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                            rule.RouterId,
+                            rule.TunnelId);
                     }
                 }
                 udp.EnsurePreCreateEndpointsAsync();

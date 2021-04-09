@@ -23,15 +23,26 @@ namespace Pomelo.Net
         public PomeloUdpClient()
         {
             Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+            Client.Bind(new IPEndPoint(IPAddress.Any, 0));
         }
 
-        public PomeloUdpClient(int port) : this()
+        public PomeloUdpClient(AddressFamily addressFamily)
         {
-            Bind(new IPEndPoint(IPAddress.Any, port));
+            Client = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
+            Client.Bind(new IPEndPoint(addressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0));
         }
 
         public PomeloUdpClient(IPEndPoint endpoint)
         {
+
+            if (!OperatingSystem.IsWindows())
+            {
+                Client = new Socket(endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            }
+            else
+            {
+                Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+            }
             Bind(endpoint);
         }
 

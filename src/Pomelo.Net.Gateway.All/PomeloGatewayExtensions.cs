@@ -17,10 +17,12 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton(services
                     => new Association.AssociateClient(associateServerEndpoint, tunnelServerEndpoint, services))
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
+                .AddSingleton<Tunnel.PacketTunnelContextFactory>()
                 .AddSingleton<EndpointCollection.IMappingRuleProvider, EndpointCollection.LocalFileMappingRuleProvider>(services
                     => new EndpointCollection.LocalFileMappingRuleProvider(ruleJsonPath))
                 .AddSingleton<Association.Authentication.IAuthenticator, Association.Authentication.DefaultBasicAuthenticator>()
                 .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
+                .AddSingleton<Tunnel.IPacketTunnel, Tunnel.AgentSidePacketTunnel>()
                 .AddSingleton<Association.Token.ITokenProvider>(services
                     => services.GetRequiredService<Association.AssociateClient>());
         }
@@ -36,8 +38,11 @@ namespace Pomelo.Net.Gateway
                     => new Association.AssociateServer(associateServerEndpoint, services))
                 .AddSingleton<Association.Authentication.IAuthenticator, Association.Authentication.DefaultBasicAuthenticator>()
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
+                .AddSingleton<Tunnel.PacketTunnelContextFactory>()
                 .AddSingleton(services 
                     => new Tunnel.StreamTunnelServer(tunnelServerEndpoint, services))
+                .AddSingleton(services
+                    => new Tunnel.PacketTunnelServer(tunnelServerEndpoint, services))
                 .AddSingleton<Association.Token.ITokenValidator>(services 
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<Tunnel.ITunnelCreationNotifier>(services 
@@ -45,8 +50,12 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Association.Udp.IUdpAssociator>(services
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<EndpointManager.TcpEndpointManager>()
+                .AddSingleton<EndpointManager.UdpEndpointManager>()
                 .AddSingleton<Tunnel.IStreamTunnel, Tunnel.DefaultStreamTunnel>()
-                .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>();
+                .AddSingleton<Tunnel.IPacketTunnel, Tunnel.ServerSidePacketTunnel>()
+                .AddSingleton<Tunnel.IPacketTunnel, Tunnel.PublicPacketTunnel>()
+                .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>()
+                .AddSingleton<Router.IPacketRouter, Router.DefaultPacketRouter>();
         }
 
         public static Task RunPomeloGatewayServerAsync(this IServiceProvider services)
@@ -55,6 +64,7 @@ namespace Pomelo.Net.Gateway
             {
                 services.GetRequiredService<Association.AssociateServer>().Start();
                 services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();
+                services.GetRequiredService<Tunnel.PacketTunnelServer>().Start();
             }, TaskCreationOptions.LongRunning);
         }
 

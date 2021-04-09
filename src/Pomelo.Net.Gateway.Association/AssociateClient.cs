@@ -376,7 +376,7 @@ namespace Pomelo.Net.Gateway.Association
             finally
             {
                 logger.LogInformation($"[{context.ConnectionId}] Disposing...");
-                streamTunnelContextFactory.Delete(context.ConnectionId);
+                streamTunnelContextFactory.DestroyContext(context.ConnectionId);
                 context.Dispose();
                 logger.LogInformation($"[{context.ConnectionId}] Disposed...");
             }

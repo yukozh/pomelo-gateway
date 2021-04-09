@@ -26,6 +26,12 @@ namespace Pomelo.Net.Gateway.Tunnel
             server = new PomeloUdpClient(endpoint);
         }
 
+        public void Start()
+        {
+            logger.LogInformation($"Packet Tunnel Server is listening on {endpoint}...");
+            StartAsync();
+        }
+
         private async ValueTask StartAsync()
         {
             var buffer = ArrayPool<byte>.Shared.Rent(256);

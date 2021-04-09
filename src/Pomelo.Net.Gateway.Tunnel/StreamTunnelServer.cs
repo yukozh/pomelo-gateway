@@ -108,7 +108,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
                     if (connectionId != default)
                     {
-                        streamTunnelContextFactory.Delete(connectionId);
+                        streamTunnelContextFactory.DestroyContext(connectionId);
                     }
                 }
             }

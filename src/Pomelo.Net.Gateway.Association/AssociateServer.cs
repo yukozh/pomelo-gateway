@@ -155,7 +155,7 @@ namespace Pomelo.Net.Gateway.Association
                     await HandleListStreamTunnelsCommandAsync(services, context);
                     break;
                 case AssociateOpCode.SetRule:
-                    HandleSetRuleCommand(body, tcpEndpointManager, context.Credential.Identifier);
+                    HandleSetRuleCommand(body, tcpEndpointManager, udpEndpointManager, context.Credential.Identifier);
                     break;
                 case AssociateOpCode.CleanRules:
                     await HandleCleanRulesCommandAsync(tcpEndpointManager, udpEndpointManager, context.Credential.Identifier);

@@ -17,7 +17,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);
         ValueTask BackwardAsync(
-            PomeloUdpClient leftServer,
+            PomeloUdpClient server,
             ArraySegment<byte> buffer,
             PacketTunnelContext context,
             CancellationToken cancellationToken = default);

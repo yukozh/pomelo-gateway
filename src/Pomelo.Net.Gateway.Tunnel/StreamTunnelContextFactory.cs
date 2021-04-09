@@ -12,19 +12,19 @@ namespace Pomelo.Net.Gateway.Tunnel
     public class StreamTunnelContextFactory : IDisposable
     {
         public const int TunnelCreateTimeoutSeconds = 60;
-        private ConcurrentDictionary<Guid, StreamTunnelContext> tunnels;
+        private ConcurrentDictionary<Guid, StreamTunnelContext> contexts;
         private ILogger<StreamTunnelContextFactory> logger;
 
         public StreamTunnelContextFactory(ILogger<StreamTunnelContextFactory> logger)
         {
-            this.tunnels = new ConcurrentDictionary<Guid, StreamTunnelContext>();
+            this.contexts = new ConcurrentDictionary<Guid, StreamTunnelContext>();
             this.logger = logger;
             RecycleAsync();
         }
 
-        public IEnumerable<StreamTunnelContext> EnumerateContexts() => tunnels.Values;
+        public IEnumerable<StreamTunnelContext> EnumerateContexts() => contexts.Values;
 
-        public IEnumerable<StreamTunnelContext> EnumerateContexts(string userIdentifier) => tunnels.Values.Where(x => x.UserIdentifier == userIdentifier);
+        public IEnumerable<StreamTunnelContext> EnumerateContexts(string userIdentifier) => contexts.Values.Where(x => x.UserIdentifier == userIdentifier);
 
         private async ValueTask RecycleAsync()
         {
@@ -38,15 +38,15 @@ namespace Pomelo.Net.Gateway.Tunnel
                         if (context.CreatedTimeUtc.AddSeconds(TunnelCreateTimeoutSeconds) < DateTime.UtcNow
                             && context.Status == StreamTunnelStatus.WaitingForClient)
                         {
-                            tunnels.Remove(context.ConnectionId, out var _);
-                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled due to agent has not connected");
+                            contexts.Remove(context.ConnectionId, out var _);
+                            logger.LogInformation($"TCP Tunnel {context.ConnectionId} has been recycled due to agent has not connected");
                             context.Dispose();
                         }
 
                         if (context.LastCommunicationTimeUtc.AddMinutes(5) < DateTime.UtcNow)
                         {
-                            tunnels.Remove(context.ConnectionId, out var _);
-                            logger.LogInformation($"Tunnel {context.ConnectionId} has been recycled due to the tunnel idle for a long time");
+                            contexts.Remove(context.ConnectionId, out var _);
+                            logger.LogInformation($"TCP Tunnel {context.ConnectionId} has been recycled due to the tunnel idle for a long time");
                             context.Dispose();
                         }
                     }
@@ -63,20 +63,20 @@ namespace Pomelo.Net.Gateway.Tunnel
         public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier, IStreamRouter router, IStreamTunnel tunnel)
         {
             var context = new StreamTunnelContext(headerBuffer, userIdentifier, router, tunnel);
-            tunnels.TryAdd(context.ConnectionId, context);
+            contexts.TryAdd(context.ConnectionId, context);
             return context;
         }
 
         public StreamTunnelContext Create(IMemoryOwner<byte> headerBuffer, string userIdentifier, IStreamRouter router, IStreamTunnel tunnel, Guid connectionId)
         {
             var context = new StreamTunnelContext(connectionId, headerBuffer, userIdentifier, router, tunnel);
-            tunnels.TryAdd(context.ConnectionId, context);
+            contexts.TryAdd(context.ConnectionId, context);
             return context;
         }
 
-        public void Delete(Guid connectionId)
+        public void DestroyContext(Guid connectionId)
         {
-            if (tunnels.TryRemove(connectionId, out var context))
+            if (contexts.TryRemove(connectionId, out var context))
             {
                 logger.LogInformation($"Disposing TCP tunnel {connectionId}");
                 context?.Dispose();
@@ -85,11 +85,11 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public void DestroyContextsForUserIdentifier(string identifier)
         {
-            foreach (var context in tunnels.Values)
+            foreach (var context in contexts.Values)
             {
                 if (context.UserIdentifier == identifier)
                 {
-                    if (tunnels.TryRemove(context.ConnectionId, out var _))
+                    if (contexts.TryRemove(context.ConnectionId, out var _))
                     {
                         logger.LogInformation($"Disposing TCP tunnel {context.ConnectionId}");
                         context?.Dispose();
@@ -98,11 +98,11 @@ namespace Pomelo.Net.Gateway.Tunnel
             }
         }
 
-        public StreamTunnelContext GetContextByConnectionId(Guid id) => tunnels.ContainsKey(id) ? tunnels[id] : null;
+        public StreamTunnelContext GetContextByConnectionId(Guid id) => contexts.ContainsKey(id) ? contexts[id] : null;
 
         public void Dispose()
         {
-            foreach (var x in tunnels)
+            foreach (var x in contexts)
             {
                 x.Value?.Dispose();
             }

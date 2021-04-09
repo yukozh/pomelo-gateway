@@ -27,8 +27,16 @@
                 <td>@x.Protocol.ToString()</td>
                 <td>@x.ServerEndpoint</td>
                 <td>@x.DestinationEndpoint</td>
-                <td>@ViewBag.StreamTunnels[x.TunnelId].Name</td>
-                <td>@ViewBag.StreamRouters[x.RouterId].Name</td>
+                @if (x.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP)
+                {
+                    <td>@ViewBag.StreamTunnels[x.TunnelId].Name</td>
+                    <td>@ViewBag.StreamRouters[x.RouterId].Name</td>
+                }
+                else
+                {
+                    <td>@ViewBag.PacketTunnels[x.TunnelId].Name</td>
+                    <td>@ViewBag.PacketRouters[x.RouterId].Name</td>
+                }
                 <td>
                     <a asp-action="Tunnel" asp-controller="Home" asp-route-id="@x.Id">Tunnels</a>
                     <a asp-action="Edit" asp-route-id="@x.Id">Edit</a>
@@ -38,11 +46,11 @@
             @if (!Model.Any())
             { 
                 <tr>
-                    <td colspan="6">No public rule created</td>
+                    <td colspan="7">No public rule created</td>
                 </tr>
             }
             <tr>
-                <td colspan="6">
+                <td colspan="7">
                     <a asp-action="Create">Create Public Rule</a>
                 </td>
             </tr>

@@ -64,7 +64,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id 
                 && x.UserIdentifier == userIdentifier))
             {
-                logger.LogInformation($"User {userIdentifier} is using the endpoint {endpoint}");
+                logger.LogInformation($"User {userIdentifier} is using the endpoint TCP:{endpoint}");
                 _endpoint.Users.Add(new EndpointUser
                 {
                     EndpointId = _endpoint.Id,

@@ -100,6 +100,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
         public async ValueTask<IActionResult> Create(
             [FromServices] ServerContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] UdpEndpointManager udpEndpointManager,
             PublicRule model,
             CancellationToken cancellationToken = default)
         {
@@ -122,19 +123,39 @@ namespace Pomelo.Net.Gateway.Server.Controllers
 
             db.PublicRules.Add(model);
             await db.SaveChangesAsync();
-            await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
-                model.Id,
-                serverEndpoint,
-                destinationEndpoint,
-                model.RouterId,
-                model.TunnelId,
-                cancellationToken);
-            tcpEndpointManager.GetOrCreateListenerForEndpoint(
-                serverEndpoint,
-                model.RouterId,
-                model.TunnelId,
-                model.Id,
-                EndpointCollection.EndpointUserType.Public);
+
+            if (model.Protocol == EndpointCollection.Protocol.TCP)
+            {
+                await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                    model.Id,
+                    serverEndpoint,
+                    destinationEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    cancellationToken);
+                tcpEndpointManager.GetOrCreateListenerForEndpoint(
+                    serverEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    model.Id,
+                    EndpointCollection.EndpointUserType.Public);
+            }
+            else
+            {
+                await udpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                    model.Id,
+                    serverEndpoint,
+                    destinationEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    cancellationToken);
+                udpEndpointManager.GetOrCreateListenerForEndpoint(
+                    serverEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    model.Id,
+                    EndpointCollection.EndpointUserType.Public);
+            }
             return RedirectToAction(nameof(Index));
         }
 
@@ -183,10 +204,12 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             PublicRule model,
             [FromServices] IServiceProvider services,
             [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] UdpEndpointManager udpEndpointManager,
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
         {
             var rule = await db.PublicRules.SingleAsync(x => x.Id == model.Id, cancellationToken);
+            var previousProtocol = rule.Protocol;
             rule.Protocol = model.Protocol;
             rule.RouterId = model.RouterId;
             rule.TunnelId = model.TunnelId;
@@ -207,23 +230,50 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             await db.SaveChangesAsync(cancellationToken);
 
             // Remove old rule
-            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(model.Id, cancellationToken);
-            await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(model.Id);
+            if (previousProtocol == EndpointCollection.Protocol.TCP)
+            {
+                await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(model.Id, cancellationToken);
+                await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(model.Id);
+            }
+            else
+            {
+                await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(model.Id, cancellationToken);
+                await udpEndpointManager.RemovePreCreateEndpointRuleAsync(model.Id);
+            }
 
             // Create rule
-            await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
-                model.Id,
-                serverEndpoint,
-                destinationEndpoint,
-                model.RouterId,
-                model.TunnelId,
-                cancellationToken);
-            tcpEndpointManager.GetOrCreateListenerForEndpoint(
-                serverEndpoint,
-                model.RouterId,
-                model.TunnelId,
-                model.Id,
-                EndpointCollection.EndpointUserType.Public);
+            if (previousProtocol == EndpointCollection.Protocol.TCP)
+            {
+                await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                    model.Id,
+                    serverEndpoint,
+                    destinationEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    cancellationToken);
+                tcpEndpointManager.GetOrCreateListenerForEndpoint(
+                    serverEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    model.Id,
+                    EndpointCollection.EndpointUserType.Public);
+            }
+            else
+            {
+                await udpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                    model.Id,
+                    serverEndpoint,
+                    destinationEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    cancellationToken);
+                udpEndpointManager.GetOrCreateListenerForEndpoint(
+                    serverEndpoint,
+                    model.RouterId,
+                    model.TunnelId,
+                    model.Id,
+                    EndpointCollection.EndpointUserType.Public);
+            }
             ViewBag.Info = "Succeeded";
             return await Edit(model.Id, services, db, cancellationToken);
         }
@@ -232,14 +282,23 @@ namespace Pomelo.Net.Gateway.Server.Controllers
         public async ValueTask<IActionResult> Delete(
             string id,
             [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] UdpEndpointManager udpEndpointManager,
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
         {
             var rule = await db.PublicRules.SingleAsync(x => x.Id == id, cancellationToken);
             db.PublicRules.Remove(rule);
             await db.SaveChangesAsync(cancellationToken);
-            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(id, cancellationToken);
-            await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
+            if (rule.Protocol == EndpointCollection.Protocol.TCP)
+            {
+                await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(id, cancellationToken);
+                await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
+            }
+            else
+            {
+                await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(id, cancellationToken);
+                await udpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
+            }
             return RedirectToAction(nameof(Index));
         }
     }

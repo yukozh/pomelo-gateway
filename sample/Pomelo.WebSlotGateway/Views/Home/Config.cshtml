@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Configurations";
+}
+
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Configurations</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(configuration, i) in configurations">
+                <td><input type="hidden" v-model="configuration.key" class="form-control" />{{ configuration.key }}</td>
+                <td><input type="text" v-model="configuration.value" class="form-control" /></td>
+                <td>{{ configuration.description }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7">
+                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchConfigurations">Save</a>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@section Scripts{
+    <script>var app = new Vue({
+            data: {
+                configurations: []
+            },
+            created: function () {
+                this.loadConfigurations();
+            },
+            methods: {
+                loadConfigurations: function () {
+                    var self = this;
+                    return qv.get('/api/configuration').then(data => {
+                        self.configurations = data;
+                    });
+                },
+                patchConfigurations: function () {
+                    return qv.post('/api/configuration', { configurations: this.configurations }).then(data => {
+                        alert('Configurations updated');
+                    });
+                }
+            }
+        });
+        app.$mount('#app');</script>
+}

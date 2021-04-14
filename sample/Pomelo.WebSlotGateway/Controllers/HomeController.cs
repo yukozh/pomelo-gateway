@@ -20,17 +20,11 @@ namespace Pomelo.WebSlotGateway.Controllers
             _logger = logger;
         }
 
-        public async ValueTask<IActionResult> Index(
-            [FromServices] SlotContext db, 
-            CancellationToken cancellationToken = default)
-        {
-            return View(await db.Slots.ToListAsync());
-        }
+        public IActionResult Index()
+            => View();
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        public IActionResult Config()
+            => View();
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

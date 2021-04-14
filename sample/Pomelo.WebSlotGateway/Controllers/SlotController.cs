@@ -31,7 +31,7 @@ namespace Pomelo.WebSlotGateway.Controllers
         [HttpPost]
         [HttpPatch]
         public async ValueTask<IEnumerable<Slot>> Put(
-            [FromBody] IEnumerable<Slot> model,
+            [FromBody] SetSlotsRequestViewModel request,
             [FromServices] SlotContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
@@ -45,10 +45,10 @@ namespace Pomelo.WebSlotGateway.Controllers
                 await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(slot.Id.ToString(), cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
             }
-            db.Slots.AddRange(model);
+            db.Slots.AddRange(request.Slots);
             await db.SaveChangesAsync(cancellationToken);
             var endpoint = await config.GetLocalEndpointAsync(cancellationToken);
-            foreach (var slot in model)
+            foreach (var slot in request.Slots)
             {
                 await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     slot.Id.ToString(),

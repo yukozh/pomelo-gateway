@@ -9,7 +9,12 @@ namespace Pomelo.WebSlotGateway.Models
     {
         public SlotContext(DbContextOptions<SlotContext> opt)
             : base(opt)
-        { }
+        {
+            if (Database.EnsureCreated())
+            {
+                InitDatabaseAsync().GetAwaiter().GetResult();
+            }
+        }
 
         public DbSet<Slot> Slots { get; set; }
 
@@ -34,7 +39,7 @@ namespace Pomelo.WebSlotGateway.Models
             Configurations.Add(new Config
             {
                 Key = ConfigurationHelper.KeyLocalEndpoint,
-                Value = "0.0.0.0:80",
+                Value = "0.0.0.0:8000",
                 Description = "The entry endpoint from this server"
             });
 

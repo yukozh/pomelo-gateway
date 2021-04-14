@@ -6,24 +6,27 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.WebSlotGateway.Models;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class ARRAffinityRouter : IStreamRouter
+    public class ARRAffinityRouter : IStreamRouter, IDisposable
     {
+        private IServiceScope scope;
         private Guid[] slotMap;
         private SlotContext db;
         private ConfigurationHelper configurationHelper;
         private Random random;
         private ConcurrentDictionary<IPAddress, ARRContext> contexts;
 
-        public ARRAffinityRouter(SlotContext db, ConfigurationHelper configurationHelper)
+        public ARRAffinityRouter(IServiceProvider services)
         {
             this.slotMap = null;
-            this.db = db;
-            this.configurationHelper = configurationHelper;
+            this.scope = services.CreateScope();
+            this.db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+            this.configurationHelper = services.GetRequiredService<ConfigurationHelper>();
             this.random = new Random();
             this.contexts = new ConcurrentDictionary<IPAddress, ARRContext>();
             RecycleAsync();
@@ -124,6 +127,11 @@ namespace Pomelo.WebSlotGateway.Utils
                     return slotId;
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            scope?.Dispose();
         }
     }
 }

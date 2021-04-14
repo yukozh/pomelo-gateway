@@ -5,7 +5,7 @@
 
 
 <div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
-    <h6 class="border-bottom border-gray pb-2 mb-0">Rules</h6>
+    <h6 class="border-bottom border-gray pb-2 mb-0">Slots</h6>
     <table class="table">
         <thead>
             <tr>
@@ -16,18 +16,18 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="(rule, i) in rules">
-                <td><input type="text" v-model="rule.name" class="form-control-plaintext" /></td>
-                <td><input type="text" v-model="rule.destination" class="form-control-plaintext" /></td>
-                <td><input type="text" v-model="rule.priority" class="form-control-plaintext" /></td>
-                <td><a v-on:click="rules.splice(i, 1)">Remove</a></td>
+            <tr v-for="(slot, i) in slots">
+                <td><input type="text" v-model="slot.name" class="form-control" /></td>
+                <td><input type="text" v-model="slot.destination" class="form-control" /></td>
+                <td><input type="text" v-model="slot.priority" class="form-control" /></td>
+                <td><a v-on:click="slots.splice(i, 1)">Remove</a></td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="7">
-                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchRules">Save</a>
-                    <a v-on:click="rules.push({ protocol: 'TCP', localEndpoint: '127.0.0.1:8888', remoteEndpoint: '0.0.0.0:8888', localTunnelId: null, remoteTunnelId: null, remoteRouterId: null })" class="btn btn-sm btn-primary" style="color: #fff">New Rule</a>
+                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchSlots">Save</a>
+                    <a v-on:click="slots.push({ name: 'New Slot', destination: null, priority: 10 })" class="btn btn-sm btn-primary" style="color: #fff">New Slot</a>
                 </td>
             </tr>
         </tfoot>
@@ -50,7 +50,7 @@
                     });
                 },
                 patchSlots: function () {
-                    return qv.post('/api/slot', { rules: this.slots }).then(data => {
+                    return qv.post('/api/slot', { slots: this.slots }).then(data => {
                         alert('Slots updated');
                     });
                 }

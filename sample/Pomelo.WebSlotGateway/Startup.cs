@@ -16,6 +16,9 @@ namespace Pomelo.WebSlotGateway
 {
     public class Startup
     {
+        public static Guid RouterId = Guid.Parse("374c20bc-e730-4da3-8c2f-7e570da35268");
+        public static Guid TunnelId = Guid.Parse("4048bf29-0997-4f9d-827b-fe29ceb0e4fe");
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -49,8 +52,8 @@ namespace Pomelo.WebSlotGateway
                             rule.Id.ToString(),
                             serverEndpoint,
                             await AddressHelper.ParseAddressAsync(rule.Destination, 0),
-                            Guid.Parse("374c20bc-e730-4da3-8c2f-7e570da35268"),
-                            Guid.Parse("4048bf29-0997-4f9d-827b-fe29ceb0e4fe"));
+                            RouterId,
+                            TunnelId);
                     }
                 }
                 tcp.EnsurePreCreateEndpointsAsync();

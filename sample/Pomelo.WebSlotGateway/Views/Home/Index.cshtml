@@ -1,8 +1,61 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<Pomelo.WebSlotGateway.Models.Slot>
+@{
+    ViewData["Title"] = "Slots";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Rules</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Destination</th>
+                <th>Priority</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(rule, i) in rules">
+                <td><input type="text" v-model="rule.name" class="form-control-plaintext" /></td>
+                <td><input type="text" v-model="rule.destination" class="form-control-plaintext" /></td>
+                <td><input type="text" v-model="rule.priority" class="form-control-plaintext" /></td>
+                <td><a v-on:click="rules.splice(i, 1)">Remove</a></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7">
+                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchRules">Save</a>
+                    <a v-on:click="rules.push({ protocol: 'TCP', localEndpoint: '127.0.0.1:8888', remoteEndpoint: '0.0.0.0:8888', localTunnelId: null, remoteTunnelId: null, remoteRouterId: null })" class="btn btn-sm btn-primary" style="color: #fff">New Rule</a>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
 </div>
+@section Scripts{
+    <script>
+        var app = new Vue({
+            data: {
+                slots: []
+            },
+            created: function () {
+                this.loadSlots();
+            },
+            methods: {
+                loadSlots: function () {
+                    var self = this;
+                    return qv.get('/api/slot').then(data => {
+                        self.slots = data;
+                    });
+                },
+                patchSlots: function () {
+                    return qv.post('/api/slot', { rules: this.slots }).then(data => {
+                        alert('Slots updated');
+                    });
+                }
+            }
+        });
+        app.$mount('#app');
+    </script>
+}

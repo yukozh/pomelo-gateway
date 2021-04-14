@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Pomelo.WebSlotGateway.Models;
 
@@ -18,9 +20,11 @@ namespace Pomelo.WebSlotGateway.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public async ValueTask<IActionResult> Index(
+            [FromServices] SlotContext db, 
+            CancellationToken cancellationToken = default)
         {
-            return View();
+            return View(await db.Slots.ToListAsync());
         }
 
         public IActionResult Privacy()

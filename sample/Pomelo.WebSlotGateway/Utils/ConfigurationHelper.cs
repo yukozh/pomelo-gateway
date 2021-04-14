@@ -4,11 +4,12 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Pomelo.WebSlotGateway.Models;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class ConfigurationHelper
+    public class ConfigurationHelper : IDisposable
     {
         public const string KeyUsername = "USERNAME";
         public const string KeyPassword = "PASSWORD";
@@ -16,11 +17,13 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyARRAffinityExpireMinutes = "ARREXPIREMINUTES";
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
 
+        private IServiceScope scope;
         private SlotContext db;
 
-        public ConfigurationHelper(SlotContext db)
+        public ConfigurationHelper(IServiceProvider services)
         {
-            this.db = db;
+            scope = services.CreateScope();
+            db = scope.ServiceProvider.GetRequiredService<SlotContext>();
         }
 
         public async ValueTask<string> GetValueAsync(string key, CancellationToken cancellationToken = default)
@@ -43,5 +46,10 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask<IPEndPoint> GetLocalEndpointAsync(CancellationToken cancellationToken = default)
             => await AddressHelper.ParseAddressAsync(await GetValueAsync(KeyLocalEndpoint, cancellationToken), 0);
+
+        public void Dispose()
+        {
+            scope?.Dispose();
+        }
     }
 }

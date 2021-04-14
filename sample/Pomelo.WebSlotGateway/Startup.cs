@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pomelo.Net.Gateway;
 using Pomelo.Net.Gateway.EndpointManager;
+using Pomelo.Net.Gateway.Router;
 using Pomelo.WebSlotGateway.Models;
 using Pomelo.WebSlotGateway.Utils;
 
@@ -29,6 +30,8 @@ namespace Pomelo.WebSlotGateway
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<SlotContext>(x => x.UseSqlite(Configuration["SQLite"]));
+            services.AddSingleton<ConfigurationHelper>();
+            services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),
                 IPEndPoint.Parse("127.0.0.1:16247"));
@@ -65,7 +68,6 @@ namespace Pomelo.WebSlotGateway
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
             app.UseHttpsRedirection();

@@ -31,7 +31,6 @@ namespace Pomelo.WebSlotGateway.Controllers
         [HttpPost]
         [HttpPatch]
         public async ValueTask<IEnumerable<Slot>> Put(
-            Guid? id, 
             [FromBody] IEnumerable<Slot> model,
             [FromServices] SlotContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,

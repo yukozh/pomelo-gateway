@@ -9,7 +9,7 @@ using Pomelo.WebSlotGateway.Models;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class ConfigurationHelper : IDisposable
+    public class ConfigurationHelper
     {
         public const string KeyUsername = "USERNAME";
         public const string KeyPassword = "PASSWORD";
@@ -18,20 +18,24 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
         public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";
 
-        private IServiceScope scope;
-        private SlotContext db;
+        private IServiceProvider services;
 
         public ConfigurationHelper(IServiceProvider services)
         {
-            scope = services.CreateScope();
-            db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+            this.services = services;
         }
 
         public async ValueTask<string> GetValueAsync(string key, CancellationToken cancellationToken = default)
-            => await db.Configurations
-                .Where(x => x.Key == key)
-                .Select(x => x.Value)
-                .SingleAsync(cancellationToken);
+        {
+            using (var scope = services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                return await db.Configurations
+                    .Where(x => x.Key == key)
+                    .Select(x => x.Value)
+                    .SingleAsync(cancellationToken);
+            }
+        }
 
         public ValueTask<string> GetUsernameAsync(CancellationToken cancellationToken = default)
             => GetValueAsync(KeyUsername, cancellationToken);
@@ -50,10 +54,5 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask<int> GetHealthCheckerIntervalSecondsAsync(CancellationToken cancellationToken = default)
             => Convert.ToInt32(await GetValueAsync(KeyHealthCheckerIntervalSeconds, cancellationToken));
-
-        public void Dispose()
-        {
-            scope?.Dispose();
-        }
     }
 }

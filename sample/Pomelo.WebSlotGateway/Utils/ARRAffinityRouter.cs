@@ -13,11 +13,10 @@ using Pomelo.WebSlotGateway.Models;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class ARRAffinityRouter : IStreamRouter, IDisposable
+    public class ARRAffinityRouter : IStreamRouter
     {
-        private IServiceScope scope;
+        private IServiceProvider services;
         private Guid[] slotMap;
-        private SlotContext db;
         private ConfigurationHelper configurationHelper;
         private Random random;
         private ConcurrentDictionary<IPAddress, ARRContext> contexts;
@@ -26,9 +25,8 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public ARRAffinityRouter(IServiceProvider services)
         {
+            this.services = services;
             this.slotMap = null;
-            this.scope = services.CreateScope();
-            this.db = scope.ServiceProvider.GetRequiredService<SlotContext>();
             this.configurationHelper = services.GetRequiredService<ConfigurationHelper>();
             this.random = new Random();
             this.contexts = new ConcurrentDictionary<IPAddress, ARRContext>();
@@ -79,16 +77,20 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask ReloadSlotsAsync(CancellationToken cancellationToken = default)
         {
-            var slots = await db.Slots
-                .Where(x => x.Status == SlotStatus.Enabled)
-                .ToListAsync(cancellationToken);
-            slotMap = new Guid[slots.Sum(x => x.Priority)];
-            var pos = 0;
-            foreach(var slot in slots)
+            using (var scope = services.CreateScope())
             {
-                for (var i = 0; i < slot.Priority; ++i)
+                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                var slots = await db.Slots
+                    .Where(x => x.Status == SlotStatus.Enabled)
+                    .ToListAsync(cancellationToken);
+                slotMap = new Guid[slots.Sum(x => x.Priority)];
+                var pos = 0;
+                foreach (var slot in slots)
                 {
-                    slotMap[pos++] = slot.Id;
+                    for (var i = 0; i < slot.Priority; ++i)
+                    {
+                        slotMap[pos++] = slot.Id;
+                    }
                 }
             }
         }
@@ -114,7 +116,11 @@ namespace Pomelo.WebSlotGateway.Utils
 
         private async ValueTask<bool> IsSlotValidAsync(Guid slotId, CancellationToken cancellationToken = default)
         {
-            return await db.Slots.AnyAsync(x => x.Id == slotId, cancellationToken);
+            using (var scope = services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                return await db.Slots.AnyAsync(x => x.Id == slotId, cancellationToken);
+            }
         }
 
         private async ValueTask<Guid> AssignSlotAsync(CancellationToken cancellationToken = default)
@@ -132,11 +138,6 @@ namespace Pomelo.WebSlotGateway.Utils
                     return slotId;
                 }
             }
-        }
-
-        public void Dispose()
-        {
-            scope?.Dispose();
         }
     }
 }

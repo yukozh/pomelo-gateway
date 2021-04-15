@@ -3,6 +3,11 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <ApplicationIcon>client.ico</ApplicationIcon>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>0.9.0</Version>
+    <Product>Pomelo Gateway</Product>
+    <Company>Pomelo Foundation</Company>
+    <Authors>Yuko Zheng</Authors>
   </PropertyGroup>
 
   <ItemGroup>

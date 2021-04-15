@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <Company>Pomelo Foundation</Company>
+    <Product>Pomelo Gateway</Product>
+    <Authors>Yuko Zheng</Authors>
+    <Version>0.9.0</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

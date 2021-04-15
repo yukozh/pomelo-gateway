@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Pomelo.WebSlotGateway.Models
 {
@@ -22,6 +24,7 @@ namespace Pomelo.WebSlotGateway.Models
 
         public uint Priority { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public SlotStatus Status { get; set; }
     }
 }

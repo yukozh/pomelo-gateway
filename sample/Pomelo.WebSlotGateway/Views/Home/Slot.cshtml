@@ -10,6 +10,7 @@
         <thead>
             <tr>
                 <th>Name</th>
+                <th>Status</th>
                 <th>Destination</th>
                 <th>Priority</th>
                 <th>Actions</th>
@@ -18,6 +19,13 @@
         <tbody>
             <tr v-for="(slot, i) in slots">
                 <td><input type="text" v-model="slot.name" class="form-control" /></td>
+                <td>
+                    <select class="form-control" v-model="slot.status">
+                        <option>Enabled</option>
+                        <option>Disabled</option>
+                        <option>Error</option>
+                    </select>
+                </td>
                 <td><input type="text" v-model="slot.destination" class="form-control" /></td>
                 <td><input type="text" v-model="slot.priority" class="form-control" /></td>
                 <td><a v-on:click="slots.splice(i, 1)">Remove</a></td>
@@ -27,7 +35,7 @@
             <tr>
                 <td colspan="7">
                     <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchSlots">Save</a>
-                    <a v-on:click="slots.push({ name: 'New Slot', destination: null, priority: 10 })" class="btn btn-sm btn-primary" style="color: #fff">New Slot</a>
+                    <a v-on:click="slots.push({ name: 'New Slot', status: 'Enabled', destination: null, priority: 10 })" class="btn btn-sm btn-primary" style="color: #fff">New Slot</a>
                 </td>
             </tr>
         </tfoot>

@@ -76,7 +76,9 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask ReloadSlotsAsync(CancellationToken cancellationToken = default)
         {
-            var slots = await db.Slots.ToListAsync(cancellationToken);
+            var slots = await db.Slots
+                .Where(x => x.Status == SlotStatus.Enabled)
+                .ToListAsync(cancellationToken);
             slotMap = new Guid[slots.Sum(x => x.Priority)];
             var pos = 0;
             foreach(var slot in slots)

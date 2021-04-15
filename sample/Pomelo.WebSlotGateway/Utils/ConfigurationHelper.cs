@@ -16,6 +16,7 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyARRAffinitySwitch = "ARPSWITCH";
         public const string KeyARRAffinityExpireMinutes = "ARREXPIREMINUTES";
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
+        public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";
 
         private IServiceScope scope;
         private SlotContext db;
@@ -46,6 +47,9 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask<IPEndPoint> GetLocalEndpointAsync(CancellationToken cancellationToken = default)
             => await AddressHelper.ParseAddressAsync(await GetValueAsync(KeyLocalEndpoint, cancellationToken), 0);
+
+        public async ValueTask<int> GetHealthCheckerIntervalSecondsAsync(CancellationToken cancellationToken = default)
+            => Convert.ToInt32(await GetValueAsync(KeyHealthCheckerIntervalSeconds, cancellationToken));
 
         public void Dispose()
         {

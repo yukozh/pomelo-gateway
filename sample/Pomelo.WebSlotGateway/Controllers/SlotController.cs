@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
+using Pomelo.Net.Gateway.Router;
 using Pomelo.WebSlotGateway.Models;
 using Pomelo.WebSlotGateway.Utils;
 
@@ -35,6 +36,7 @@ namespace Pomelo.WebSlotGateway.Controllers
             [FromServices] SlotContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
+            [FromServices] IStreamRouter _router,
             CancellationToken cancellationToken = default)
         {
             var slots = await db.Slots.ToListAsync(cancellationToken);
@@ -48,6 +50,8 @@ namespace Pomelo.WebSlotGateway.Controllers
             db.Slots.AddRange(request.Slots);
             await db.SaveChangesAsync(cancellationToken);
             var endpoint = await config.GetLocalEndpointAsync(cancellationToken);
+            var router = _router as ARRAffinityRouter;
+            await router.ReloadSlotsAsync();
             foreach (var slot in request.Slots)
             {
                 await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(

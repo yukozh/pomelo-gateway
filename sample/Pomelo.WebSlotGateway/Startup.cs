@@ -31,6 +31,7 @@ namespace Pomelo.WebSlotGateway
         {
             services.AddDbContext<SlotContext>(x => x.UseSqlite(Configuration["SQLite"]));
             services.AddSingleton<ConfigurationHelper>();
+            services.AddSingleton<HealthCheckerProcesser>();
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),

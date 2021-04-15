@@ -3,6 +3,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Pomelo.WebSlotGateway.Models
 {
+    public enum SlotStatus
+    { 
+        Enabled,
+        Disabled,
+        Error
+    }
+
     public class Slot
     {
         public Guid Id { get; set; }
@@ -14,5 +21,7 @@ namespace Pomelo.WebSlotGateway.Models
         public string Destination { get; set; }
 
         public uint Priority { get; set; }
+
+        public SlotStatus Status { get; set; }
     }
 }

@@ -57,6 +57,13 @@ namespace Pomelo.WebSlotGateway.Models
                 Description = "ARR affinity switch"
             });
 
+            Configurations.Add(new Config
+            {
+                Key = ConfigurationHelper.KeyHealthCheckerIntervalSeconds,
+                Value = "30",
+                Description = "Health check interval"
+            });
+
             await SaveChangesAsync(cancellationToken);
         }
     }

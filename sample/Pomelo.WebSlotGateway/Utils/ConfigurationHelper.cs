@@ -13,7 +13,7 @@ namespace Pomelo.WebSlotGateway.Utils
     {
         public const string KeyUsername = "USERNAME";
         public const string KeyPassword = "PASSWORD";
-        public const string KeyARRAffinitySwitch = "ARPSWITCH";
+        public const string KeyARRAffinitySwitch = "ARRSWITCH";
         public const string KeyARRAffinityExpireMinutes = "ARREXPIREMINUTES";
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
         public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";

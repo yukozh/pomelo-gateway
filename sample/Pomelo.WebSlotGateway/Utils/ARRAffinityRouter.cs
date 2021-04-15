@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,6 +21,8 @@ namespace Pomelo.WebSlotGateway.Utils
         private ConfigurationHelper configurationHelper;
         private Random random;
         private ConcurrentDictionary<IPAddress, ARRContext> contexts;
+
+        public IEnumerable<ARRContext> Contexts => contexts.Values;
 
         public ARRAffinityRouter(IServiceProvider services)
         {

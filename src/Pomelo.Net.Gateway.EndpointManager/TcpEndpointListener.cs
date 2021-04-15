@@ -75,7 +75,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             var stream = client.GetStream();
             var buffer = MemoryPool<byte>.Shared.Rent(router.ExpectedBufferSize);
             logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
-            var result = await router.DetermineIdentifierAsync(stream, buffer.Memory, server.LocalEndpoint as IPEndPoint);
+            var result = await router.DetermineIdentifierAsync(stream, buffer.Memory, client.Client.RemoteEndPoint as IPEndPoint);
             if (!result.IsSucceeded)
             {
                 logger.LogWarning($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");

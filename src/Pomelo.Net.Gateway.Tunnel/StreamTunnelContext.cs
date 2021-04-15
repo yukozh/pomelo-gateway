@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using Pomelo.Net.Gateway.Router;
+using Newtonsoft.Json;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -20,8 +22,16 @@ namespace Pomelo.Net.Gateway.Tunnel
         private IStreamRouter router;
         private IStreamTunnel tunnel;
 
+        [JsonIgnore]
         public TcpClient LeftClient { get; set; }
+
+        [JsonIgnore]
         public TcpClient RightClient { get; set; }
+
+        public IPEndPoint? LeftEndpoint => (IPEndPoint?)LeftClient?.Client?.RemoteEndPoint;
+
+        public IPEndPoint? RightEndpoint => (IPEndPoint?)RightClient?.Client?.RemoteEndPoint;
+
         public DateTime LastCommunicationTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc => createdTime;
         public string UserIdentifier => userIdentifier;

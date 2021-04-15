@@ -9,19 +9,25 @@ namespace Pomelo.Net.Gateway.EndpointCollection
     {
         public override bool CanConvert(Type objectType)
         {
-            return (objectType == typeof(IPEndPoint));
+            return (objectType == typeof(IPEndPoint) || objectType == typeof(IPAddress));
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            IPEndPoint ep = (IPEndPoint)value;
-            writer.WriteValue(value.ToString());
+            if (value is IPEndPoint || value is IPAddress)
+            {
+                writer.WriteValue(value.ToString());
+            }
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var jv = JValue.Load(reader);
-            return IPEndPoint.Parse(jv.ToString());
+            if (IPEndPoint.TryParse(jv.ToString(), out var ep))
+            {
+                return ep;
+            }
+            return IPAddress.Parse(jv.ToString());
         }
     }
 }

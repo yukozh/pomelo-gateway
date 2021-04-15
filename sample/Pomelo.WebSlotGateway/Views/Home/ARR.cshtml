@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "ARR";
+}
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">ARR</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Slot</th>
+                <th>Created At (UTC)</th>
+                <th>Last Active (UTC)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(context, i) in contexts">
+                <td>{{ context.clientAddress }}</td>
+                <td>{{ slots.some(x => x.id == context.slotId) ? slots.filter(x => x.id == context.slotId)[0].name : context.slotId }}</td>
+                <td>{{ context.createdTimeUtc }}</td>
+                <td>{{ context.lastActiveTimeUtc }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+@section Scripts{
+    <script>
+        var app = new Vue({
+            data: {
+                contexts: [],
+                slots: [],
+            },
+            created: function () {
+                this.loadSlots();
+                this.loadARRContexts();
+                setInterval(this.loadARRContexts, 1000 * 3);
+            },
+            methods: {
+                loadARRContexts: function () {
+                    var self = this;
+                    return qv.get('/api/arr').then(data => {
+                        self.contexts = data;
+                    });
+                },
+                loadSlots: function () {
+                    var self = this;
+                    return qv.get('/api/slot').then(data => {
+                        self.slots = data;
+                    });
+                }
+            }
+        });
+        app.$mount('#app');
+    </script>
+}

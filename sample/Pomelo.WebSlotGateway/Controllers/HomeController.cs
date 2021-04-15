@@ -60,6 +60,11 @@ namespace Pomelo.WebSlotGateway.Controllers
         public IActionResult Config()
             => View();
 
+        public IActionResult Tunnel()
+            => View();
+        public IActionResult ARR()
+            => View();
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

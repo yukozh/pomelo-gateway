@@ -33,7 +33,10 @@ namespace Pomelo.WebSlotGateway.Utils
             }
             finally
             {
-                client.Client.Disconnect(true);
+                if (client.Connected)
+                {
+                    client.Client.Disconnect(true);
+                }
             }
         }
     }

@@ -33,6 +33,7 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<ConfigurationHelper>();
             services.AddSingleton<HealthCheckerProcesser>();
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
+            services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),
                 IPEndPoint.Parse("127.0.0.1:16247"));
@@ -62,6 +63,7 @@ namespace Pomelo.WebSlotGateway
                 }
                 tcp.EnsurePreCreateEndpointsAsync();
             }));
+            app.ApplicationServices.GetRequiredService<HealthCheckerProcesser>();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

@@ -1,61 +1,78 @@
-﻿@model IEnumerable<Pomelo.WebSlotGateway.Models.Slot>
+﻿@inject Pomelo.Net.Gateway.Association.AssociateServer associateServer
+@inject Pomelo.Net.Gateway.Tunnel.StreamTunnelServer streamTunnelServer
+@inject Pomelo.Net.Gateway.Association.Authentication.IAuthenticator authenticator
 @{
-    ViewData["Title"] = "Slots";
+    ViewData["Title"] = "Overview";
 }
 
+<div class="my-3 p-3 bg-white rounded shadow-sm">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Server Components</h6>
+    <div class="media text-muted pt-3">
+        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
 
-<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
-    <h6 class="border-bottom border-gray pb-2 mb-0">Slots</h6>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Destination</th>
-                <th>Priority</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="(slot, i) in slots">
-                <td><input type="text" v-model="slot.name" class="form-control" /></td>
-                <td><input type="text" v-model="slot.destination" class="form-control" /></td>
-                <td><input type="text" v-model="slot.priority" class="form-control" /></td>
-                <td><a v-on:click="slots.splice(i, 1)">Remove</a></td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="7">
-                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchSlots">Save</a>
-                    <a v-on:click="slots.push({ name: 'New Slot', destination: null, priority: 10 })" class="btn btn-sm btn-primary" style="color: #fff">New Slot</a>
-                </td>
-            </tr>
-        </tfoot>
-    </table>
+        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">Associate Server</strong>
+            Listening on @associateServer.Endpoint
+        </p>
+    </div>
+    <div class="media text-muted pt-3">
+        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">Stream Tunnel Server</strong>
+            Listening on @streamTunnelServer.Endpoint
+        </p>
+    </div>
+    <div class="media text-muted pt-3">
+        <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+        <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">Authenticator</strong>
+            @authenticator.GetType().Name (@authenticator.GetType().FullName)
+        </p>
+    </div>
+    @foreach (var x in ViewBag.StreamTunnels)
+    {
+        <div class="media text-muted pt-3">
+            <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+            <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <strong class="d-block text-gray-dark">Stream Tunnel Provider</strong>
+                @x.Name (@x.Id)
+            </p>
+        </div>
+    }
+    @foreach (var x in ViewBag.StreamRouters)
+    {
+        <div class="media text-muted pt-3">
+            <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+            <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <strong class="d-block text-gray-dark">Stream Router</strong>
+                @x.Name (@x.Id)
+            </p>
+        </div>
+    }
+    @foreach (var x in ViewBag.PacketTunnels)
+    {
+        <div class="media text-muted pt-3">
+            <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+            <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <strong class="d-block text-gray-dark">Packet Tunnel Provider</strong>
+                @x.Name (@x.Id)
+            </p>
+        </div>
+    }
+    @foreach (var x in ViewBag.PacketRouters)
+    {
+        <div class="media text-muted pt-3">
+            <svg class="bd-placeholder-img mr-2 rounded" width="32" height="32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 32x32" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#e83e8c"></rect><text x="50%" y="50%" fill="#e83e8c" dy=".3em">32x32</text></svg>
+
+            <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <strong class="d-block text-gray-dark">Packet Router</strong>
+                @x.Name (@x.Id)
+            </p>
+        </div>
+    }
 </div>
-@section Scripts{
-    <script>
-        var app = new Vue({
-            data: {
-                slots: []
-            },
-            created: function () {
-                this.loadSlots();
-            },
-            methods: {
-                loadSlots: function () {
-                    var self = this;
-                    return qv.get('/api/slot').then(data => {
-                        self.slots = data;
-                    });
-                },
-                patchSlots: function () {
-                    return qv.post('/api/slot', { slots: this.slots }).then(data => {
-                        alert('Slots updated');
-                    });
-                }
-            }
-        });
-        app.$mount('#app');
-    </script>
-}

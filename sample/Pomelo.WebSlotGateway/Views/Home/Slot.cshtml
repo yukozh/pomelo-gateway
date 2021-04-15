@@ -1,0 +1,61 @@
+﻿@model IEnumerable<Pomelo.WebSlotGateway.Models.Slot>
+@{
+    ViewData["Title"] = "Slots";
+}
+
+
+<div class="my-3 p-3 bg-white rounded shadow-sm" id="app">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Slots</h6>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Destination</th>
+                <th>Priority</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(slot, i) in slots">
+                <td><input type="text" v-model="slot.name" class="form-control" /></td>
+                <td><input type="text" v-model="slot.destination" class="form-control" /></td>
+                <td><input type="text" v-model="slot.priority" class="form-control" /></td>
+                <td><a v-on:click="slots.splice(i, 1)">Remove</a></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7">
+                    <a class="btn btn-sm btn-success" style="color: #fff" v-on:click="patchSlots">Save</a>
+                    <a v-on:click="slots.push({ name: 'New Slot', destination: null, priority: 10 })" class="btn btn-sm btn-primary" style="color: #fff">New Slot</a>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@section Scripts{
+    <script>
+        var app = new Vue({
+            data: {
+                slots: []
+            },
+            created: function () {
+                this.loadSlots();
+            },
+            methods: {
+                loadSlots: function () {
+                    var self = this;
+                    return qv.get('/api/slot').then(data => {
+                        self.slots = data;
+                    });
+                },
+                patchSlots: function () {
+                    return qv.post('/api/slot', { slots: this.slots }).then(data => {
+                        alert('Slots updated');
+                    });
+                }
+            }
+        });
+        app.$mount('#app');
+    </script>
+}

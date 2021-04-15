@@ -36,7 +36,7 @@ namespace Pomelo.WebSlotGateway
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),
                 IPEndPoint.Parse("127.0.0.1:16247"));
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddNewtonsoftJson();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -25,19 +25,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Associat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Shared", "src\Pomelo.Net.Gateway.Shared\Pomelo.Net.Gateway.Shared.csproj", "{60281AB4-9F4A-49CC-8F60-F9E3438A5510}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.All", "src\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj", "{2AD8DF76-717F-4F0E-B7D1-45CF54C013AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.All", "src\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj", "{2AD8DF76-717F-4F0E-B7D1-45CF54C013AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Shared.Tests", "test\Pomelo.Net.Gateway.Shared.Tests\Pomelo.Net.Gateway.Shared.Tests.csproj", "{268812FB-3E68-400A-83E4-ABE436EB9741}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Shared.Tests", "test\Pomelo.Net.Gateway.Shared.Tests\Pomelo.Net.Gateway.Shared.Tests.csproj", "{268812FB-3E68-400A-83E4-ABE436EB9741}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Association.Udp", "src\Pomelo.Net.Gateway.Association.Udp\Pomelo.Net.Gateway.Association.Udp.csproj", "{745E8F80-91AB-498B-A7F9-B6D60FF5FD7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Association.Udp", "src\Pomelo.Net.Gateway.Association.Udp\Pomelo.Net.Gateway.Association.Udp.csproj", "{745E8F80-91AB-498B-A7F9-B6D60FF5FD7B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{F4F57681-7948-4F76-9CB1-C384AA2E82CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Agent", "sample\Pomelo.Net.Gateway.Agent\Pomelo.Net.Gateway.Agent.csproj", "{D912EEEE-BAFF-439A-A421-A59C9F2F233F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Agent", "sample\Pomelo.Net.Gateway.Agent\Pomelo.Net.Gateway.Agent.csproj", "{D912EEEE-BAFF-439A-A421-A59C9F2F233F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Server", "sample\Pomelo.Net.Gateway.Server\Pomelo.Net.Gateway.Server.csproj", "{80E02233-7A38-49DB-B58C-7429C1DCAEA0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Server", "sample\Pomelo.Net.Gateway.Server\Pomelo.Net.Gateway.Server.csproj", "{80E02233-7A38-49DB-B58C-7429C1DCAEA0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.WebSlotGateway", "sample\Pomelo.WebSlotGateway\Pomelo.WebSlotGateway.csproj", "{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.WebSlotGateway", "sample\Pomelo.WebSlotGateway\Pomelo.WebSlotGateway.csproj", "{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Http", "src\Pomelo.Net.Gateway.Http\Pomelo.Net.Gateway.Http.csproj", "{346DEA57-82F1-4D84-B025-1ACAE758038B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +107,10 @@ Global
 		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -125,6 +131,7 @@ Global
 		{D912EEEE-BAFF-439A-A421-A59C9F2F233F} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
 		{80E02233-7A38-49DB-B58C-7429C1DCAEA0} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
 		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
+		{346DEA57-82F1-4D84-B025-1ACAE758038B} = {00678BA8-1744-4B02-A1B7-74CB56AE47CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC571B69-4612-4269-99A3-7A1BA7CEA8C0}

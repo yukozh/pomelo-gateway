@@ -85,6 +85,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             }
             logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
             var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
+            tunnelContext.HeaderLength = result.HeaderLength;
             logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
             var user = await manager.GetEndpointUserByIdentifierAsync(result.Identifier);
@@ -106,7 +107,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     var destEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
                     await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
 
-                    // TODO: Start forwarding
+                    // Start forwarding
                     await tunnelContext.Tunnel.BackwardAsync(
                         tunnelContext.GetHeaderStream(),
                         tunnelContext.LeftClient.GetStream(), tunnelContext);

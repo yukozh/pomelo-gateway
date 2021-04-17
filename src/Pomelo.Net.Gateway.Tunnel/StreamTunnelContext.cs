@@ -34,6 +34,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public DateTime LastCommunicationTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc => createdTime;
+        public int HeaderLength { get; set; }
         public string UserIdentifier => userIdentifier;
         public IStreamRouter Router => router;
         public IStreamTunnel Tunnel => tunnel;
@@ -80,7 +81,7 @@ namespace Pomelo.Net.Gateway.Tunnel
         }
 
         public HeaderStream GetHeaderStream() 
-            => headerBuffer == null ? null : new HeaderStream(headerBuffer.Memory);
+            => headerBuffer == null ? null : new HeaderStream(headerBuffer.Memory.Slice(0, HeaderLength));
 
         public void DestroyHeaderBuffer()
         {

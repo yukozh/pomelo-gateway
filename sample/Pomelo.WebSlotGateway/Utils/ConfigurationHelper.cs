@@ -31,6 +31,7 @@ namespace Pomelo.WebSlotGateway.Utils
             {
                 var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
                 return await db.Configurations
+                    .AsNoTracking()
                     .Where(x => x.Key == key)
                     .Select(x => x.Value)
                     .SingleAsync(cancellationToken);

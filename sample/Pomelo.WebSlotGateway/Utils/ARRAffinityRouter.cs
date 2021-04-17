@@ -81,6 +81,7 @@ namespace Pomelo.WebSlotGateway.Utils
             {
                 var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
                 var slots = await db.Slots
+                    .AsNoTracking()
                     .Where(x => x.Status == SlotStatus.Enabled)
                     .ToListAsync(cancellationToken);
                 slotMap = new Guid[slots.Sum(x => x.Priority)];

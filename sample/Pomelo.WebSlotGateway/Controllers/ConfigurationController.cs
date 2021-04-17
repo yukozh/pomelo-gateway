@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.Net.Gateway.EndpointManager;
+using Pomelo.Net.Gateway.Tunnel;
 using Pomelo.WebSlotGateway.Models;
 using Pomelo.WebSlotGateway.Utils;
 
@@ -33,6 +33,7 @@ namespace Pomelo.WebSlotGateway.Controllers
             [FromServices] TcpEndpointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
             [FromServices] SlotContext db,
+            [FromServices] StreamTunnelContextFactory streamTunnelContextFactory,
             CancellationToken cancellationToken = default)
         {
             var configurations = await db.Configurations
@@ -57,13 +58,14 @@ namespace Pomelo.WebSlotGateway.Controllers
             {
                 // Remove all rules
                 var slots = await db.Slots.ToListAsync(cancellationToken);
-                db.RemoveRange(slots);
-                await db.SaveChangesAsync(cancellationToken);
                 foreach (var slot in slots)
                 {
                     await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(slot.Id.ToString(), cancellationToken);
                     await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
+                    streamTunnelContextFactory.DestroyContextsForUserIdentifier(slot.Id.ToString());
                 }
+                db.RemoveRange(slots);
+                await db.SaveChangesAsync(cancellationToken);
 
                 // Setup rules
                 foreach (var rule in slots)

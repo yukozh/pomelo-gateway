@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Router;
+using Pomelo.Net.Gateway.Tunnel;
 using Pomelo.WebSlotGateway.Models;
 using Pomelo.WebSlotGateway.Utils;
 
@@ -37,17 +38,19 @@ namespace Pomelo.WebSlotGateway.Controllers
             [FromServices] SlotContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
+            [FromServices] StreamTunnelContextFactory streamTunnelContextFactory,
             [FromServices] IServiceProvider services,
             CancellationToken cancellationToken = default)
         {
             var slots = await db.Slots.ToListAsync(cancellationToken);
-            db.RemoveRange(slots);
-            await db.SaveChangesAsync(cancellationToken);
             foreach (var slot in slots)
             {
                 await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(slot.Id.ToString(), cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
+                streamTunnelContextFactory.DestroyContextsForUserIdentifier(slot.Id.ToString());
             }
+            db.RemoveRange(slots);
+            await db.SaveChangesAsync(cancellationToken);
             db.Slots.AddRange(request.Slots);
             await db.SaveChangesAsync(cancellationToken);
             var endpoint = await config.GetLocalEndpointAsync(cancellationToken);

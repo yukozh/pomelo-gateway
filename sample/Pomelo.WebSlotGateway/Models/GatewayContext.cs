@@ -33,7 +33,8 @@ namespace Pomelo.WebSlotGateway.Models
             {
                 Key = ConfigurationHelper.KeyPassword,
                 Value = "123456",
-                Description = "Password for log on this platform"
+                Description = "Password for log on this platform",
+                Type = ConfigType.Password
             });
 
             Configurations.Add(new Config
@@ -54,7 +55,9 @@ namespace Pomelo.WebSlotGateway.Models
             {
                 Key = ConfigurationHelper.KeyARRAffinitySwitch,
                 Value = "true",
-                Description = "ARR affinity switch. (true|false)"
+                Description = "ARR affinity switch",
+                Type = ConfigType.DropDownList,
+                Addition = "true|false"
             });
 
             Configurations.Add(new Config
@@ -68,7 +71,9 @@ namespace Pomelo.WebSlotGateway.Models
             {
                 Key = ConfigurationHelper.KeyAppendForwardHeader,
                 Value = "true",
-                Description = "Append forward info into header. (true|false)"
+                Description = "Append forward info into header",
+                Type = ConfigType.DropDownList,
+                Addition = "true|false"
             });
 
             await SaveChangesAsync(cancellationToken);

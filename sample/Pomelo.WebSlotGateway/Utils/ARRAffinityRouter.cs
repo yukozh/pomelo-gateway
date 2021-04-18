@@ -75,7 +75,7 @@ namespace Pomelo.WebSlotGateway.Utils
             if (await configurationHelper.GetAppendForwardHeaderAsync(cancellationToken))
             {
                 header.HeaderCollection.TryAdd("X-Forwarded-For", from.ToString());
-                header.HeaderCollection.TryAdd("X-Forward-Agent", "Pomelo Gateway");
+                header.HeaderCollection.TryAdd("X-Forward-Server", "Pomelo Gateway");
                 header.HeaderCollection.TryAdd("X-Real-IP", from.Address.ToString());
                 header.HeaderCollection.TryAdd("RemoteAddress", from.Address.ToString());
             }

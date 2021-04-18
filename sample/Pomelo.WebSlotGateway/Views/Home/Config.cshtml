@@ -16,7 +16,13 @@
         <tbody>
             <tr v-for="(configuration, i) in configurations">
                 <td><input type="hidden" v-model="configuration.key" class="form-control" />{{ configuration.key }}</td>
-                <td><input type="text" v-model="configuration.value" class="form-control" /></td>
+                <td v-if="configuration.type == 'Text'"><input type="text" v-model="configuration.value" class="form-control" /></td>
+                <td v-if="configuration.type == 'Password'"><input type="password" v-model="configuration.value" class="form-control" /></td>
+                <td v-if="configuration.type == 'DropDownList'">
+                    <select v-model="configuration.value" class="form-control">
+                        <option v-for="option in configuration.addition.split('|')">{{ option }}</option>
+                    </select>
+                </td>
                 <td>{{ configuration.description }}</td>
             </tr>
         </tbody>

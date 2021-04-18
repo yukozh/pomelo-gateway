@@ -30,7 +30,7 @@ namespace Pomelo.WebSlotGateway
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<SlotContext>(x => x.UseSqlite(Configuration["SQLite"]));
+            services.AddDbContext<GatewayContext>(x => x.UseSqlite(Configuration["SQLite"]));
             services.AddSingleton<ConfigurationHelper>();
             services.AddSingleton<HealthCheckerProcesser>();
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
@@ -51,7 +51,7 @@ namespace Pomelo.WebSlotGateway
                 var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
-                    var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                    var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
                     var rules = await db.Slots
                         .ToListAsync();
                     var serverEndpoint = await app.ApplicationServices.GetRequiredService<ConfigurationHelper>().GetLocalEndpointAsync();

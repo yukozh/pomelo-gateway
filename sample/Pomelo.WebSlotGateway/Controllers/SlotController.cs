@@ -22,7 +22,7 @@ namespace Pomelo.WebSlotGateway.Controllers
     {
         [HttpGet]
         public async ValueTask<IEnumerable<Slot>> Get(
-            [FromServices] SlotContext db,
+            [FromServices] GatewayContext db,
             CancellationToken cancellationToken = default)
         {
             return await db.Slots
@@ -35,7 +35,7 @@ namespace Pomelo.WebSlotGateway.Controllers
         [HttpPatch]
         public async ValueTask<IEnumerable<Slot>> Put(
             [FromBody] SetSlotsRequestViewModel request,
-            [FromServices] SlotContext db,
+            [FromServices] GatewayContext db,
             [FromServices] TcpEndpointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
             [FromServices] StreamTunnelContextFactory streamTunnelContextFactory,

@@ -17,6 +17,7 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyARRAffinityExpireMinutes = "ARREXPIREMINUTES";
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
         public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";
+        public const string KeyAppendForwardHeader = "APPENDFORWARDHEADER";
 
         private IServiceProvider services;
 
@@ -29,7 +30,7 @@ namespace Pomelo.WebSlotGateway.Utils
         {
             using (var scope = services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
                 return await db.Configurations
                     .AsNoTracking()
                     .Where(x => x.Key == key)
@@ -55,5 +56,7 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask<int> GetHealthCheckerIntervalSecondsAsync(CancellationToken cancellationToken = default)
             => Convert.ToInt32(await GetValueAsync(KeyHealthCheckerIntervalSeconds, cancellationToken));
+        public async ValueTask<bool> GetAppendForwardHeaderAsync(CancellationToken cancellationToken = default)
+            => Convert.ToBoolean(await GetValueAsync(KeyAppendForwardHeader, cancellationToken));
     }
 }

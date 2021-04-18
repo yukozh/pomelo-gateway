@@ -5,9 +5,9 @@ using Pomelo.WebSlotGateway.Utils;
 
 namespace Pomelo.WebSlotGateway.Models
 {
-    public class SlotContext : DbContext
+    public class GatewayContext : DbContext
     {
-        public SlotContext(DbContextOptions<SlotContext> opt)
+        public GatewayContext(DbContextOptions<GatewayContext> opt)
             : base(opt)
         {
             if (Database.EnsureCreated())
@@ -47,21 +47,28 @@ namespace Pomelo.WebSlotGateway.Models
             {
                 Key = ConfigurationHelper.KeyARRAffinityExpireMinutes,
                 Value = "20",
-                Description = "ARR affinity expire duration"
+                Description = "ARR affinity expire duration (Unit: min)"
             });
 
             Configurations.Add(new Config
             {
                 Key = ConfigurationHelper.KeyARRAffinitySwitch,
                 Value = "true",
-                Description = "ARR affinity switch"
+                Description = "ARR affinity switch. (true|false)"
             });
 
             Configurations.Add(new Config
             {
                 Key = ConfigurationHelper.KeyHealthCheckerIntervalSeconds,
                 Value = "30",
-                Description = "Health check interval"
+                Description = "Health check interval (Unit: sec)"
+            });
+
+            Configurations.Add(new Config
+            {
+                Key = ConfigurationHelper.KeyAppendForwardHeader,
+                Value = "true",
+                Description = "Append forward info into header. (true|false)"
             });
 
             await SaveChangesAsync(cancellationToken);

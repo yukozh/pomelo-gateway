@@ -39,7 +39,7 @@ namespace Pomelo.WebSlotGateway.Utils
         {
             using (var scope = services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
                 var slots = (await db.Slots
                     .AsNoTracking()
                     .Where(x => x.Status == SlotStatus.Enabled)
@@ -58,38 +58,58 @@ namespace Pomelo.WebSlotGateway.Utils
                     }
                     slotMaps.AddOrUpdate(group.Key, slotMap, (_, __) => slotMap);
                 }
-                foreach (var keyToRemove in slotMaps.Keys.Where(x => !slots.Select(y => y.Key).Contains(x)))
+                foreach (var keyToRemove in slotMaps.Keys.Where(x => !slots
+                    .Select(y => y.Key)
+                    .Contains(x)))
                 {
                     slotMaps.Remove(keyToRemove, out var _);
                 }
             }
         }
 
-        public override async ValueTask<string> FindDestinationByHeadersAsync(HttpHeader headers, IPEndPoint from, CancellationToken cancellationToken = default)
+        public override async ValueTask BeforeBuildHeaderStreamAsync(
+            HttpHeader header, 
+            IPEndPoint from, 
+            CancellationToken cancellationToken = default)
+        {
+            if (await configurationHelper.GetAppendForwardHeaderAsync(cancellationToken))
+            {
+                header.HeaderCollection.TryAdd("X-Forwarded-For", from.ToString());
+                header.HeaderCollection.TryAdd("X-Forward-Agent", "Pomelo Gateway");
+                header.HeaderCollection.TryAdd("X-Real-IP", from.Address.ToString());
+                header.HeaderCollection.TryAdd("RemoteAddress", from.Address.ToString());
+            }
+        }
+
+        public override async ValueTask<string> FindDestinationByHeadersAsync(
+            HttpHeader header, 
+            IPEndPoint from, 
+            CancellationToken cancellationToken = default)
         {
             if (!await configurationHelper.GetARRAffinitySwitchAsync(cancellationToken))
             {
-                var slotId = await AssignSlotAsync(headers.Host, cancellationToken);
+                var slotId = await AssignSlotAsync(header.Host, cancellationToken);
                 return slotId.ToString();
             }
             else
             {
-                var slotId = await AssignSlotAsync(headers.Host, cancellationToken);
-                var contextDic = contexts.GetOrAdd(headers.Host, (_) => new ConcurrentDictionary<IPAddress, ARRContext>());
+                var slotId = await AssignSlotAsync(header.Host, cancellationToken);
+                var contextDic = contexts.GetOrAdd(header.Host, (_) 
+                    => new ConcurrentDictionary<IPAddress, ARRContext>());
                 var context = contextDic.GetOrAdd(from.Address, (key) =>
                 {
                     return new ARRContext
                     {
                         ClientAddress = from.Address,
                         SlotId = slotId,
-                        Host = headers.Host
+                        Host = header.Host
                     };
                 });
                 context.LastActiveTimeUtc = DateTime.UtcNow;
                 if (!await IsSlotValidAsync(context.SlotId, cancellationToken))
                 {
                     await ReloadSlotsAsync(cancellationToken);
-                    context.SlotId = await AssignSlotAsync(headers.Host, cancellationToken);
+                    context.SlotId = await AssignSlotAsync(header.Host, cancellationToken);
                 }
                 return context.SlotId.ToString();
             }
@@ -117,18 +137,22 @@ namespace Pomelo.WebSlotGateway.Utils
             }
         }
 
-        private async ValueTask<bool> IsSlotValidAsync(Guid slotId, CancellationToken cancellationToken = default)
+        private async ValueTask<bool> IsSlotValidAsync(
+            Guid slotId,
+            CancellationToken cancellationToken = default)
         {
             using (var scope = services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
+                var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
                 return await db.Slots
                     .AsNoTracking()
                     .AnyAsync(x => x.Id == slotId, cancellationToken);
             }
         }
 
-        private async ValueTask<Guid> AssignSlotAsync(string host, CancellationToken cancellationToken = default)
+        private async ValueTask<Guid> AssignSlotAsync(
+            string host,
+            CancellationToken cancellationToken = default)
         {
             if (slotMaps.Keys.Count == 0)
             {

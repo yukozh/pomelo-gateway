@@ -43,7 +43,7 @@ namespace Pomelo.WebSlotGateway.Utils
                 {
                     using (var _scope = services.CreateScope())
                     {
-                        var db = _scope.ServiceProvider.GetRequiredService<SlotContext>();
+                        var db = _scope.ServiceProvider.GetRequiredService<GatewayContext>();
                         var slots = await db.Slots.ToListAsync();
                         var shouldRebuildSlotAssignArray = false;
                         foreach (var slot in slots)

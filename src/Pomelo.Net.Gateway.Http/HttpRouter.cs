@@ -15,20 +15,20 @@ namespace Pomelo.Net.Gateway.Http
 
         public virtual int ExpectedBufferSize => 65536; // Max Limitation of HTTP Header
 
-        public async ValueTask<RouteResult> DetermineIdentifierAsync(Stream stream, Memory<byte> buffer, IPEndPoint endpoint, CancellationToken cancellationToken = default)
+        public async ValueTask<RouteResult> DetermineIdentifierAsync(Stream stream, Memory<byte> buffer, IPEndPoint from, CancellationToken cancellationToken = default)
         {
             var header = new HttpHeader();
             await header.ParseHeaderAsync(stream, HttpHeaderType.Request);
             var count = header.WriteToMemory(buffer);
-            var destination = await FindDestinationByHostAsync(header.Host, cancellationToken);
+            var destination = await FindDestinationByHeadersAsync(header, from, cancellationToken);
             return new RouteResult
             {
                 HeaderLength = count,
-                IsSucceeded = destination == null,
+                IsSucceeded = destination != null,
                 Identifier = destination
             };
         }
 
-        public virtual async ValueTask<string> FindDestinationByHostAsync(string host, CancellationToken cancellationToken = default) => null;
+        public virtual async ValueTask<string> FindDestinationByHeadersAsync(HttpHeader headers, IPEndPoint from, CancellationToken cancellationToken = default) => null;
     }
 }

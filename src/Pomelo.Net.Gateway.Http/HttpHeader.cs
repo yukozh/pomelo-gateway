@@ -47,89 +47,90 @@ namespace Pomelo.Net.Gateway.Http
         public async ValueTask ParseHeaderAsync(Stream stream, HttpHeaderType type)
         {
             var firstLine = true;
-            using (var sr = new StreamReader(stream))
+            var sr = new StreamReader(stream);
+            while (true)
             {
-                while (true)
+                var line = await sr.ReadLineAsync();
+                if (line == null)
                 {
-                    var line = await sr.ReadLineAsync();
-                    if (firstLine)
+                    break;
+                }
+
+                if (firstLine)
+                {
+                    firstLine = false;
+                    var index1 = line.IndexOf(' ');
+                    if (index1 == -1)
                     {
-                        firstLine = false;
-                        var index1 = line.IndexOf(' ');
+                        throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                    }
+                    if (type == HttpHeaderType.Request)
+                    {
+                        Method = line.Substring(0, index1).ToUpper();
+                    }
+                    else
+                    {
+                        Protocol = line.Substring(0, index1).ToUpper();
+                    }
+                    var index2 = line.LastIndexOf(' ');
+                    if (index1 == index2)
+                    {
                         if (index1 == -1)
                         {
                             throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
                         }
-                        if (type == HttpHeaderType.Request)
-                        {
-                            Method = line.Substring(0, index1).ToUpper();
-                        }
-                        else
-                        { 
-                            Protocol = line.Substring(0, index1).ToUpper();
-                        }
-                        var index2 = line.LastIndexOf(' ');
-                        if (index1 == index2)
-                        {
-                            if (index1 == -1)
-                            {
-                                throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
-                            }
-                        }
-                        if (type == HttpHeaderType.Request)
-                        {
-                            Url = line.Substring(index1, index2 - index1).Trim();
-                            Protocol = line.Substring(index2).Trim();
-                        }
-                        else
-                        {
-                            StatusCode = Convert.ToInt32(line.Substring(index1, index2 - index1).Trim());
-                            StatusCodeString = line.Substring(index2).Trim();
-                        }
-                        continue;
                     }
-
-                    if (string.IsNullOrEmpty(line))
+                    if (type == HttpHeaderType.Request)
                     {
-                        break;
+                        Url = line.Substring(index1, index2 - index1).Trim();
+                        Protocol = line.Substring(index2).Trim();
                     }
-                    var index3 = line.IndexOf(':');
-                    if (index3 == -1)
+                    else
                     {
-                        throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                        StatusCode = Convert.ToInt32(line.Substring(index1, index2 - index1).Trim());
+                        StatusCodeString = line.Substring(index2).Trim();
                     }
-                    var key = line.Substring(0, index3);
-                    var value = line.Substring(index3 + 1);
-                    fields.Add(key, value.TrimStart());
+                    continue;
                 }
-                if (Method == null || Url == null || Protocol == null)
+
+                if (string.IsNullOrEmpty(line))
+                {
+                    break;
+                }
+                var index3 = line.IndexOf(':');
+                if (index3 == -1)
                 {
                     throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
                 }
+                var key = line.Substring(0, index3);
+                var value = line.Substring(index3 + 1);
+                fields.Add(key, value.TrimStart());
+            }
+            if (Method == null || Url == null || Protocol == null)
+            {
+                throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
             }
         }
 
         public async ValueTask WriteToStream(Stream stream)
         {
-            using (var sw = new StreamWriter(stream))
+            var sw = new StreamWriter(stream);
+            await sw.WriteLineAsync($"{Method} {Url} {Protocol}");
+            foreach (var field in fields)
             {
-                await sw.WriteLineAsync($"{Method} {Url} {Protocol}");
-                foreach (var field in fields)
-                {
-                    await sw.WriteLineAsync($"{field.Key}: {field.Value}");
-                }
+                await sw.WriteLineAsync($"{field.Key}: {field.Value}");
             }
         }
 
         public int WriteToMemory(Memory<byte> buffer)
         {
             var count = 0;
-            count += Encoding.UTF8.GetBytes($"{Method} {Url} {Protocol}\r\n", buffer.Slice(count).Span);
+            count += Encoding.ASCII.GetBytes($"{Method} {Url} {Protocol}\r\n", buffer.Slice(count).Span);
             foreach (var field in fields)
             {
-                count += Encoding.UTF8.GetBytes($"{field.Key}: {field.Value}\r\n", buffer.Slice(count).Span);
+                count += Encoding.ASCII.GetBytes($"{field.Key}: {field.Value}\r\n", buffer.Slice(count).Span);
             }
-            count += Encoding.UTF8.GetBytes("\r\n", buffer.Slice(count).Span);
+            count += Encoding.ASCII.GetBytes("\r\n", buffer.Slice(count).Span);
             return count;
         }
     }

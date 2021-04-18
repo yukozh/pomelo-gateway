@@ -9,6 +9,7 @@
     <ProjectReference Include="..\..\src\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\Pomelo.Net.Gateway.Http\Pomelo.Net.Gateway.Http.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.5" />

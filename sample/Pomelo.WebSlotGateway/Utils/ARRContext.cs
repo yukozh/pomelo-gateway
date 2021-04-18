@@ -8,6 +8,7 @@ namespace Pomelo.WebSlotGateway.Utils
         public IPAddress ClientAddress { get; set; }
         public DateTime CreatedTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime LastActiveTimeUtc { get; set; } = DateTime.UtcNow;
+        public string Host { get; set; }
         public Guid SlotId { get; set; }
     }
 }

@@ -9,6 +9,7 @@
             <tr>
                 <th>Destination</th>
                 <th>Client</th>
+                <th>Host</th>
                 <th>Created At (UTC)</th>
                 <th>Last Active (UTC)</th>
             </tr>
@@ -17,6 +18,7 @@
             <tr v-for="(tunnel, i) in tunnels">
                 <td>{{ tunnel.leftEndpoint }}</td>
                 <td>{{ tunnel.rightEndpoint }}</td>
+                <td>{{ tunnel.host }}</td>
                 <td>{{ tunnel.createdTimeUtc }}</td>
                 <td>{{ tunnel.lastCommunicationTimeUtc }}</td>
             </tr>

@@ -1,98 +1,97 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Pomelo.Net.Gateway.Router;
+using Pomelo.Net.Gateway.Http;
 using Pomelo.WebSlotGateway.Models;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class ARRAffinityRouter : IStreamRouter
+    public class ARRAffinityRouter : HttpRouterBase
     {
         private IServiceProvider services;
-        private Guid[] slotMap;
+        private ConcurrentDictionary<string, Guid[]> slotMaps;
         private ConfigurationHelper configurationHelper;
         private Random random;
-        private ConcurrentDictionary<IPAddress, ARRContext> contexts;
+        private ConcurrentDictionary<string, ConcurrentDictionary<IPAddress, ARRContext>> contexts;
 
-        public IEnumerable<ARRContext> Contexts => contexts.Values;
+        public IEnumerable<ARRContext> Contexts => contexts.Values.SelectMany(x => x.Values);
 
         public ARRAffinityRouter(IServiceProvider services)
         {
             this.services = services;
-            this.slotMap = null;
+            this.slotMaps = new ConcurrentDictionary<string, Guid[]>(StringComparer.OrdinalIgnoreCase);
             this.configurationHelper = services.GetRequiredService<ConfigurationHelper>();
             this.random = new Random();
-            this.contexts = new ConcurrentDictionary<IPAddress, ARRContext>();
+            this.contexts = new ConcurrentDictionary<string, ConcurrentDictionary<IPAddress, ARRContext>>(StringComparer.OrdinalIgnoreCase);
             RecycleAsync();
         }
 
-        public Guid Id => Guid.Parse("374c20bc-e730-4da3-8c2f-7e570da35268");
-        public string Name => "ARR Affinity Stream Router";
-        public int ExpectedBufferSize => 0;
-
-        public async ValueTask<RouteResult> DetermineIdentifierAsync(Stream stream, Memory<byte> buffer, IPEndPoint endpoint, CancellationToken cancellationToken = default)
-        {
-            if (!await configurationHelper.GetARRAffinitySwitchAsync(cancellationToken))
-            {
-                var slotId = await AssignSlotAsync(cancellationToken);
-                return new RouteResult
-                {
-                    HeaderLength = 0,
-                    IsSucceeded = true,
-                    Identifier = slotId.ToString()
-                };
-            }
-            else
-            {
-                var slotId = await AssignSlotAsync(cancellationToken);
-                var context = contexts.GetOrAdd(endpoint.Address, (key) =>
-                {
-                    return new ARRContext
-                    {
-                        ClientAddress = endpoint.Address,
-                        SlotId = slotId
-                    };
-                });
-                context.LastActiveTimeUtc = DateTime.UtcNow;
-                if (!await IsSlotValidAsync(context.SlotId, cancellationToken))
-                {
-                    await ReloadSlotsAsync(cancellationToken);
-                    context.SlotId = await AssignSlotAsync(cancellationToken);
-                }
-                return new RouteResult
-                {
-                    HeaderLength = 0,
-                    IsSucceeded = true,
-                    Identifier = context.SlotId.ToString()
-                };
-            }
-        }
+        public override Guid Id => Guid.Parse("374c20bc-e730-4da3-8c2f-7e570da35268");
+        public override string Name => "ARR Affinity Stream Router";
 
         public async ValueTask ReloadSlotsAsync(CancellationToken cancellationToken = default)
         {
             using (var scope = services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
-                var slots = await db.Slots
+                var slots = (await db.Slots
                     .AsNoTracking()
                     .Where(x => x.Status == SlotStatus.Enabled)
-                    .ToListAsync(cancellationToken);
-                slotMap = new Guid[slots.Sum(x => x.Priority)];
-                var pos = 0;
-                foreach (var slot in slots)
+                    .ToListAsync(cancellationToken))
+                    .GroupBy(x => x.Host);
+                foreach (var group in slots)
                 {
-                    for (var i = 0; i < slot.Priority; ++i)
+                    var slotMap = new Guid[group.Sum(x => x.Priority)];
+                    var pos = 0;
+                    foreach (var slot in group)
                     {
-                        slotMap[pos++] = slot.Id;
+                        for (var i = 0; i < slot.Priority; ++i)
+                        {
+                            slotMap[pos++] = slot.Id;
+                        }
                     }
+                    slotMaps.AddOrUpdate(group.Key, slotMap, (_, __) => slotMap);
                 }
+                foreach (var keyToRemove in slotMaps.Keys.Where(x => !slots.Select(y => y.Key).Contains(x)))
+                {
+                    slotMaps.Remove(keyToRemove, out var _);
+                }
+            }
+        }
+
+        public override async ValueTask<string> FindDestinationByHeadersAsync(HttpHeader headers, IPEndPoint from, CancellationToken cancellationToken = default)
+        {
+            if (!await configurationHelper.GetARRAffinitySwitchAsync(cancellationToken))
+            {
+                var slotId = await AssignSlotAsync(headers.Host, cancellationToken);
+                return slotId.ToString();
+            }
+            else
+            {
+                var slotId = await AssignSlotAsync(headers.Host, cancellationToken);
+                var contextDic = contexts.GetOrAdd(headers.Host, (_) => new ConcurrentDictionary<IPAddress, ARRContext>());
+                var context = contextDic.GetOrAdd(from.Address, (key) =>
+                {
+                    return new ARRContext
+                    {
+                        ClientAddress = from.Address,
+                        SlotId = slotId,
+                        Host = headers.Host
+                    };
+                });
+                context.LastActiveTimeUtc = DateTime.UtcNow;
+                if (!await IsSlotValidAsync(context.SlotId, cancellationToken))
+                {
+                    await ReloadSlotsAsync(cancellationToken);
+                    context.SlotId = await AssignSlotAsync(headers.Host, cancellationToken);
+                }
+                return context.SlotId.ToString();
             }
         }
 
@@ -103,11 +102,14 @@ namespace Pomelo.WebSlotGateway.Utils
                 if (await configurationHelper.GetARRAffinitySwitchAsync())
                 {
                     var expireMinutes = await configurationHelper.GetARRAffinityExpireMinutesAsync();
-                    foreach (var context in contexts.Values)
+                    foreach (var contextDic in contexts.Values)
                     {
-                        if (context.LastActiveTimeUtc.AddMinutes(expireMinutes) < DateTime.UtcNow)
+                        foreach (var context in contextDic.Values)
                         {
-                            contexts.TryRemove(context.ClientAddress, out var _);
+                            if (context.LastActiveTimeUtc.AddMinutes(expireMinutes) < DateTime.UtcNow)
+                            {
+                                contextDic.TryRemove(context.ClientAddress, out var _);
+                            }
                         }
                     }
                 }
@@ -120,20 +122,30 @@ namespace Pomelo.WebSlotGateway.Utils
             using (var scope = services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<SlotContext>();
-                return await db.Slots.AnyAsync(x => x.Id == slotId, cancellationToken);
+                return await db.Slots
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == slotId, cancellationToken);
             }
         }
 
-        private async ValueTask<Guid> AssignSlotAsync(CancellationToken cancellationToken = default)
+        private async ValueTask<Guid> AssignSlotAsync(string host, CancellationToken cancellationToken = default)
         {
-            if (slotMap == null)
+            if (slotMaps.Keys.Count == 0)
             {
                 await ReloadSlotsAsync(cancellationToken);
+            }
+            if (!slotMaps.ContainsKey(host))
+            {
+                host = "*";
+            }
+            if (!slotMaps.ContainsKey(host))
+            {
+                throw new EntryPointNotFoundException($"The slot for host {host} has not been found");
             }
 
             while (true)
             {
-                var slotId = slotMap[random.Next(0, slotMap.Length)];
+                var slotId = slotMaps[host][random.Next(0, slotMaps[host].Length)];
                 if (await IsSlotValidAsync(slotId, cancellationToken))
                 {
                     return slotId;

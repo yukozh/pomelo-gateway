@@ -20,6 +20,9 @@ namespace Pomelo.WebSlotGateway.Models
         public string Name { get; set; }
 
         [MaxLength(128)]
+        public string Host { get; set; }
+
+        [MaxLength(128)]
         public string Destination { get; set; }
 
         public uint Priority { get; set; }

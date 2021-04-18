@@ -31,6 +31,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             var memory = new Memory<byte>(buffer, offset, count);
             var length = (int)Math.Min(count, Length - (int)Position);
             this.buffer.Slice((int)Position, length).CopyTo(memory);
+            Position += length;
             return length;
         }
 

@@ -30,6 +30,7 @@ namespace Pomelo.Net.Gateway.Http
         public string UserAgent => GetHeaderField("user-agent");
         public string ContentType => GetHeaderField("content-type");
         public string ContentEncoding => GetHeaderField("content-encoding");
+        public string Connection => GetHeaderField("connection");
         public string Accept => GetHeaderField("accept");
         public string AcceptEncoding => GetHeaderField("accept-encoding");
         public string AcceptLanguage => GetHeaderField("accept-language");

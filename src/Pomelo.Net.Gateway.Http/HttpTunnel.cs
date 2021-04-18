@@ -66,8 +66,8 @@ namespace Pomelo.Net.Gateway.Http
                     cancellationToken);
 
                 // 5. Determine if disconnect is needed
-                if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0"
-                    || httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive" 
+                    && httpContext.Response.Headers.Protocol.ToLower() != "http/1.0")
                 {
                     break;
                 }
@@ -120,8 +120,8 @@ namespace Pomelo.Net.Gateway.Http
                     cancellationToken);
 
                 // 5. Determine if disconnect is needed
-                if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0"
-                    || httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
+                    && httpContext.Request.Headers.Protocol.ToLower() != "http/1.0")
                 {
                     break;
                 }

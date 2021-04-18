@@ -10,7 +10,6 @@ namespace Pomelo.Net.Gateway.Http
     public class DefaultHttpInterceptor : IHttpInterceptor
     {
         public const int BufferSize = 2048;
-        public virtual bool CanIntercept(HttpHeader requestHeaders, HttpAction action) => true;
 
         protected virtual async ValueTask ForwardRequestHeaderAsync(
             HttpTunnelContext context, 
@@ -153,16 +152,18 @@ namespace Pomelo.Net.Gateway.Http
             }
         }
 
-        public virtual async ValueTask ForwardRequestAsync(HttpTunnelContext context, CancellationToken cancellationToken = default)
+        public virtual async ValueTask<bool> ForwardRequestAsync(HttpTunnelContext context, CancellationToken cancellationToken = default)
         {
             await ForwardRequestHeaderAsync(context, cancellationToken);
             await ForwardRequestBodyAsync(context, cancellationToken);
+            return true;
         }
 
-        public virtual async ValueTask BackwardResponseAsync(HttpTunnelContext context, CancellationToken cancellationToken = default)
+        public virtual async ValueTask<bool> BackwardResponseAsync(HttpTunnelContext context, CancellationToken cancellationToken = default)
         {
             await BackwardResponseHeaderAsync(context, cancellationToken);
             await BackwardResponseBodyAsync(context, cancellationToken);
+            return true;
         }
     }
 }

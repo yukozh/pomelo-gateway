@@ -5,13 +5,11 @@ namespace Pomelo.Net.Gateway.Http
 {
     public interface IHttpInterceptor
     {
-        bool CanIntercept(HttpHeader requestHeaders, HttpAction action);
-
-        ValueTask ForwardRequestAsync(
+        ValueTask<bool> ForwardRequestAsync(
             HttpTunnelContext context,
             CancellationToken cancellationToken = default);
 
-        ValueTask BackwardResponseAsync(
+        ValueTask<bool> BackwardResponseAsync(
             HttpTunnelContext context,
             CancellationToken cancellationToken = default);
     }

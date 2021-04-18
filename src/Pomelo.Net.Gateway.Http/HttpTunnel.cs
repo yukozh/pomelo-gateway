@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
@@ -39,6 +38,7 @@ namespace Pomelo.Net.Gateway.Http
                 var httpContext = FindOrCreateHttpTunnelContextCreated(context);
                 httpContext.Response.SourceStream = rightToTunnelStream;
                 httpContext.Response.DestinationStream = tunnelToLeftStream;
+                httpContext.StreamTunnelContext = context;
 
                 // 2. Get Headers
                 httpContext.Response.Headers = new HttpHeader();
@@ -46,24 +46,23 @@ namespace Pomelo.Net.Gateway.Http
 
                 // 3. Find Interceptor
                 var interceptors = services.GetServices<IHttpInterceptor>();
-                IHttpInterceptor interceptor = null;
-                foreach (var _interceptor in interceptors)
+
+                // 4. Backward Response
+                var handled = false;
+                foreach (var interceptor in interceptors)
                 {
-                    if (_interceptor.CanIntercept(httpContext.Response.Headers, HttpAction.Response))
+                    if (await interceptor.BackwardResponseAsync(
+                        httpContext,
+                        cancellationToken))
                     {
-                        interceptor = _interceptor;
+                        handled = true;
                         break;
                     }
                 }
-
-                // 4. Backward Response
-                if (interceptor == null)
+                if (!handled)
                 {
                     throw new NotSupportedException("This stream is not supported");
                 }
-                await interceptor.BackwardResponseAsync(
-                    httpContext,
-                    cancellationToken);
 
                 // 5. Determine if disconnect is needed
                 if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive" 
@@ -92,6 +91,7 @@ namespace Pomelo.Net.Gateway.Http
                 httpContext.ConnectionId = context.ConnectionId;
                 httpContext.Request.SourceStream = leftToTunnelStream;
                 httpContext.Request.DestinationStream = tunnelToRightStream;
+                httpContext.StreamTunnelContext = context;
 
                 // 2. Get Headers
                 httpContext.Request.Headers = new HttpHeader();
@@ -99,25 +99,23 @@ namespace Pomelo.Net.Gateway.Http
 
                 // 3. Find Interceptor
                 var interceptors = services.GetServices<IHttpInterceptor>();
-                IHttpInterceptor interceptor = null;
-                foreach (var _interceptor in interceptors)
+
+                // 4. Forward Request
+                var handled = false;
+                foreach (var interceptor in interceptors)
                 {
-                    if (_interceptor.CanIntercept(httpContext.Request.Headers, HttpAction.Request))
+                    if (await interceptor.ForwardRequestAsync(
+                        httpContext,
+                        cancellationToken))
                     {
-                        interceptor = _interceptor;
+                        handled = true;
                         break;
                     }
                 }
-
-                if (interceptor == null)
+                if (!handled)
                 {
                     throw new NotSupportedException("This stream is not supported");
                 }
-
-                // 4. Forward Request
-                await interceptor.ForwardRequestAsync(
-                    httpContext,
-                    cancellationToken);
 
                 // 5. Determine if disconnect is needed
                 if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"

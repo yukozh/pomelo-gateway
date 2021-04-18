@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Http
 {
@@ -16,6 +17,8 @@ namespace Pomelo.Net.Gateway.Http
         public HttpTunnelContextPart Request { get; private set; } = new HttpTunnelContextPart { HttpAction = HttpAction.Request };
 
         public HttpTunnelContextPart Response { get; private set; } = new HttpTunnelContextPart { HttpAction = HttpAction.Response };
+
+        public StreamTunnelContext StreamTunnelContext { get; set; }
     }
 
     public class HttpTunnelContextPart

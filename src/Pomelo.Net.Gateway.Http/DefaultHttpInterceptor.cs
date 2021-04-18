@@ -1,4 +1,7 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +16,8 @@ namespace Pomelo.Net.Gateway.Http
             HttpTunnelContext context, 
             CancellationToken cancellationToken = default)
         {
-            await context.RequestHeaders.WriteToStreamAsync(
-                context.RequestDestinationStream, 
+            await context.Request.Headers.WriteToStreamAsync(
+                context.Request.DestinationStream, 
                 HttpAction.Request, 
                 cancellationToken);
         }
@@ -25,18 +28,57 @@ namespace Pomelo.Net.Gateway.Http
         {
             using (var buffer = MemoryPool<byte>.Shared.Rent(BufferSize))
             {
-                while (true)
+                if (context.Request.Headers.ContentLength >= 0 
+                    || context.Request.Headers.Method.ToLower() == "get") // Request with Content-Length, GET request does not need that header
                 {
-                    var length = await context.RequestSourceStream.ReadAsync(buffer.Memory);
-                    if (length == 0)
+                    var count = 0;
+                    while (count < context.Request.Headers.ContentLength)
                     {
-                        break;
+                        var read = await context.Request.SourceStream.ReadAsync(buffer.Memory, cancellationToken);
+                        if (read == 0)
+                        {
+                            throw new IOException("Unexpected EOF of stream");
+                        }
+                        await context.Request.DestinationStream.WriteAsync(buffer.Memory.Slice(0, read), cancellationToken);
+                        count += read;
                     }
-                    await context.RequestDestinationStream.WriteAsync(buffer.Memory.Slice(0, length), cancellationToken);
-                    if (context.RequestHeaders.Contains("content-length") && context.RequestHeaders.ContentLength >= length)
+                }
+                else if (context.Request.Headers.ContentLength == -1
+                    && context.Request.Headers.TransferEncoding != null
+                    && context.Request.Headers.TransferEncoding.Any(x => x.ToLower() == "chunked"))
+                {
+                    using (var lengthBuffer = MemoryPool<byte>.Shared.Rent(4))
                     {
-                        break;
+                        var _lengthBuffer = lengthBuffer.Memory.Slice(0, 4);
+                        while (true)
+                        {
+                            // Chunk header
+                            await context.Request.SourceStream.ReadExAsync(_lengthBuffer, cancellationToken);
+                            await context.Request.DestinationStream.WriteAsync(_lengthBuffer, cancellationToken);
+
+                            // Chunk body
+                            var length = BitConverter.ToUInt16(_lengthBuffer.Slice(0, 2).Span);
+                            var count = 0;
+                            while (count < length + 2)
+                            {
+                                var read = await context.Request.SourceStream.ReadAsync(buffer.Memory, cancellationToken);
+                                await context.Request.DestinationStream.WriteAsync(buffer.Memory.Slice(0, read), cancellationToken);
+                                if (read == 0)
+                                {
+                                    throw new IOException("Unexpected EOF of stream");
+                                }
+                                count += read;
+                            }
+                            if (length == 0)
+                            {
+                                break;
+                            }
+                        }
                     }
+                }
+                else
+                {
+                    throw new NotSupportedException();
                 }
             }
         }
@@ -45,8 +87,8 @@ namespace Pomelo.Net.Gateway.Http
             HttpTunnelContext context,
             CancellationToken cancellationToken = default)
         {
-            await context.ResponseHeaders.WriteToStreamAsync(
-                context.ResponseDestinationStream,
+            await context.Response.Headers.WriteToStreamAsync(
+                context.Response.DestinationStream,
                 HttpAction.Response, 
                 cancellationToken);
         }
@@ -57,18 +99,56 @@ namespace Pomelo.Net.Gateway.Http
         {
             using (var buffer = MemoryPool<byte>.Shared.Rent(BufferSize))
             {
-                while (true)
+                if (context.Response.Headers.ContentLength >= 0) // Response with Content-Length
                 {
-                    var length = await context.ResponseSourceStream.ReadAsync(buffer.Memory);
-                    if (length == 0)
+                    var count = 0;
+                    while (count < context.Response.Headers.ContentLength)
                     {
-                        break;
+                        var read = await context.Response.SourceStream.ReadAsync(buffer.Memory, cancellationToken);
+                        if (read == 0)
+                        {
+                            throw new IOException("Unexpected EOF of stream");
+                        }
+                        await context.Response.DestinationStream.WriteAsync(buffer.Memory.Slice(0, read), cancellationToken);
+                        count += read;
                     }
-                    await context.ResponseDestinationStream.WriteAsync(buffer.Memory.Slice(0, length), cancellationToken);
-                    if (context.ResponseHeaders.Contains("content-length") && context.ResponseHeaders.ContentLength >= length)
+                }
+                else if (context.Response.Headers.ContentLength == -1
+                    && context.Request.Headers.TransferEncoding != null
+                    && context.Response.Headers.TransferEncoding.Any(x => x.ToLower() == "chunked"))
+                {
+                    using (var lengthBuffer = MemoryPool<byte>.Shared.Rent(4))
                     {
-                        break;
+                        var _lengthBuffer = lengthBuffer.Memory.Slice(0, 4);
+                        while (true)
+                        {
+                            // Chunk header
+                            await context.Response.SourceStream.ReadExAsync(_lengthBuffer, cancellationToken);
+                            await context.Response.DestinationStream.WriteAsync(_lengthBuffer, cancellationToken);
+
+                            // Chunk body
+                            var length = BitConverter.ToUInt16(_lengthBuffer.Slice(0, 2).Span);
+                            var count = 0;
+                            while (count < length + 2)
+                            {
+                                var read = await context.Response.SourceStream.ReadAsync(buffer.Memory, cancellationToken);
+                                await context.Response.DestinationStream.WriteAsync(buffer.Memory.Slice(0, read), cancellationToken);
+                                if (read == 0)
+                                {
+                                    throw new IOException("Unexpected EOF of stream");
+                                }
+                                count += read;
+                            }
+                            if (length == 0)
+                            {
+                                break;
+                            }
+                        }
                     }
+                }
+                else
+                {
+                    throw new NotSupportedException();
                 }
             }
         }

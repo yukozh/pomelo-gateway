@@ -33,40 +33,45 @@ namespace Pomelo.Net.Gateway.Http
                 return;
             }
 
-            var httpContext = FindOrCreateHttpTunnelContextCreated(context);
-            if (httpContext.ResponseSourceStream == null)
+            while (true)
             {
-                httpContext.ResponseSourceStream = rightToTunnelStream;
-            }
-            if (httpContext.ResponseDestinationStream == null)
-            {
-                httpContext.ResponseDestinationStream = tunnelToLeftStream;
-            }
+                // 1. Prepare context
+                var httpContext = FindOrCreateHttpTunnelContextCreated(context);
+                httpContext.Response.SourceStream = rightToTunnelStream;
+                httpContext.Response.DestinationStream = tunnelToLeftStream;
 
-            // 1. Get Headers
-            httpContext.ResponseHeaders = new HttpHeader();
-            await httpContext.ResponseHeaders.ParseHeaderAsync(rightToTunnelStream, HttpAction.Response);
+                // 2. Get Headers
+                httpContext.Response.Headers = new HttpHeader();
+                await httpContext.Response.Headers.ParseHeaderAsync(rightToTunnelStream, HttpAction.Response);
 
-            // 2. Find Interceptor
-            var interceptors = services.GetServices<IHttpInterceptor>();
-            IHttpInterceptor interceptor = null;
-            foreach (var _interceptor in interceptors)
-            {
-                if (_interceptor.CanIntercept(httpContext.ResponseHeaders, HttpAction.Response))
+                // 3. Find Interceptor
+                var interceptors = services.GetServices<IHttpInterceptor>();
+                IHttpInterceptor interceptor = null;
+                foreach (var _interceptor in interceptors)
                 {
-                    interceptor = _interceptor;
+                    if (_interceptor.CanIntercept(httpContext.Response.Headers, HttpAction.Response))
+                    {
+                        interceptor = _interceptor;
+                        break;
+                    }
+                }
+
+                // 4. Backward Response
+                if (interceptor == null)
+                {
+                    throw new NotSupportedException("This stream is not supported");
+                }
+                await interceptor.BackwardResponseAsync(
+                    httpContext,
+                    cancellationToken);
+
+                // 5. Determine if disconnect is needed
+                if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0"
+                    || httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                {
                     break;
                 }
             }
-
-            // 3. Backward Response
-            if (interceptor == null)
-            {
-                throw new NotSupportedException("This stream is not supported");
-            }
-            await interceptor.BackwardResponseAsync(
-                httpContext, 
-                cancellationToken);
         }
 
         public async ValueTask ForwardAsync(
@@ -80,42 +85,47 @@ namespace Pomelo.Net.Gateway.Http
                 return;
             }
 
-            var httpContext = FindOrCreateHttpTunnelContextCreated(context);
-            httpContext.ConnectionId = context.ConnectionId;
-            if (httpContext.RequestSourceStream == null)
+            while (true)
             {
-                httpContext.RequestSourceStream = leftToTunnelStream;
-            }
-            if (httpContext.RequestDestinationStream == null)
-            {
-                httpContext.RequestDestinationStream = tunnelToRightStream;
-            }
+                // 1. Prepare context
+                var httpContext = FindOrCreateHttpTunnelContextCreated(context);
+                httpContext.ConnectionId = context.ConnectionId;
+                httpContext.Request.SourceStream = leftToTunnelStream;
+                httpContext.Request.DestinationStream = tunnelToRightStream;
 
-            // 1. Get Headers
-            httpContext.RequestHeaders = new HttpHeader();
-            var result = await httpContext.RequestHeaders.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
+                // 2. Get Headers
+                httpContext.Request.Headers = new HttpHeader();
+                var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
 
-            // 2. Find Interceptor
-            var interceptors = services.GetServices<IHttpInterceptor>();
-            IHttpInterceptor interceptor = null;
-            foreach (var _interceptor in interceptors)
-            {
-                if (_interceptor.CanIntercept(httpContext.RequestHeaders, HttpAction.Request))
+                // 3. Find Interceptor
+                var interceptors = services.GetServices<IHttpInterceptor>();
+                IHttpInterceptor interceptor = null;
+                foreach (var _interceptor in interceptors)
                 {
-                    interceptor = _interceptor;
+                    if (_interceptor.CanIntercept(httpContext.Request.Headers, HttpAction.Request))
+                    {
+                        interceptor = _interceptor;
+                        break;
+                    }
+                }
+
+                if (interceptor == null)
+                {
+                    throw new NotSupportedException("This stream is not supported");
+                }
+
+                // 4. Forward Request
+                await interceptor.ForwardRequestAsync(
+                    httpContext,
+                    cancellationToken);
+
+                // 5. Determine if disconnect is needed
+                if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0"
+                    || httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                {
                     break;
                 }
             }
-
-            if (interceptor == null)
-            {
-                throw new NotSupportedException("This stream is not supported");
-            }
-
-            // 3. Forward Request
-            await interceptor.ForwardRequestAsync(
-                httpContext, 
-                cancellationToken);
         }
 
         private HttpTunnelContext FindOrCreateHttpTunnelContextCreated(StreamTunnelContext context)

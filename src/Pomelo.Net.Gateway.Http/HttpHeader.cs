@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,8 +26,10 @@ namespace Pomelo.Net.Gateway.Http
         public Dictionary<string, string> HeaderCollection => fields;
         public string Host => GetHeaderField("host");
         public int ContentLength => Convert.ToInt32(GetHeaderField("content-length") ?? "-1");
+        public IEnumerable<string> TransferEncoding => GetHeaderFields("transfer-encoding");
         public string UserAgent => GetHeaderField("user-agent");
         public string ContentType => GetHeaderField("content-type");
+        public string ContentEncoding => GetHeaderField("content-encoding");
         public string Accept => GetHeaderField("accept");
         public string AcceptEncoding => GetHeaderField("accept-encoding");
         public string AcceptLanguage => GetHeaderField("accept-language");
@@ -35,6 +38,7 @@ namespace Pomelo.Net.Gateway.Http
         public string Authorization => GetHeaderField("authorization");
 
         private string GetHeaderField(string key) => fields.ContainsKey(key) ? fields[key] : null;
+        private IEnumerable<string> GetHeaderFields(string key) => fields.ContainsKey(key) ? fields[key].Split(',').Select(x => x.Trim()): null;
 
         public HttpHeader()
         {
@@ -46,6 +50,38 @@ namespace Pomelo.Net.Gateway.Http
         }
 
         public bool Contains(string key) => fields.ContainsKey(key);
+
+        public bool TryAdd(string key, string value)
+        {
+            if (Contains(key))
+            {
+                return false;
+            }
+            HeaderCollection.Add(key, value);
+            return true;
+        }
+
+        public void AddOrUpdate(string key, string value)
+        { 
+            if (Contains(key))
+            {
+                HeaderCollection[key] = value;
+            }
+            else
+            {
+                HeaderCollection.Add(key, value);
+            }
+        }
+
+        public bool TryRemove(string key)
+        {
+            if (Contains(key))
+            {
+                HeaderCollection.Remove(key);
+                return true;
+            }
+            return false;
+        }
 
         public async ValueTask<bool> ParseHeaderAsync(Stream stream, HttpAction type)
         {

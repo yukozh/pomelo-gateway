@@ -108,15 +108,15 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
 
                     // Start forwarding
-                    await tunnelContext.Tunnel.BackwardAsync(
+                    await tunnelContext.Tunnel.ForwardAsync(
                         tunnelContext.GetHeaderStream(),
                         tunnelContext.LeftClient.GetStream(),
                         tunnelContext);
 
                     await Task.WhenAll(new[]
                     {
-                        tunnelContext.Tunnel.ForwardAsync(tunnelContext.LeftClient.GetStream(), tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
-                        tunnelContext.Tunnel.BackwardAsync(tunnelContext.RightClient.GetStream(), tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
+                        tunnelContext.Tunnel.BackwardAsync(tunnelContext.LeftClient.GetStream(), tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
+                        tunnelContext.Tunnel.ForwardAsync(tunnelContext.RightClient.GetStream(), tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
                     });
                     
                 }

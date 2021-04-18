@@ -32,6 +32,8 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public IPEndPoint? RightEndpoint => (IPEndPoint?)RightClient?.Client?.RemoteEndPoint;
 
+        public event Action<Guid> OnContextDisposed;
+
         public DateTime LastCommunicationTimeUtc { get; set; } = DateTime.UtcNow;
         public DateTime CreatedTimeUtc => createdTime;
         public int HeaderLength { get; set; }
@@ -98,6 +100,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             RightClient?.Close();
             RightClient?.Dispose();
             RightClient = null;
+            OnContextDisposed?.Invoke(this.connectionId);
         }
     }
 }

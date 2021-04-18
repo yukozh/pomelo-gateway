@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -102,21 +103,18 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     tunnelContext.LeftClient = new TcpClient();
                     tunnelContext.LeftClient.ReceiveTimeout = 1000 * 30;
                     tunnelContext.LeftClient.SendTimeout = 1000 * 30;
-                    // Right: Server
-                    // Left: Destination
+                    // Right: Tunnel <-> Client
+                    // Left: Destination Server <-> Tunnel
                     var destEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
                     await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
 
                     // Start forwarding
-                    await tunnelContext.Tunnel.ForwardAsync(
-                        tunnelContext.GetHeaderStream(),
-                        tunnelContext.LeftClient.GetStream(),
-                        tunnelContext);
-
+                    var concatStream = new ConcatStream();
+                    concatStream.Join(tunnelContext.GetHeaderStream(), tunnelContext.RightClient.GetStream());
                     await Task.WhenAll(new[]
                     {
                         tunnelContext.Tunnel.BackwardAsync(tunnelContext.LeftClient.GetStream(), tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
-                        tunnelContext.Tunnel.ForwardAsync(tunnelContext.RightClient.GetStream(), tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
+                        tunnelContext.Tunnel.ForwardAsync(concatStream, tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
                     });
                     
                 }

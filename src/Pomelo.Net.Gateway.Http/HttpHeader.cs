@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pomelo.Net.Gateway.Http
 {
-    public enum HttpHeaderType
+    public enum HttpAction
     { 
         Request,
         Response
@@ -15,7 +16,7 @@ namespace Pomelo.Net.Gateway.Http
     public class HttpHeader
     {
         private Dictionary<string, string> fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public HttpHeaderType Type { get; set; }
+        public HttpAction Type { get; set; }
         public string Method { get; set; }
         public string Url { get; set; }
         public string Protocol { get; set; }
@@ -39,19 +40,20 @@ namespace Pomelo.Net.Gateway.Http
         {
         }
 
-        public HttpHeader(Stream stream, HttpHeaderType type)
+        public HttpHeader(Stream stream, HttpAction type)
         {
             ParseHeaderAsync(stream, type).GetAwaiter().GetResult();
         }
 
-        public async ValueTask ParseHeaderAsync(Stream stream, HttpHeaderType type)
+        public bool Contains(string key) => fields.ContainsKey(key);
+
+        public async ValueTask<bool> ParseHeaderAsync(Stream stream, HttpAction type)
         {
             var firstLine = true;
-            var sr = new StreamReader(stream);
             while (true)
             {
-                var line = await sr.ReadLineAsync();
-                if (line == null)
+                var line = await stream.ReadLineExAsync();
+                if (string.IsNullOrEmpty(line))
                 {
                     break;
                 }
@@ -62,9 +64,9 @@ namespace Pomelo.Net.Gateway.Http
                     var index1 = line.IndexOf(' ');
                     if (index1 == -1)
                     {
-                        throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                        return false;
                     }
-                    if (type == HttpHeaderType.Request)
+                    if (type == HttpAction.Request)
                     {
                         Method = line.Substring(0, index1).ToUpper();
                     }
@@ -72,15 +74,15 @@ namespace Pomelo.Net.Gateway.Http
                     {
                         Protocol = line.Substring(0, index1).ToUpper();
                     }
-                    var index2 = line.LastIndexOf(' ');
+                    var index2 = line.IndexOf(' ', index1 + 1);
                     if (index1 == index2)
                     {
                         if (index1 == -1)
                         {
-                            throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                            return false;
                         }
                     }
-                    if (type == HttpHeaderType.Request)
+                    if (type == HttpAction.Request)
                     {
                         Url = line.Substring(index1, index2 - index1).Trim();
                         Protocol = line.Substring(index2).Trim();
@@ -100,32 +102,59 @@ namespace Pomelo.Net.Gateway.Http
                 var index3 = line.IndexOf(':');
                 if (index3 == -1)
                 {
-                    throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                    return false;
                 }
                 var key = line.Substring(0, index3);
                 var value = line.Substring(index3 + 1);
                 fields.Add(key, value.TrimStart());
             }
-            if (Method == null || Url == null || Protocol == null)
+            if (type == HttpAction.Request && (Method == null || Url == null || Protocol == null))
             {
-                throw new InvalidDataException("Invalid first line of stream, maybe it is not an HTTP stream.");
+                return false;
             }
+            else if (type == HttpAction.Response && (Protocol == null || StatusCode == default || StatusCodeString == null))
+            {
+                return false;
+            }
+            return true;
         }
 
-        public async ValueTask WriteToStream(Stream stream)
+        public async ValueTask WriteToStreamAsync(
+            Stream stream, 
+            HttpAction type,
+            CancellationToken cancellationToken = default)
         {
-            var sw = new StreamWriter(stream);
-            await sw.WriteLineAsync($"{Method} {Url} {Protocol}");
-            foreach (var field in fields)
+            using (var sw = new StreamWriter(stream, Encoding.ASCII, -1, true))
             {
-                await sw.WriteLineAsync($"{field.Key}: {field.Value}");
+                if (type == HttpAction.Request)
+                {
+                    await sw.WriteLineAsync(new StringBuilder($"{Method} {Url} {Protocol}"), cancellationToken);
+                }
+                else
+                {
+                    await sw.WriteLineAsync(new StringBuilder($"{Protocol} {StatusCode} {StatusCodeString}"), cancellationToken);
+                }
+                foreach (var field in fields)
+                {
+                    await sw.WriteLineAsync(new StringBuilder($"{field.Key}: {field.Value}"), cancellationToken);
+                }
+                await sw.WriteLineAsync(new StringBuilder(""), cancellationToken);
+                await sw.FlushAsync();
             }
         }
 
-        public int WriteToMemory(Memory<byte> buffer)
+        public int WriteToMemory(HttpAction type, Memory<byte> buffer)
         {
             var count = 0;
-            count += Encoding.ASCII.GetBytes($"{Method} {Url} {Protocol}\r\n", buffer.Slice(count).Span);
+
+            if (type == HttpAction.Request)
+            {
+                count += Encoding.ASCII.GetBytes($"{Method} {Url} {Protocol}\r\n", buffer.Slice(count).Span);
+            } 
+            else
+            {
+                count += Encoding.ASCII.GetBytes($"{Protocol} {StatusCode} {StatusCodeString}\r\n", buffer.Slice(count).Span);
+            }
             foreach (var field in fields)
             {
                 count += Encoding.ASCII.GetBytes($"{field.Key}: {field.Value}\r\n", buffer.Slice(count).Span);

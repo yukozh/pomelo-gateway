@@ -22,10 +22,10 @@ namespace Pomelo.Net.Gateway.Http
             CancellationToken cancellationToken = default)
         {
             var header = new HttpHeader();
-            await header.ParseHeaderAsync(stream, HttpHeaderType.Request);
+            await header.ParseHeaderAsync(stream, HttpAction.Request);
             var destination = await FindDestinationByHeadersAsync(header, from, cancellationToken);
-            BeforeBuildHeaderStreamAsync(header, from, cancellationToken);
-            var count = header.WriteToMemory(buffer);
+            await BeforeBuildHeaderStreamAsync(header, from, cancellationToken);
+            var count = header.WriteToMemory(HttpAction.Request, buffer);
             return new RouteResult
             {
                 HeaderLength = count,

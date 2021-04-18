@@ -10,7 +10,9 @@ using Microsoft.Extensions.Hosting;
 using Pomelo.Net.Gateway;
 using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
+using Pomelo.Net.Gateway.Http;
 using Pomelo.Net.Gateway.Router;
+using Pomelo.Net.Gateway.Tunnel;
 using Pomelo.WebSlotGateway.Models;
 using Pomelo.WebSlotGateway.Utils;
 
@@ -19,7 +21,7 @@ namespace Pomelo.WebSlotGateway
     public class Startup
     {
         public static Guid RouterId = Guid.Parse("374c20bc-e730-4da3-8c2f-7e570da35268");
-        public static Guid TunnelId = Guid.Parse("4048bf29-0997-4f9d-827b-fe29ceb0e4fe");
+        public static Guid TunnelId = Guid.Parse("5237e1e5-5f1a-4df0-a716-2f3dbac2a3ff");
 
         public Startup(IConfiguration configuration)
         {
@@ -34,6 +36,9 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<ConfigurationHelper>();
             services.AddSingleton<HealthCheckerProcesser>();
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
+            services.AddSingleton<IStreamTunnel, HttpTunnel>();
+            services.AddSingleton<IHttpInterceptor, TextHttpInterceptor>();
+            services.AddSingleton<IHttpInterceptor, DefaultHttpInterceptor>();
             services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),

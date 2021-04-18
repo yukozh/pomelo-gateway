@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +46,9 @@ namespace Pomelo.Net.Gateway.Http
                 await httpContext.Response.Headers.ParseHeaderAsync(rightToTunnelStream, HttpAction.Response);
 
                 // 3. Find Interceptor
-                var interceptors = services.GetServices<IHttpInterceptor>();
+                var interceptors = services
+                    .GetServices<IHttpInterceptor>()
+                    .Reverse();
 
                 // 4. Backward Response
                 var handled = false;
@@ -98,7 +101,9 @@ namespace Pomelo.Net.Gateway.Http
                 var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
 
                 // 3. Find Interceptor
-                var interceptors = services.GetServices<IHttpInterceptor>();
+                var interceptors = services
+                    .GetServices<IHttpInterceptor>()
+                    .Reverse();
 
                 // 4. Forward Request
                 var handled = false;

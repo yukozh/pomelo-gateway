@@ -37,8 +37,8 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<HealthCheckerProcesser>();
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
             services.AddSingleton<IStreamTunnel, HttpTunnel>();
-            services.AddSingleton<IHttpInterceptor, TextHttpInterceptor>();
             services.AddSingleton<IHttpInterceptor, DefaultHttpInterceptor>();
+            services.AddSingleton<IHttpInterceptor, TextHttpInterceptor>();
             services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),

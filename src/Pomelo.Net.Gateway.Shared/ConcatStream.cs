@@ -6,6 +6,7 @@ namespace System.IO
     {
         private Queue<Stream> readStreams = new Queue<Stream>();
         private Queue<Stream> writeStreams = new Queue<Stream>();
+        private long position = 0;
 
         public override bool CanRead => readStreams.Peek().CanRead;
 
@@ -15,7 +16,11 @@ namespace System.IO
 
         public override long Length => readStreams.Peek().Length;
 
-        public override long Position { get; set; }
+        public override long Position 
+        { 
+            get => position; 
+            set => throw new NotSupportedException();
+        }
 
         public override void Flush()
         {
@@ -41,7 +46,7 @@ namespace System.IO
                     readStreams.Dequeue();
                     return Read(buffer, offset, count);
                 }
-                Position += _count;
+                position += _count;
                 return _count;
             }
             catch 

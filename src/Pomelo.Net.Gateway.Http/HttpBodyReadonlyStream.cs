@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Text;
 
 namespace Pomelo.Net.Gateway.Http
 {
@@ -13,7 +14,7 @@ namespace Pomelo.Net.Gateway.Http
     public class HttpBodyReadonlyStream : Stream, IDisposable
     {
         private const int MaxChunkBodySize = 2048;
-        private const int TempBufferSize = MaxChunkBodySize + 8;
+        private const int TempBufferSize = MaxChunkBodySize + 10;
 
         private long length;
         private long position = 0;
@@ -65,9 +66,10 @@ namespace Pomelo.Net.Gateway.Http
         private (int StartIndex, int Count) ReadFromTempbuffer(int count)
         {
             var bytesToRead = Math.Min(tempStoredBytes, count);
-            tempReadPos += bytesToRead;
             tempStoredBytes -= bytesToRead;
-            return (tempReadPos, bytesToRead);
+            var ret = (tempReadPos, bytesToRead);
+            tempReadPos += bytesToRead;
+            return ret;
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -90,10 +92,8 @@ namespace Pomelo.Net.Gateway.Http
                     // Read a chunk
                     tempReadPos = 0;
                     tempStoredBytes = 0;
-                    baseStream.ReadEx(temp, 0, 4);
-                    tempStoredBytes += 4;
-                    position += 4;
-                    var chunkLength = BitConverter.ToUInt16(temp, 0);
+                    var chunkHeaderLine = baseStream.ReadLineExAsync(default).GetAwaiter().GetResult();
+                    var chunkLength = Convert.ToInt32(chunkHeaderLine);
                     if (chunkLength == 0)
                     {
                         streamEnd = true;
@@ -104,10 +104,10 @@ namespace Pomelo.Net.Gateway.Http
                         {
                             throw new InvalidDataException("Chunk size is too large");
                         }
-                        baseStream.ReadEx(temp, 4, chunkLength);
+                        baseStream.ReadEx(temp, 0, chunkLength);
                         tempStoredBytes += chunkLength;
-                        position += chunkLength;
                     }
+                    baseStream.ReadEx(temp, MaxChunkBodySize, 2);
                 }
 
                 // Send chunk data to destination buffer
@@ -115,6 +115,7 @@ namespace Pomelo.Net.Gateway.Http
                 {
                     var pos = ReadFromTempbuffer(count);
                     Buffer.BlockCopy(temp, pos.StartIndex, buffer, offset, pos.Count);
+                    position += pos.Count;
                     return pos.Count;
                 }
                 else

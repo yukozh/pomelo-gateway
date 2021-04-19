@@ -37,6 +37,7 @@ namespace Pomelo.Net.Gateway.Http
         public string Referer => GetHeaderField("referer");
         public string Origin => GetHeaderField("origin");
         public string Authorization => GetHeaderField("authorization");
+        public string Upgrade => GetHeaderField("upgrade");
 
         private string GetHeaderField(string key) => fields.ContainsKey(key) ? fields[key] : null;
         private IEnumerable<string> GetHeaderFields(string key) => fields.ContainsKey(key) ? fields[key].Split(',').Select(x => x.Trim()): null;

@@ -8,7 +8,8 @@ namespace Pomelo.Net.Gateway.Http
     { 
         FixedLength,
         Chunked,
-        HTTP1_0
+        WebSocket,
+        HTTP1_0,
     }
 
     public class HttpBodyReadonlyStream : Stream, IDisposable
@@ -89,7 +90,8 @@ namespace Pomelo.Net.Gateway.Http
                 position += read;
                 return read;
             }
-            else if (type == HttpBodyType.HTTP1_0)
+            else if (type == HttpBodyType.HTTP1_0 
+                || type == HttpBodyType.WebSocket)
             {
                 var read = baseStream.Read(buffer, offset, count);
                 position += read;

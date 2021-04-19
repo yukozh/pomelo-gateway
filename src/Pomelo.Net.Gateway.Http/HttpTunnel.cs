@@ -57,6 +57,12 @@ namespace Pomelo.Net.Gateway.Http
                         httpContext.Response.Body = new HttpBodyReadonlyStream(
                             httpContext.Response.SourceStream, HttpBodyType.HTTP1_0);
                     }
+                    else if (httpContext.Response.Headers.StatusCode == 101
+                        && httpContext.Response.Headers.Upgrade?.ToLower() == "websocket")
+                    {
+                        httpContext.Response.Body = new HttpBodyReadonlyStream(
+                            httpContext.Response.SourceStream, HttpBodyType.WebSocket);
+                    }
                     else if (httpContext.Response.Headers.TransferEncoding != null
                         && httpContext.Response.Headers.TransferEncoding
                             .Any(x => x.ToLower() == "chunked"))

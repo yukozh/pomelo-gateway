@@ -43,5 +43,23 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Assert 3
             Assert.Equal("Hello World", result3);
         }
+
+        [Fact]
+        public async Task Http1_0Test()
+        {
+            // Arrange
+            var testData = "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nHello World\r\n\r\n";
+            var sourceStream = new MemoryStream(Encoding.ASCII.GetBytes(testData));
+
+            // Act
+            var header = new HttpHeader();
+            await header.ParseHeaderAsync(sourceStream, HttpAction.Response);
+            var stream = new HttpBodyReadonlyStream(sourceStream, HttpBodyType.HTTP1_0);
+            var sr = new StreamReader(stream);
+            var result = sr.ReadToEnd();
+
+            // Assert
+            Assert.Equal("Hello World\r\n\r\n", result, ignoreLineEndingDifferences: false);
+        }
     }
 }

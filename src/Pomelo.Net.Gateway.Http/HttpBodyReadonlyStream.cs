@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
-using System.Text;
 
 namespace Pomelo.Net.Gateway.Http
 {
     public enum HttpBodyType
     { 
         FixedLength,
-        Chunked
+        Chunked,
+        HTTP1_0
     }
 
     public class HttpBodyReadonlyStream : Stream, IDisposable
@@ -25,9 +25,9 @@ namespace Pomelo.Net.Gateway.Http
         private int tempStoredBytes = 0;
         private bool streamEnd = false;
 
-        public HttpBodyReadonlyStream(Stream baseStream, long length)
+        public HttpBodyReadonlyStream(Stream baseSourceStream, long length)
         {
-            this.baseStream = baseStream;
+            this.baseStream = baseSourceStream;
             this.length = length;
             this.type = HttpBodyType.FixedLength;
             if (length <= 0)
@@ -36,11 +36,15 @@ namespace Pomelo.Net.Gateway.Http
                 this.temp = ArrayPool<byte>.Shared.Rent(TempBufferSize);
             }
         }
-        public HttpBodyReadonlyStream(Stream baseStream)
+        public HttpBodyReadonlyStream(Stream baseStream, HttpBodyType type = HttpBodyType.Chunked)
         {
+            if (type == HttpBodyType.FixedLength)
+            {
+                throw new InvalidOperationException("Please use HttpBodyReadonlyStream(Stream, long) to init fixed length body");
+            }
             this.baseStream = baseStream;
             this.length = -1;
-            this.type = HttpBodyType.Chunked;
+            this.type = type;
             this.temp = ArrayPool<byte>.Shared.Rent(TempBufferSize);
         }
 
@@ -85,9 +89,15 @@ namespace Pomelo.Net.Gateway.Http
                 position += read;
                 return read;
             }
+            else if (type == HttpBodyType.HTTP1_0)
+            {
+                var read = baseStream.Read(buffer, offset, count);
+                position += read;
+                return read;
+            }
             else
             {
-                if (!streamEnd && tempStoredBytes == 0) 
+                if (!streamEnd && tempStoredBytes == 0)
                 {
                     // Read a chunk
                     tempReadPos = 0;

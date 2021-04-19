@@ -52,7 +52,12 @@ namespace Pomelo.Net.Gateway.Http
                         HttpAction.Response);
 
                     // 3. Build Body Stream
-                    if (httpContext.Response.Headers.TransferEncoding != null 
+                    if (httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                    {
+                        httpContext.Response.Body = new HttpBodyReadonlyStream(
+                            httpContext.Response.SourceStream, HttpBodyType.HTTP1_0);
+                    }
+                    else if (httpContext.Response.Headers.TransferEncoding != null
                         && httpContext.Response.Headers.TransferEncoding
                             .Any(x => x.ToLower() == "chunked"))
                     {
@@ -130,7 +135,12 @@ namespace Pomelo.Net.Gateway.Http
                     var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
 
                     // 3. Build body stream
-                    if (httpContext.Request.Headers.TransferEncoding != null 
+                    if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0")
+                    {
+                        httpContext.Request.Body = new HttpBodyReadonlyStream(
+                            httpContext.Request.SourceStream, HttpBodyType.HTTP1_0);
+                    }
+                    else if (httpContext.Request.Headers.TransferEncoding != null 
                         && httpContext.Request.Headers.TransferEncoding
                             .Any(x => x.ToLower() == "chunked"))
                     {

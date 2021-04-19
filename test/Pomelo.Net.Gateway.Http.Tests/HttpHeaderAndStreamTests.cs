@@ -6,13 +6,13 @@ using Xunit;
 
 namespace Pomelo.Net.Gateway.Http.Tests
 {
-    public class UnitTest1
+    public class HttpHeaderAndStreamTests
     {
         [Fact]
         public async Task ChunkedBodyTest()
         {
             // Arrange
-            var testData = "7\r\nMozilla\r\n9\r\nDeveloper\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n6\r\nPomelo\r\n10\r\nFoundation\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World";
+            var testData = "6\r\nDotNet\r\n9\r\nDeveloper\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n6\r\nPomelo\r\n10\r\nFoundation\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World";
             var sourceStream = new MemoryStream(Encoding.ASCII.GetBytes(testData));
 
             // Act 1
@@ -21,7 +21,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
             var result1 = sr1.ReadToEnd();
 
             // Assert 1
-            Assert.Equal("MozillaDeveloper", result1);
+            Assert.Equal("DotNetDeveloper", result1);
 
             // Act 2
             var header = new HttpHeader();

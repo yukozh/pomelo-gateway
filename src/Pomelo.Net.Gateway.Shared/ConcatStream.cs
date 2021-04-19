@@ -41,6 +41,7 @@ namespace System.IO
                     readStreams.Dequeue();
                     return Read(buffer, offset, count);
                 }
+                Position += _count;
                 return _count;
             }
             catch 

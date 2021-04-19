@@ -24,6 +24,21 @@ namespace System.IO
             }
         }
 
+        public static void ReadEx(this Stream stream, byte[] buffer, int offset, int count)
+        {
+            var len = 0;
+            var bufferSize = count;
+            while (len < bufferSize)
+            {
+                var read = stream.Read(buffer, len + offset, bufferSize - len);
+                if (read == 0)
+                {
+                    throw new IOException($"Unexpected Stream End. Expected {bufferSize} bytes, Actual {len} bytes.");
+                }
+                len += read;
+            }
+        }
+
         public static async ValueTask<string> ReadLineExAsync(this Stream stream, CancellationToken cancellationToken = default)
         {
             var sb = new StringBuilder();

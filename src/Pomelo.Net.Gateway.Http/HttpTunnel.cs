@@ -13,7 +13,8 @@ namespace Pomelo.Net.Gateway.Http
     {
         private IServiceProvider services;
         private const int BufferSize = 2048;
-        private ConcurrentDictionary<Guid, HttpTunnelContext> contexts = new ConcurrentDictionary<Guid, HttpTunnelContext>();
+        private ConcurrentDictionary<Guid, HttpTunnelContext> contexts 
+            = new ConcurrentDictionary<Guid, HttpTunnelContext>();
         public Guid Id => Guid.Parse("5237e1e5-5f1a-4df0-a716-2f3dbac2a3ff");
         public string Name => "HTTP Tunnel";
 
@@ -40,38 +41,63 @@ namespace Pomelo.Net.Gateway.Http
                 httpContext.Response.SourceStream = rightToTunnelStream;
                 httpContext.Response.DestinationStream = tunnelToLeftStream;
                 httpContext.StreamTunnelContext = context;
+                httpContext.Response.Body?.Dispose();
 
-                // 2. Get Headers
-                httpContext.Response.Headers = new HttpHeader();
-                await httpContext.Response.Headers.ParseHeaderAsync(rightToTunnelStream, HttpAction.Response);
-
-                // 3. Find Interceptor
-                var interceptors = services
-                    .GetServices<IHttpInterceptor>()
-                    .Reverse();
-
-                // 4. Backward Response
-                var handled = false;
-                foreach (var interceptor in interceptors)
+                try
                 {
-                    if (await interceptor.BackwardResponseAsync(
-                        httpContext,
-                        cancellationToken))
+                    // 2. Get Headers
+                    httpContext.Response.Headers = new HttpHeader();
+                    await httpContext.Response.Headers.ParseHeaderAsync(
+                        rightToTunnelStream, 
+                        HttpAction.Response);
+
+                    // 3. Build Body Stream
+                    if (httpContext.Response.Headers.TransferEncoding != null 
+                        && httpContext.Response.Headers.TransferEncoding
+                            .Any(x => x.ToLower() == "chunked"))
                     {
-                        handled = true;
+                        httpContext.Response.Body = new HttpBodyReadonlyStream(
+                            httpContext.Response.SourceStream);
+                    }
+                    else if (httpContext.Response.Headers.ContentLength >= 0)
+                    {
+                        httpContext.Response.Body = new HttpBodyReadonlyStream(
+                            httpContext.Response.SourceStream,
+                            httpContext.Response.Headers.ContentLength);
+                    }
+
+                    // 4. Find Interceptor
+                    var interceptors = services
+                        .GetServices<IHttpInterceptor>()
+                        .Reverse();
+
+                    // 5. Backward Response
+                    var handled = false;
+                    foreach (var interceptor in interceptors)
+                    {
+                        if (await interceptor.BackwardResponseAsync(
+                            httpContext,
+                            cancellationToken))
+                        {
+                            handled = true;
+                            break;
+                        }
+                    }
+                    if (!handled)
+                    {
+                        throw new NotSupportedException("This stream is not supported");
+                    }
+
+                    // 6. Determine if disconnect is needed
+                    if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
+                        && httpContext.Response.Headers.Protocol.ToLower() != "http/1.0")
+                    {
                         break;
                     }
                 }
-                if (!handled)
+                finally
                 {
-                    throw new NotSupportedException("This stream is not supported");
-                }
-
-                // 5. Determine if disconnect is needed
-                if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive" 
-                    && httpContext.Response.Headers.Protocol.ToLower() != "http/1.0")
-                {
-                    break;
+                    httpContext?.Dispose();
                 }
             }
         }
@@ -95,38 +121,62 @@ namespace Pomelo.Net.Gateway.Http
                 httpContext.Request.SourceStream = leftToTunnelStream;
                 httpContext.Request.DestinationStream = tunnelToRightStream;
                 httpContext.StreamTunnelContext = context;
+                httpContext.Request.Body?.Dispose();
 
-                // 2. Get Headers
-                httpContext.Request.Headers = new HttpHeader();
-                var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
-
-                // 3. Find Interceptor
-                var interceptors = services
-                    .GetServices<IHttpInterceptor>()
-                    .Reverse();
-
-                // 4. Forward Request
-                var handled = false;
-                foreach (var interceptor in interceptors)
+                try
                 {
-                    if (await interceptor.ForwardRequestAsync(
-                        httpContext,
-                        cancellationToken))
+                    // 2. Get Headers
+                    httpContext.Request.Headers = new HttpHeader();
+                    var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
+
+                    // 3. Build body stream
+                    if (httpContext.Request.Headers.TransferEncoding != null 
+                        && httpContext.Request.Headers.TransferEncoding
+                            .Any(x => x.ToLower() == "chunked"))
                     {
-                        handled = true;
+                        httpContext.Request.Body = new HttpBodyReadonlyStream(
+                            httpContext.Request.SourceStream);
+                    }
+                    else if (httpContext.Request.Headers.ContentLength >= 0
+                        || httpContext.Request.Headers.Method.ToLower() == "get")
+                    {
+                        httpContext.Request.Body = new HttpBodyReadonlyStream(
+                            httpContext.Request.SourceStream,
+                            httpContext.Request.Headers.ContentLength);
+                    }
+
+                    // 4. Find Interceptor
+                    var interceptors = services
+                        .GetServices<IHttpInterceptor>()
+                        .Reverse();
+
+                    // 5. Forward Request
+                    var handled = false;
+                    foreach (var interceptor in interceptors)
+                    {
+                        if (await interceptor.ForwardRequestAsync(
+                            httpContext,
+                            cancellationToken))
+                        {
+                            handled = true;
+                            break;
+                        }
+                    }
+                    if (!handled)
+                    {
+                        throw new NotSupportedException("This stream is not supported");
+                    }
+
+                    // 6. Determine if disconnect is needed
+                    if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
+                        && httpContext.Request.Headers.Protocol.ToLower() != "http/1.0")
+                    {
                         break;
                     }
                 }
-                if (!handled)
+                finally
                 {
-                    throw new NotSupportedException("This stream is not supported");
-                }
-
-                // 5. Determine if disconnect is needed
-                if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
-                    && httpContext.Request.Headers.Protocol.ToLower() != "http/1.0")
-                {
-                    break;
+                    httpContext?.Dispose();
                 }
             }
         }

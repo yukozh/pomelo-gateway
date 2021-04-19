@@ -52,10 +52,13 @@ namespace Pomelo.Net.Gateway.Http
                         HttpAction.Response);
 
                     // 3. Build Body Stream
-                    if (httpContext.Response.Headers.Protocol.ToLower() == "http/1.0")
+                    if (httpContext.Request.Headers.ContentLength == -1
+                        && httpContext.Request.Headers.Connection == null
+                        || (httpContext.Request.Headers.Connection != null
+                        && httpContext.Request.Headers.Connection.ToLower() != "keep-alive"))
                     {
                         httpContext.Response.Body = new HttpBodyReadonlyStream(
-                            httpContext.Response.SourceStream, HttpBodyType.HTTP1_0);
+                            httpContext.Response.SourceStream, HttpBodyType.NonKeepAlive);
                     }
                     else if (httpContext.Response.Headers.StatusCode == 101
                         && httpContext.Response.Headers.Upgrade?.ToLower() == "websocket")
@@ -100,8 +103,7 @@ namespace Pomelo.Net.Gateway.Http
                     }
 
                     // 6. Determine if disconnect is needed
-                    if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
-                        && httpContext.Response.Headers.Protocol.ToLower() != "http/1.0")
+                    if (httpContext.Response.Body.Type == HttpBodyType.NonKeepAlive)
                     {
                         break;
                     }
@@ -141,10 +143,13 @@ namespace Pomelo.Net.Gateway.Http
                     var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
 
                     // 3. Build body stream
-                    if (httpContext.Request.Headers.Protocol.ToLower() == "http/1.0")
+                    if (httpContext.Request.Headers.ContentLength == -1
+                        && httpContext.Request?.Headers?.Connection == null
+                        || (httpContext.Request?.Headers?.Connection != null
+                        && httpContext.Request?.Headers?.Connection.ToLower() != "keep-alive"))
                     {
                         httpContext.Request.Body = new HttpBodyReadonlyStream(
-                            httpContext.Request.SourceStream, HttpBodyType.HTTP1_0);
+                            httpContext.Request.SourceStream, HttpBodyType.NonKeepAlive);
                     }
                     else if (httpContext.Request.Headers.TransferEncoding != null 
                         && httpContext.Request.Headers.TransferEncoding
@@ -184,8 +189,7 @@ namespace Pomelo.Net.Gateway.Http
                     }
 
                     // 6. Determine if disconnect is needed
-                    if (httpContext.Request.Headers.Connection.ToLower() == "keep-alive"
-                        && httpContext.Request.Headers.Protocol.ToLower() != "http/1.0")
+                    if (httpContext.Request.Body.Type == HttpBodyType.NonKeepAlive)
                     {
                         break;
                     }

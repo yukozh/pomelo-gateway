@@ -9,7 +9,7 @@ namespace Pomelo.Net.Gateway.Http
         FixedLength,
         Chunked,
         WebSocket,
-        HTTP1_0,
+        NonKeepAlive,
     }
 
     public class HttpBodyReadonlyStream : Stream, IDisposable
@@ -48,6 +48,8 @@ namespace Pomelo.Net.Gateway.Http
             this.type = type;
             this.temp = ArrayPool<byte>.Shared.Rent(TempBufferSize);
         }
+
+        public HttpBodyType Type => type;
 
         public override bool CanRead => true;
 
@@ -90,7 +92,7 @@ namespace Pomelo.Net.Gateway.Http
                 position += read;
                 return read;
             }
-            else if (type == HttpBodyType.HTTP1_0 
+            else if (type == HttpBodyType.NonKeepAlive 
                 || type == HttpBodyType.WebSocket)
             {
                 var read = baseStream.Read(buffer, offset, count);

@@ -53,7 +53,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Act
             var header = new HttpHeader();
             await header.ParseHeaderAsync(sourceStream, HttpAction.Response);
-            var stream = new HttpBodyReadonlyStream(sourceStream, HttpBodyType.HTTP1_0);
+            var stream = new HttpBodyReadonlyStream(sourceStream, HttpBodyType.NonKeepAlive);
             var sr = new StreamReader(stream);
             var result = sr.ReadToEnd();
 

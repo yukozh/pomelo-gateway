@@ -44,7 +44,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
         }
 
         [Fact]
-        public async Task Http1_0Test()
+        public async Task NonKeepAliveTest()
         {
             // Arrange
             var testData = "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nHello World\r\n\r\n";

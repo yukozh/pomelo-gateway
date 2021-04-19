@@ -31,6 +31,7 @@ namespace Pomelo.Net.Gateway.Http
         public string ContentType => GetHeaderField("content-type");
         public string ContentEncoding => GetHeaderField("content-encoding");
         public string Connection => GetHeaderField("connection");
+        public string KeepAlive => GetHeaderField("keep-alive");
         public string Accept => GetHeaderField("accept");
         public string AcceptEncoding => GetHeaderField("accept-encoding");
         public string AcceptLanguage => GetHeaderField("accept-language");
@@ -38,6 +39,24 @@ namespace Pomelo.Net.Gateway.Http
         public string Origin => GetHeaderField("origin");
         public string Authorization => GetHeaderField("authorization");
         public string Upgrade => GetHeaderField("upgrade");
+
+        public bool IsKeepAlive
+        {
+            get
+            { 
+                if (Connection == null && Protocol.ToLower() == "http/1.0")
+                {
+                    return false;
+                }
+
+                if (Connection.ToLower() != "keep-alive")
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
 
         private string GetHeaderField(string key) => fields.ContainsKey(key) ? fields[key] : null;
         private IEnumerable<string> GetHeaderFields(string key) => fields.ContainsKey(key) ? fields[key].Split(',').Select(x => x.Trim()): null;

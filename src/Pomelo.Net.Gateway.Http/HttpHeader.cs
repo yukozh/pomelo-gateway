@@ -43,7 +43,7 @@ namespace Pomelo.Net.Gateway.Http
         public bool IsKeepAlive
         {
             get
-            { 
+            {
                 if (Connection == null 
                     && Protocol.ToLower() == "http/1.0")
                 {

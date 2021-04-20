@@ -60,5 +60,28 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Assert
             Assert.Equal("Hello World\r\n\r\n", result, ignoreLineEndingDifferences: false);
         }
+
+        [Fact]
+        public async Task ChunkForwardTest()
+        {
+            // Arrange
+            var sb = new StringBuilder();
+            for (var i = 0; i < 65536; ++i)
+            {
+                sb.Append((i % 10).ToString());
+            }
+            var sourceStream = new MemoryStream(Encoding.ASCII.GetBytes(sb.ToString()));
+            var stream = new HttpBodyReadonlyStream(sourceStream, 65536);
+            var destStream = new MemoryStream(new byte[65536 * 2]);
+            var sr = new StreamReader(destStream);
+
+            // Act
+            await stream.ChunkedCopyToAsync(destStream, 200);
+            destStream.Position = 0;
+
+            // Assert
+            var text = sr.ReadToEnd();
+            Assert.True(text.EndsWith("0\r\n\r\n"));
+        }
     }
 }

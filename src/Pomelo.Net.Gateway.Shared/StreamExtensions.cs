@@ -59,7 +59,7 @@ namespace System.IO
                     sb.Append((char)_buffer.Span[0]);
                 }
             }
-            if (sb[sb.Length - 1] == '\r')
+            if (sb.Length - 1 >= 0 && sb[sb.Length - 1] == '\r')
             {
                 sb.Remove(sb.Length - 1, 1);
             }

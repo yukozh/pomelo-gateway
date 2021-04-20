@@ -16,8 +16,8 @@ namespace Pomelo.Net.Gateway.Http
             CancellationToken cancellationToken = default)
         {
             await context.Request.Headers.WriteToStreamAsync(
-                context.Request.DestinationStream, 
-                HttpAction.Request, 
+                context.Request.DestinationStream,
+                HttpAction.Request,
                 cancellationToken);
         }
 
@@ -25,7 +25,19 @@ namespace Pomelo.Net.Gateway.Http
             HttpTunnelContext context,
             CancellationToken cancellationToken = default)
         {
-            await context.Request.Body.CopyToAsync(context.Request.DestinationStream);
+            if (context.Request.Headers.TransferEncoding == null
+                || context.Request.Headers.TransferEncoding.All(x => x.ToLower() != "chunked"))
+            {
+                await context.Request.Body.CopyToAsync(
+                    context.Request.DestinationStream, 
+                    cancellationToken);
+            }
+            else
+            {
+                await context.Request.Body.ChunkedCopyToAsync(
+                    context.Request.DestinationStream, 
+                    cancellationToken: cancellationToken);
+            }
         }
 
         protected virtual async ValueTask BackwardResponseHeaderAsync(
@@ -42,15 +54,18 @@ namespace Pomelo.Net.Gateway.Http
             HttpTunnelContext context,
             CancellationToken cancellationToken = default)
         {
-
             if (context.Response.Headers.TransferEncoding == null
                 || context.Response.Headers.TransferEncoding.All(x => x.ToLower() != "chunked"))
             {
-                await context.Response.Body.CopyToAsync(context.Response.DestinationStream);
+                await context.Response.Body.CopyToAsync(
+                    context.Response.DestinationStream,
+                    cancellationToken);
             }
             else
             {
-                await context.Response.Body.ChunkedCopyToAsync(context.Response.DestinationStream);
+                await context.Response.Body.ChunkedCopyToAsync(
+                    context.Response.DestinationStream, 
+                    cancellationToken: cancellationToken);
             }
         }
 

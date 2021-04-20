@@ -8,6 +8,8 @@ namespace Pomelo.Net.Gateway.Http
 {
     public static class HttpTunnelContextExtensions
     {
+        private static Encoding utf8EncodingWithoutBOM = new UTF8Encoding(false);
+
         public static async ValueTask<string> ReadAsStringAsync(
             this HttpTunnelContextPart self,
             Encoding encoding = null,
@@ -51,20 +53,24 @@ namespace Pomelo.Net.Gateway.Http
             this HttpTunnelContextPart self,
             object obj,
             Encoding encoding = null,
+            int bomLength = 0,
             CancellationToken cancellationToken = default)
         {
             if (encoding == null)
             {
-                encoding = Encoding.UTF8;
+                encoding = utf8EncodingWithoutBOM;
+                bomLength = 0;
             }
             var jsonStr = JsonConvert.SerializeObject(obj);
-            var bytes = encoding.GetBytes(jsonStr);
-            self.Headers.AddOrUpdate("content-length", bytes.Length.ToString());
+            self.Headers.AddOrUpdate("content-length", (encoding.GetByteCount(jsonStr) + bomLength).ToString());
             self.Headers.AddOrUpdate("content-type", "application/json");
             self.Headers.TryRemove("transfer-encoding");
             self.Headers.TryRemove("content-encoding");
             await self.Headers.WriteToStreamAsync(self.DestinationStream, self.HttpAction, cancellationToken);
-            await self.DestinationStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
+            using (var sw = new StreamWriter(self.DestinationStream, encoding, -1, true))
+            {
+                await sw.WriteAsync(jsonStr);
+            }
         }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pomelo.Net.Gateway.Http
 {
@@ -14,7 +17,7 @@ namespace Pomelo.Net.Gateway.Http
 
     public class HttpBodyReadonlyStream : Stream, IDisposable
     {
-        private const int MaxChunkBodySize = 2048;
+        private const int MaxChunkBodySize = 0xffff;
         private const int TempBufferSize = MaxChunkBodySize + 10;
 
         private long length;
@@ -107,7 +110,7 @@ namespace Pomelo.Net.Gateway.Http
                     tempReadPos = 0;
                     tempStoredBytes = 0;
                     var chunkHeaderLine = baseStream.ReadLineExAsync(default).GetAwaiter().GetResult();
-                    var chunkLength = Convert.ToInt32(chunkHeaderLine);
+                    var chunkLength = Convert.ToInt32("0x" + chunkHeaderLine, 16);
                     if (chunkLength == 0)
                     {
                         streamEnd = true;
@@ -152,6 +155,33 @@ namespace Pomelo.Net.Gateway.Http
         public override void Write(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException();
+        }
+
+        public async ValueTask ChunkedCopyToAsync(
+            Stream destination, 
+            int bufferSize = 2048,
+            CancellationToken cancellationToken = default)
+        {
+            using (var buffer = MemoryPool<byte>.Shared.Rent(bufferSize + 8))
+            {
+                var _buffer = buffer.Memory.Slice(8, bufferSize);
+                while (true)
+                {
+                    var count = await ReadAsync(_buffer, cancellationToken);
+                    var headerCount = Encoding.ASCII.GetBytes($"{count.ToString("x")}\r\n", buffer.Memory.Slice(0, 8).Span);
+                    await destination.WriteAsync(buffer.Memory.Slice(0, headerCount), cancellationToken);
+                    if (count > 0)
+                    {
+                        await destination.WriteAsync(_buffer.Slice(0, count), cancellationToken);
+                    }
+                    Encoding.ASCII.GetBytes($"\r\n", buffer.Memory.Slice(0, 2).Span);
+                    await destination.WriteAsync(buffer.Memory.Slice(0, 2), cancellationToken);
+                    if (count == 0)
+                    {
+                        break;
+                    }
+                }
+            }
         }
 
         protected override void Dispose(bool disposing)

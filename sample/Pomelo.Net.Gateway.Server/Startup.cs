@@ -53,9 +53,10 @@ namespace Pomelo.Net.Gateway.Server
                         await tcp.InsertPreCreateEndpointRuleAsync(
                             rule.Id,
                             IPEndPoint.Parse(rule.ServerEndpoint),
-                            await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                            rule.DestinationEndpoint,
                             rule.RouterId,
-                            rule.TunnelId);
+                            rule.TunnelId,
+                            false); // TODO: Support SSL
                     }
                 }
                 tcp.EnsurePreCreateEndpointsAsync();

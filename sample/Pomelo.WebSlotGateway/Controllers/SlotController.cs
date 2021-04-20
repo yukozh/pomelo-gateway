@@ -61,9 +61,10 @@ namespace Pomelo.WebSlotGateway.Controllers
                 await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     slot.Id.ToString(),
                     endpoint,
-                    await AddressHelper.ParseAddressAsync(slot.Destination, 0),
+                    slot.Destination,
                     Startup.RouterId,
                     Startup.TunnelId,
+                    slot.DestinationType == DestinationType.Https,
                     cancellationToken);
                 tcpEndpointManager.GetOrCreateListenerForEndpoint(
                     endpoint,

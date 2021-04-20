@@ -67,20 +67,6 @@ namespace Pomelo.WebSlotGateway.Utils
             }
         }
 
-        public override async ValueTask BeforeBuildHeaderStreamAsync(
-            HttpHeader header, 
-            IPEndPoint from, 
-            CancellationToken cancellationToken = default)
-        {
-            if (await configurationHelper.GetAppendForwardHeaderAsync(cancellationToken))
-            {
-                header.HeaderCollection.TryAdd("X-Forwarded-For", from.ToString());
-                header.HeaderCollection.TryAdd("X-Forward-Server", "Pomelo Gateway");
-                header.HeaderCollection.TryAdd("X-Real-IP", from.Address.ToString());
-                header.HeaderCollection.TryAdd("RemoteAddress", from.Address.ToString());
-            }
-        }
-
         public override async ValueTask<string> FindDestinationByHeadersAsync(
             HttpHeader header, 
             IPEndPoint from, 

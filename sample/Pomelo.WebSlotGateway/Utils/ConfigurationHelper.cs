@@ -18,6 +18,7 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyLocalEndpoint = "LOCALENDPOINT";
         public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";
         public const string KeyAppendForwardHeader = "APPENDFORWARDHEADER";
+        public const string KeyOverrideHost = "OVERRIDEHOST";
 
         private IServiceProvider services;
 
@@ -56,7 +57,11 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public async ValueTask<int> GetHealthCheckerIntervalSecondsAsync(CancellationToken cancellationToken = default)
             => Convert.ToInt32(await GetValueAsync(KeyHealthCheckerIntervalSeconds, cancellationToken));
+
         public async ValueTask<bool> GetAppendForwardHeaderAsync(CancellationToken cancellationToken = default)
             => Convert.ToBoolean(await GetValueAsync(KeyAppendForwardHeader, cancellationToken));
+
+        public ValueTask<string> GetOverrideHostAsync(CancellationToken cancellationToken = default)
+            => GetValueAsync(KeyOverrideHost, cancellationToken);
     }
 }

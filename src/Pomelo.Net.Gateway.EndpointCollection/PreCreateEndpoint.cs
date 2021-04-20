@@ -20,5 +20,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         public Guid RouterId { get; set; }
 
         public Guid TunnelId { get; set; }
+
+        public bool DestinationWithSSL { get; set; }
     }
 }

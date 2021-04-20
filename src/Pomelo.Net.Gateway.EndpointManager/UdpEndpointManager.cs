@@ -107,7 +107,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         public async ValueTask InsertPreCreateEndpointRuleAsync(
             string identifier,
             IPEndPoint serverEndpoint,
-            IPEndPoint destinationEndpoint,
+            string destinationEndpoint,
             Guid routerId,
             Guid tunnelId,
             CancellationToken cancellationToken = default)

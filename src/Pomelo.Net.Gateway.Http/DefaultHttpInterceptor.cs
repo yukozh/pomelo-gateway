@@ -34,7 +34,7 @@ namespace Pomelo.Net.Gateway.Http
         {
             await context.Response.Headers.WriteToStreamAsync(
                 context.Response.DestinationStream,
-                HttpAction.Response, 
+                HttpAction.Response,
                 cancellationToken);
         }
 
@@ -42,7 +42,16 @@ namespace Pomelo.Net.Gateway.Http
             HttpTunnelContext context,
             CancellationToken cancellationToken = default)
         {
-            await context.Response.Body.CopyToAsync(context.Response.DestinationStream);
+
+            if (context.Response.Headers.TransferEncoding == null
+                || context.Response.Headers.TransferEncoding.All(x => x.ToLower() != "chunked"))
+            {
+                await context.Response.Body.CopyToAsync(context.Response.DestinationStream);
+            }
+            else
+            {
+                await context.Response.Body.ChunkedCopyToAsync(context.Response.DestinationStream);
+            }
         }
 
         public virtual async ValueTask<bool> ForwardRequestAsync(HttpTunnelContext context, CancellationToken cancellationToken = default)

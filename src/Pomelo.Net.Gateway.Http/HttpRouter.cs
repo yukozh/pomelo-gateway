@@ -24,7 +24,6 @@ namespace Pomelo.Net.Gateway.Http
             var header = new HttpHeader();
             await header.ParseHeaderAsync(stream, HttpAction.Request);
             var destination = await FindDestinationByHeadersAsync(header, from, cancellationToken);
-            await BeforeBuildHeaderStreamAsync(header, from, cancellationToken);
             var count = header.WriteToMemory(HttpAction.Request, buffer);
             return new RouteResult
             {
@@ -33,11 +32,6 @@ namespace Pomelo.Net.Gateway.Http
                 Identifier = destination
             };
         }
-
-        public virtual async ValueTask BeforeBuildHeaderStreamAsync(
-            HttpHeader header, 
-            IPEndPoint from, 
-            CancellationToken cancellationToken = default) { }
 
         public virtual async ValueTask<string> FindDestinationByHeadersAsync(
             HttpHeader headers,

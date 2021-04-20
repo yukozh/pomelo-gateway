@@ -20,7 +20,6 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         [MaxLength(256)]
         public string UserIdentifier { get; set; }
 
-
         public EndpointUserType Type { get; set; }
     }
 }

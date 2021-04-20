@@ -16,14 +16,14 @@ namespace Pomelo.Net.Gateway.Http
 
     public class HttpHeader
     {
-        private Dictionary<string, string> fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, List<string>> fields = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         public HttpAction Type { get; set; }
         public string Method { get; set; }
         public string Url { get; set; }
         public string Protocol { get; set; }
         public int StatusCode { get; set; }
         public string StatusCodeString { get; set; }
-        public Dictionary<string, string> HeaderCollection => fields;
+        public Dictionary<string, List<string>> HeaderCollection => fields;
         public string Host => GetHeaderField("host");
         public int ContentLength => Convert.ToInt32(GetHeaderField("content-length") ?? "-1");
         public IEnumerable<string> TransferEncoding => GetHeaderFields("transfer-encoding");
@@ -60,8 +60,24 @@ namespace Pomelo.Net.Gateway.Http
             }
         }
 
-        private string GetHeaderField(string key) => fields.ContainsKey(key) ? fields[key] : null;
-        private IEnumerable<string> GetHeaderFields(string key) => fields.ContainsKey(key) ? fields[key].Split(',').Select(x => x.Trim()): null;
+        private string GetHeaderField(string key) => fields.ContainsKey(key) ? fields[key].First() : null;
+        private IEnumerable<string> GetHeaderFields(string key)
+        {
+            if (!Contains(key) || fields[key].Count == 0)
+            {
+                return null;
+            }
+
+            if (fields[key].Count == 1)
+            {
+                return fields[key]
+                    .Single()
+                    .Split(',')
+                    .Select(x => x.Trim());
+            }
+
+            return fields[key];
+        }
 
         public HttpHeader()
         {
@@ -80,7 +96,7 @@ namespace Pomelo.Net.Gateway.Http
             {
                 return false;
             }
-            HeaderCollection.Add(key, value);
+            HeaderCollection.Add(key, new List<string>() { key });
             return true;
         }
 
@@ -88,11 +104,18 @@ namespace Pomelo.Net.Gateway.Http
         { 
             if (Contains(key))
             {
-                HeaderCollection[key] = value;
+                if (HeaderCollection[key].Count == 0)
+                {
+                    HeaderCollection[key].Add(value);
+                }
+                else
+                {
+                    HeaderCollection[key][0] = value;
+                }
             }
             else
             {
-                HeaderCollection.Add(key, value);
+                HeaderCollection.Add(key, new List<string> { value });
             }
         }
 
@@ -165,7 +188,11 @@ namespace Pomelo.Net.Gateway.Http
                 }
                 var key = line.Substring(0, index3);
                 var value = line.Substring(index3 + 1);
-                fields.Add(key, value.TrimStart());
+                if (!fields.ContainsKey(key))
+                {
+                    fields.Add(key, new List<string>());
+                }
+                fields[key].Add(value.TrimStart());
             }
             if (type == HttpAction.Request && (Method == null || Url == null || Protocol == null))
             {
@@ -195,7 +222,10 @@ namespace Pomelo.Net.Gateway.Http
                 }
                 foreach (var field in fields)
                 {
-                    await sw.WriteLineAsync(new StringBuilder($"{field.Key}: {field.Value}"), cancellationToken);
+                    foreach (var val in field.Value)
+                    {
+                        await sw.WriteLineAsync(new StringBuilder($"{field.Key}: {val}"), cancellationToken);
+                    }
                 }
                 await sw.WriteLineAsync(new StringBuilder(""), cancellationToken);
                 await sw.FlushAsync();
@@ -216,7 +246,10 @@ namespace Pomelo.Net.Gateway.Http
             }
             foreach (var field in fields)
             {
-                count += Encoding.ASCII.GetBytes($"{field.Key}: {field.Value}\r\n", buffer.Slice(count).Span);
+                foreach (var val in field.Value)
+                {
+                    count += Encoding.ASCII.GetBytes($"{field.Key}: {val}\r\n", buffer.Slice(count).Span);
+                }
             }
             count += Encoding.ASCII.GetBytes("\r\n", buffer.Slice(count).Span);
             return count;

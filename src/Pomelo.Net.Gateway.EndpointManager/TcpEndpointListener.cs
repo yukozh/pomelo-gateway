@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,12 +91,12 @@ namespace Pomelo.Net.Gateway.EndpointManager
             logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
             var user = await manager.GetEndpointUserByIdentifierAsync(result.Identifier);
-            if (user.Type == EndpointUserType.NonPublic)
+            if (user.Type == EndpointUserType.NonPublic) // Agent based connection
             {
                 logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
                 await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
             }
-            else
+            else // Public connection
             {
                 try
                 {
@@ -111,10 +112,20 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     // Start forwarding
                     var concatStream = new ConcatStream();
                     concatStream.Join(tunnelContext.GetHeaderStream(), tunnelContext.RightClient.GetStream());
+                    Stream leftStream = tunnelContext.LeftClient.GetStream();
+                    if (preCreateEndpoint.DestinationWithSSL)
+                    {
+                        var baseStream = tunnelContext.LeftClient.GetStream();
+                        var sslStream = new SslStream(baseStream);
+                        sslStream.ReadTimeout = baseStream.ReadTimeout;
+                        sslStream.WriteTimeout = baseStream.WriteTimeout;
+                        await sslStream.AuthenticateAsClientAsync(AddressHelper.TrimPort(preCreateEndpoint.DestinationEndpoint));
+                        leftStream = sslStream;
+                    }
                     await Task.WhenAll(new[]
                     {
-                        tunnelContext.Tunnel.BackwardAsync(tunnelContext.LeftClient.GetStream(), tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
-                        tunnelContext.Tunnel.ForwardAsync(concatStream, tunnelContext.LeftClient.GetStream(), tunnelContext).AsTask()
+                        tunnelContext.Tunnel.BackwardAsync(leftStream, tunnelContext.RightClient.GetStream(), tunnelContext).AsTask(),
+                        tunnelContext.Tunnel.ForwardAsync(concatStream, leftStream, tunnelContext).AsTask()
                     });
                     
                 }

@@ -106,19 +106,21 @@ namespace Pomelo.Net.Gateway.EndpointManager
         public async ValueTask InsertPreCreateEndpointRuleAsync(
             string identifier,
             IPEndPoint serverEndpoint,
-            IPEndPoint destinationEndpoint,
+            string destinationEndpoint,
             Guid routerId,
             Guid tunnelId,
+            bool withSSL,
             CancellationToken cancellationToken = default)
         {
             context.PreCreateEndpoints.Add(new PreCreateEndpoint
             {
-                DestinationEndpoint = destinationEndpoint.ToString(),
+                DestinationEndpoint = destinationEndpoint,
                 ServerEndpoint = serverEndpoint.ToString(),
                 Identifier = identifier,
                 Protocol = Protocol.TCP,
                 RouterId = routerId,
-                TunnelId = tunnelId
+                TunnelId = tunnelId,
+                DestinationWithSSL = withSSL
             });
             await context.SaveChangesAsync(cancellationToken);
         }

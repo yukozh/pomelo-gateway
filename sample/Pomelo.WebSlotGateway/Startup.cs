@@ -38,7 +38,9 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<IStreamRouter, ARRAffinityRouter>();
             services.AddSingleton<IStreamTunnel, HttpTunnel>();
             services.AddSingleton<IHttpInterceptor, DefaultHttpInterceptor>();
-            services.AddSingleton<IHttpInterceptor, TextHttpInterceptor>();
+            services.AddSingleton<IHttpInterceptor, GoogleInterceptor>();
+            services.AddSingleton<IHttpInterceptor, HostInterceptor>();
+            services.AddSingleton<IHttpInterceptor, HttpHeaderInterceptor>();
             services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),
@@ -65,9 +67,10 @@ namespace Pomelo.WebSlotGateway
                         await tcp.InsertPreCreateEndpointRuleAsync(
                             rule.Id.ToString(),
                             serverEndpoint,
-                            await AddressHelper.ParseAddressAsync(rule.Destination, 0),
+                            rule.Destination,
                             RouterId,
-                            TunnelId);
+                            TunnelId,
+                            rule.DestinationType == DestinationType.Https);
                     }
                 }
                 tcp.EnsurePreCreateEndpointsAsync();

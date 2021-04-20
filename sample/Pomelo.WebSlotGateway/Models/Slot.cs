@@ -12,6 +12,12 @@ namespace Pomelo.WebSlotGateway.Models
         Error
     }
 
+    public enum DestinationType
+    { 
+        Http,
+        Https
+    }
+
     public class Slot
     {
         public Guid Id { get; set; }
@@ -24,6 +30,9 @@ namespace Pomelo.WebSlotGateway.Models
 
         [MaxLength(128)]
         public string Destination { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DestinationType DestinationType { get; set; }
 
         public uint Priority { get; set; }
 

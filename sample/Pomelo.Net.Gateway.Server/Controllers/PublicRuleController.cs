@@ -109,11 +109,10 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 return Content($"The ID {model.Id} is conflicted");
             }
 
-            IPEndPoint serverEndpoint, destinationEndpoint;
+            IPEndPoint serverEndpoint;
             try
             {
                 serverEndpoint = IPEndPoint.Parse(model.ServerEndpoint);
-                destinationEndpoint = await AddressHelper.ParseAddressAsync(model.DestinationEndpoint, 0);
             }
             catch(Exception ex)
             {
@@ -129,9 +128,10 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     model.Id,
                     serverEndpoint,
-                    destinationEndpoint,
+                    model.DestinationEndpoint,
                     model.RouterId,
                     model.TunnelId,
+                    false, // TODO: Support SSL
                     cancellationToken);
                 tcpEndpointManager.GetOrCreateListenerForEndpoint(
                     serverEndpoint,
@@ -145,7 +145,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 await udpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     model.Id,
                     serverEndpoint,
-                    destinationEndpoint,
+                    model.DestinationEndpoint,
                     model.RouterId,
                     model.TunnelId,
                     cancellationToken);
@@ -213,11 +213,10 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             rule.Protocol = model.Protocol;
             rule.RouterId = model.RouterId;
             rule.TunnelId = model.TunnelId;
-            IPEndPoint serverEndpoint, destinationEndpoint;
+            IPEndPoint serverEndpoint;
             try
             {
                 serverEndpoint = IPEndPoint.Parse(model.ServerEndpoint);
-                destinationEndpoint = await AddressHelper.ParseAddressAsync(model.DestinationEndpoint, 0);
             }
             catch (Exception ex)
             {
@@ -225,7 +224,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 ViewBag.Info = "Endpoint is invalid";
                 return await Edit(model.Id, services, db, cancellationToken);
             }
-            rule.DestinationEndpoint = destinationEndpoint.ToString();
+            rule.DestinationEndpoint = model.DestinationEndpoint;
             rule.ServerEndpoint = serverEndpoint.ToString();
             await db.SaveChangesAsync(cancellationToken);
 
@@ -247,9 +246,10 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     model.Id,
                     serverEndpoint,
-                    destinationEndpoint,
+                    model.DestinationEndpoint,
                     model.RouterId,
                     model.TunnelId,
+                    false, // TODO: Support SSL
                     cancellationToken);
                 tcpEndpointManager.GetOrCreateListenerForEndpoint(
                     serverEndpoint,
@@ -263,7 +263,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 await udpEndpointManager.InsertPreCreateEndpointRuleAsync(
                     model.Id,
                     serverEndpoint,
-                    destinationEndpoint,
+                    model.DestinationEndpoint,
                     model.RouterId,
                     model.TunnelId,
                     cancellationToken);

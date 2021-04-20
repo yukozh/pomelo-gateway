@@ -76,6 +76,14 @@ namespace Pomelo.WebSlotGateway.Models
                 Addition = "true|false"
             });
 
+            Configurations.Add(new Config
+            {
+                Key = ConfigurationHelper.KeyOverrideHost,
+                Value = "",
+                Description = "Override `Host` in request header",
+                Type = ConfigType.Text
+            });
+
             await SaveChangesAsync(cancellationToken);
         }
     }

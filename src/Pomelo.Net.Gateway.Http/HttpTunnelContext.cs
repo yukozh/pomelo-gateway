@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.Http
@@ -14,10 +15,12 @@ namespace Pomelo.Net.Gateway.Http
 
         public StreamTunnelContext StreamTunnelContext { get; set; }
 
+        public IPEndPoint ClientEndPoint => StreamTunnelContext?.LeftEndpoint;
+
         public void Dispose()
         {
-            Request?.Body?.Dispose();
-            Response?.Body?.Dispose();
+            Request?.Dispose();
+            Response?.Dispose();
         }
     }
 

@@ -72,5 +72,29 @@ namespace Pomelo.Net.Gateway.Http
                 await sw.WriteAsync(jsonStr);
             }
         }
+
+        public static async ValueTask WriteTextAsync(
+            this HttpTunnelContextPart self,
+            string text,
+            string contentType = "text/plain",
+            Encoding encoding = null,
+            int bomLength = 0,
+            CancellationToken cancellationToken = default)
+        {
+            if (encoding == null)
+            {
+                encoding = utf8EncodingWithoutBOM;
+                bomLength = 0;
+            }
+            self.Headers.AddOrUpdate("content-length", (encoding.GetByteCount(text) + bomLength).ToString());
+            self.Headers.AddOrUpdate("content-type", contentType);
+            self.Headers.TryRemove("transfer-encoding");
+            self.Headers.TryRemove("content-encoding");
+            await self.Headers.WriteToStreamAsync(self.DestinationStream, self.HttpAction, cancellationToken);
+            using (var sw = new StreamWriter(self.DestinationStream, encoding, -1, true))
+            {
+                await sw.WriteAsync(text);
+            }
+        }
     }
 }

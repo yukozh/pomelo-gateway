@@ -12,6 +12,7 @@ namespace Pomelo.Net.Gateway.Http
     public class HttpTunnel : IStreamTunnel
     {
         private IServiceProvider services;
+        private StreamTunnelContextFactory streamTunnelContextFactory;
         private const int BufferSize = 2048;
         private ConcurrentDictionary<Guid, HttpTunnelContext> contexts 
             = new ConcurrentDictionary<Guid, HttpTunnelContext>();
@@ -21,6 +22,7 @@ namespace Pomelo.Net.Gateway.Http
         public HttpTunnel(IServiceProvider services)
         {
             this.services = services;
+            this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
         }
 
         public async ValueTask BackwardAsync(
@@ -48,7 +50,7 @@ namespace Pomelo.Net.Gateway.Http
                     // 2. Get Headers
                     httpContext.Response.Headers = new HttpHeader();
                     await httpContext.Response.Headers.ParseHeaderAsync(
-                        rightToTunnelStream, 
+                        rightToTunnelStream,
                         HttpAction.Response);
 
                     // 3. Build Body Stream
@@ -105,6 +107,11 @@ namespace Pomelo.Net.Gateway.Http
                         break;
                     }
                 }
+                catch (Exception ex)
+                {
+                    streamTunnelContextFactory.DestroyContext(httpContext?.ConnectionId ?? default);
+                    throw;
+                }
                 finally
                 {
                     httpContext?.Dispose();
@@ -145,7 +152,7 @@ namespace Pomelo.Net.Gateway.Http
                         httpContext.Request.Body = new HttpBodyReadonlyStream(
                             httpContext.Request.SourceStream, HttpBodyType.NonKeepAlive);
                     }
-                    else if (httpContext.Request.Headers.TransferEncoding != null 
+                    else if (httpContext.Request.Headers.TransferEncoding != null
                         && httpContext.Request.Headers.TransferEncoding
                             .Any(x => x.ToLower() == "chunked"))
                     {
@@ -187,6 +194,11 @@ namespace Pomelo.Net.Gateway.Http
                     {
                         break;
                     }
+                }
+                catch (Exception ex)
+                {
+                    streamTunnelContextFactory.DestroyContext(httpContext?.ConnectionId ?? default);
+                    throw;
                 }
                 finally
                 {

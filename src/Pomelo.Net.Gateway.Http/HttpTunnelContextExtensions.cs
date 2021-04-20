@@ -87,7 +87,7 @@ namespace Pomelo.Net.Gateway.Http
                 bomLength = 0;
             }
             self.Headers.AddOrUpdate("content-length", (encoding.GetByteCount(text) + bomLength).ToString());
-            self.Headers.AddOrUpdate("content-type", contentType);
+            self.Headers.AddOrUpdate("content-type", $"{contentType}; charset={encoding.WebName}");
             self.Headers.TryRemove("transfer-encoding");
             self.Headers.TryRemove("content-encoding");
             await self.Headers.WriteToStreamAsync(self.DestinationStream, self.HttpAction, cancellationToken);

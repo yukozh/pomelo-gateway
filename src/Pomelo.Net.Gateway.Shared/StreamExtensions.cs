@@ -9,6 +9,11 @@ namespace System.IO
     {
         public static async ValueTask ReadExAsync(this Stream stream, Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
+            if (!stream.CanRead)
+            {
+                throw new InvalidOperationException("The stream cannot be read");
+            }
+
             var len = 0;
             var _buffer = buffer;
             var bufferSize = buffer.Length;
@@ -26,6 +31,11 @@ namespace System.IO
 
         public static void ReadEx(this Stream stream, byte[] buffer, int offset, int count)
         {
+            if (!stream.CanRead)
+            {
+                throw new InvalidOperationException("The stream cannot be read");
+            }
+
             var len = 0;
             var bufferSize = count;
             while (len < bufferSize)
@@ -41,6 +51,11 @@ namespace System.IO
 
         public static async ValueTask<string> ReadLineExAsync(this Stream stream, CancellationToken cancellationToken = default)
         {
+            if (!stream.CanRead)
+            {
+                throw new InvalidOperationException("The stream cannot be read");
+            }
+
             var sb = new StringBuilder();
             using (var buffer = MemoryPool<byte>.Shared.Rent(1))
             {

@@ -58,7 +58,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             server.Server.ReceiveTimeout = 1000 * 30;
             server.Server.SendTimeout = 1000 * 30;
             server.Start();
-            logger.LogInformation($"TCP Endpoitn Listener is listening on {endpoint}...");
+            logger.LogInformation($"TCP Endpoint Listener is listening on {endpoint}...");
             StartAcceptAsync();
         }
 
@@ -67,7 +67,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
-                logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} connected...");
+                logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} connected...");
                 HandleClientAcceptAsync(client);
             }
         }
@@ -76,24 +76,24 @@ namespace Pomelo.Net.Gateway.EndpointManager
         {
             var stream = client.GetStream();
             var buffer = MemoryPool<byte>.Shared.Rent(router.ExpectedBufferSize);
-            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
+            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
             var result = await router.DetermineIdentifierAsync(stream, buffer.Memory, client.Client.RemoteEndPoint as IPEndPoint);
             if (!result.IsSucceeded)
             {
-                logger.LogWarning($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");
+                logger.LogWarning($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");
                 buffer.Dispose();
                 client.Close();
                 client.Dispose();
             }
-            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
+            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
             var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
             tunnelContext.HeaderLength = result.HeaderLength;
-            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
+            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
             var user = await manager.GetEndpointUserByIdentifierAsync(result.Identifier);
             if (user.Type == EndpointUserType.NonPublic) // Agent based connection
             {
-                logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
+                logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
                 await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
             }
             else // Public connection
@@ -142,7 +142,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
         public void Dispose()
         {
-            logger.LogInformation($"TCP Endpoitn Listener<{server.LocalEndpoint}>: Stopping...");
+            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: Stopping...");
             server?.Stop();
             server = null;
             scope?.Dispose();

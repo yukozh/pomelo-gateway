@@ -54,7 +54,9 @@ namespace Pomelo.Net.Gateway.Http
 
         public HttpBodyType Type => type;
 
-        public override bool CanRead => true;
+        private bool canRead = true;
+
+        public override bool CanRead => canRead;
 
         public override bool CanSeek => false;
 
@@ -89,6 +91,7 @@ namespace Pomelo.Net.Gateway.Http
                 var bytesToRead = Math.Min(length - position, count);
                 if (bytesToRead == 0)
                 {
+                    canRead = false;
                     return 0;
                 }
                 var read = baseStream.Read(buffer, offset, (int)bytesToRead);
@@ -137,6 +140,7 @@ namespace Pomelo.Net.Gateway.Http
                 }
                 else
                 {
+                    canRead = false;
                     return 0;
                 }
             }

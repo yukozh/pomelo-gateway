@@ -12,7 +12,9 @@ namespace Pomelo.Net.Gateway.Tunnel
             this.buffer = buffer;
         }
 
-        public override bool CanRead => true;
+        private bool canRead = true;
+
+        public override bool CanRead => canRead;
 
         public override bool CanSeek => false;
 
@@ -32,6 +34,10 @@ namespace Pomelo.Net.Gateway.Tunnel
             var length = (int)Math.Min(count, Length - (int)Position);
             this.buffer.Slice((int)Position, length).CopyTo(memory);
             Position += length;
+            if (Position == buffer.Length)
+            {
+                canRead = false;
+            }
             return length;
         }
 

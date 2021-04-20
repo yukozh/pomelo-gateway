@@ -50,16 +50,21 @@ namespace Pomelo.Net.Gateway.Http
         public static async ValueTask WriteJsonAsync(
             this HttpTunnelContextPart self,
             object obj,
+            Encoding encoding = null,
             CancellationToken cancellationToken = default)
         {
+            if (encoding == null)
+            {
+                encoding = Encoding.UTF8;
+            }
             var jsonStr = JsonConvert.SerializeObject(obj);
-            var bytes = Encoding.UTF8.GetBytes(jsonStr);
+            var bytes = encoding.GetBytes(jsonStr);
             self.Headers.AddOrUpdate("content-length", bytes.Length.ToString());
             self.Headers.AddOrUpdate("content-type", "application/json");
             self.Headers.TryRemove("transfer-encoding");
             self.Headers.TryRemove("content-encoding");
             await self.Headers.WriteToStreamAsync(self.DestinationStream, self.HttpAction, cancellationToken);
-            await self.DestinationStream.WriteAsync(bytes, 0, bytes.Length);
+            await self.DestinationStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
         }
     }
 }

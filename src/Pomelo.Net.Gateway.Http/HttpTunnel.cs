@@ -52,7 +52,7 @@ namespace Pomelo.Net.Gateway.Http
                         HttpAction.Response);
 
                     // 3. Build Body Stream
-                    if (httpContext.Response.Headers.IsKeepAlive)
+                    if (!httpContext.Response.Headers.IsKeepAlive)
                     {
                         httpContext.Response.Body = new HttpBodyReadonlyStream(
                             httpContext.Response.SourceStream, HttpBodyType.NonKeepAlive);
@@ -140,7 +140,7 @@ namespace Pomelo.Net.Gateway.Http
                     var result = await httpContext.Request.Headers.ParseHeaderAsync(leftToTunnelStream, HttpAction.Request);
 
                     // 3. Build body stream
-                    if (httpContext.Request.Headers.IsKeepAlive)
+                    if (!httpContext.Request.Headers.IsKeepAlive)
                     {
                         httpContext.Request.Body = new HttpBodyReadonlyStream(
                             httpContext.Request.SourceStream, HttpBodyType.NonKeepAlive);

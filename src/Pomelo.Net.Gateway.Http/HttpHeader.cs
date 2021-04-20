@@ -44,12 +44,14 @@ namespace Pomelo.Net.Gateway.Http
         {
             get
             { 
-                if (Connection == null && Protocol.ToLower() == "http/1.0")
+                if (Connection == null 
+                    && Protocol.ToLower() == "http/1.0")
                 {
                     return false;
                 }
 
-                if (Connection.ToLower() != "keep-alive")
+                if (Connection != null 
+                    && Connection.ToLower() != "keep-alive")
                 {
                     return false;
                 }

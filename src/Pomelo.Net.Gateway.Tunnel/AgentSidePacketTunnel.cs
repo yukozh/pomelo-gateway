@@ -93,7 +93,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                 }
                 server = context.Client;
                 context.RightEndpoint = packetTunnelServerAddressProvider.PacketTunnelServerEndpoint;
-                context.LeftEndpoint = rule.LocalEndpoint;
+                context.LeftEndpoint = await AddressHelper.ParseAddressAsync(rule.LocalEndpoint, 0);
                 Task.Run(async ()=>
                 {
                     var buffer = ArrayPool<byte>.Shared.Rent(PomeloUdpClient.MaxUDPSize);

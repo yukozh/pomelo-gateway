@@ -18,12 +18,13 @@ namespace Pomelo.Net.Gateway.Http
         public async ValueTask<RouteResult> DetermineIdentifierAsync(
             Stream stream,
             Memory<byte> buffer,
-            IPEndPoint from,
+            IPEndPoint serverEndpoint,
+            IPEndPoint clientEndpoint,
             CancellationToken cancellationToken = default)
         {
             var header = new HttpHeader();
             await header.ParseHeaderAsync(stream, HttpAction.Request);
-            var destination = await FindDestinationByHeadersAsync(header, from, cancellationToken);
+            var destination = await FindDestinationByHeadersAsync(header, clientEndpoint, cancellationToken);
             var count = header.CopyToMemory(HttpAction.Request, buffer);
             return new RouteResult
             {

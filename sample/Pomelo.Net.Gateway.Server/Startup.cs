@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pomelo.Net.Gateway.Association.Authentication;
 using Pomelo.Net.Gateway.EndpointManager;
+using Pomelo.Net.Gateway.Http;
 using Pomelo.Net.Gateway.Server.Authentication;
 using Pomelo.Net.Gateway.Server.Authenticator;
 using Pomelo.Net.Gateway.Server.Models;
@@ -33,7 +34,8 @@ namespace Pomelo.Net.Gateway.Server
             services.AddDbContext<ServerContext>(x => x.UseSqlite(Configuration["DB"]));
             services.AddPomeloGatewayServer(
                 IPEndPoint.Parse(Configuration["AssociationServer"]), 
-                IPEndPoint.Parse(Configuration["TunnelServer"]));
+                IPEndPoint.Parse(Configuration["TunnelServer"]))
+                .AddPomeloHttpStack();
             services.AddSingleton<IAuthenticator, DbBasicAuthenticator>();
         }
 

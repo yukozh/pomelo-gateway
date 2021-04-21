@@ -41,7 +41,11 @@ namespace System.IO
             var _count = readStreams.Peek().Read(buffer, offset, count);
             if (_count == 0)
             {
-                readStreams.Dequeue();
+                var stream = readStreams.Dequeue();
+                if (stream is IPomeloStreamDestroyable)
+                {
+                    stream.Dispose();
+                }
                 return Read(buffer, offset, count);
             }
             position += _count;

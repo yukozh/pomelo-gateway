@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -385,7 +386,7 @@ namespace Pomelo.Net.Gateway.Association
             {
                 logger.LogInformation("Creating stream tunnel...");
                 var rule = FindMappingRuleByFromEndpoint(from);
-                logger.LogInformation($"[{context.ConnectionId}] Tunnel left={rule.LocalEndpoint}, Tunnel right={from}, Tunnel ID = {rule.LocalTunnelId}");
+                logger.LogInformation($"[{context.ConnectionId}] Tunnel left={from}, Tunnel right={rule.LocalEndpoint}, Tunnel ID = {rule.LocalTunnelId}");
                 context.LeftClient = new TcpClient();
                 context.LeftClient.ReceiveTimeout = 1000 * 30;
                 context.LeftClient.SendTimeout = 1000 * 30;
@@ -394,23 +395,36 @@ namespace Pomelo.Net.Gateway.Association
                 context.RightClient.SendTimeout = 1000 * 30;
 
                 // Connect
+                // Left: Requester
+                // Right: Responser
                 logger.LogInformation($"[{context.ConnectionId}] Tunnel connecting...");
+                var localEndpoint = await AddressHelper.ParseAddressAsync(rule.LocalEndpoint, 0);
                 await Task.WhenAll(new[]
                 {
-                    context.LeftClient.ConnectAsync(rule.LocalEndpoint.Address, rule.LocalEndpoint.Port),
-                    context.RightClient.ConnectAsync(tunnelServerEndpoint.Address, tunnelServerEndpoint.Port),
+                    context.LeftClient.ConnectAsync(tunnelServerEndpoint.Address, tunnelServerEndpoint.Port),
+                    context.RightClient.ConnectAsync(localEndpoint.Address, localEndpoint.Port),
                 });
 
                 // Handshake
                 logger.LogInformation($"[{context.ConnectionId}] Handshaking...");
-                await HandshakeWithTunnelServerAsync(context.RightClient, context.ConnectionId);
+                await HandshakeWithTunnelServerAsync(context.LeftClient, context.ConnectionId);
+                
+                // Use SSL
+                Stream rightStream = context.RightClient.GetStream();
+                if (rule.LocalWithSSL)
+                {
+                    logger.LogInformation("[{context.ConnectionId}] SSL Authenticating...");
+                    var sslStream = new SslStream(rightStream);
+                    await sslStream.AuthenticateAsClientAsync(AddressHelper.TrimPort(rule.LocalEndpoint));
+                    rightStream = sslStream;
+                }
 
                 // Forwarding
                 logger.LogInformation($"[{context.ConnectionId}] Forwarding...");
                 await Task.WhenAll(new[]
                 {
-                    context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), context.RightClient.GetStream(), context).AsTask(),
-                    context.Tunnel.BackwardAsync(context.RightClient.GetStream(), context.LeftClient.GetStream(), context).AsTask()
+                    context.Tunnel.ForwardAsync(context.LeftClient.GetStream(), rightStream, context).AsTask(),
+                    context.Tunnel.BackwardAsync(rightStream, context.LeftClient.GetStream(), context).AsTask()
                 });
                 logger.LogInformation($"[{context.ConnectionId}] Closed");
             }

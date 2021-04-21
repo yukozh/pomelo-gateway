@@ -34,9 +34,10 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
             await mappingRuleProvider.SetRulesAsync(rules.Rules.Select(x => new MappingRule 
             {
                 Protocol = x.Protocol,
-                LocalEndpoint = IPEndPoint.Parse(x.LocalEndpoint),
+                LocalEndpoint = x.LocalEndpoint,
                 RemoteEndpoint = IPEndPoint.Parse(x.RemoteEndpoint),
                 LocalTunnelId = x.LocalTunnelId,
+                LocalWithSSL = x.LocalWithSSL,
                 RemoteRouterId = x.RemoteRouterId,
                 RemoteTunnelId = x.RemoteTunnelId
             }), cancellationToken);

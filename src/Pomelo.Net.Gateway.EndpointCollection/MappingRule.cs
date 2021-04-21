@@ -9,7 +9,8 @@ namespace Pomelo.Net.Gateway.EndpointCollection
     {
         [JsonConverter(typeof(StringEnumConverter))]
         public Protocol Protocol { get; set; }
-        public IPEndPoint LocalEndpoint { get; set; }
+        public string LocalEndpoint { get; set; }
+        public bool LocalWithSSL { get; set; }
         public IPEndPoint RemoteEndpoint { get; set; }
         public Guid LocalTunnelId { get; set; }
         public Guid RemoteTunnelId { get; set; }
@@ -21,6 +22,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         [JsonConverter(typeof(StringEnumConverter))]
         public Protocol Protocol { get; set; }
         public string LocalEndpoint { get; set; }
+        public bool LocalWithSSL { get; set; }
         public string RemoteEndpoint { get; set; }
         public Guid LocalTunnelId { get; set; }
         public Guid RemoteTunnelId { get; set; }

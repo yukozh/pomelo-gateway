@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
-    public class HeaderStream : Stream
+    public class HeaderStream : Stream, IPomeloStreamDestroyable
     {
         private Memory<byte> buffer;
 

@@ -24,19 +24,21 @@ namespace Pomelo.Net.Gateway.Router
 
         public async ValueTask<RouteResult> DetermineIdentifierAsync(
             Stream stream, 
-            Memory<byte> buffer, 
-            IPEndPoint endpoint, 
+            Memory<byte> buffer,
+            IPEndPoint serverEndponit,
+            IPEndPoint clientEndpoint,
             CancellationToken cancellationToken = default)
         {
             using (var scope = services.CreateScope())
             {
-                var _endpoint = await scope.ServiceProvider.GetRequiredService<EndpointContext>()
+                var db = scope.ServiceProvider.GetRequiredService<EndpointContext>();
+                var _endpoint = await db
                     .Endpoints
                     .Include(x => x.Users)
                     .SingleOrDefaultAsync(x =>
-                        x.Address == endpoint.Address.ToString()
+                        x.Address == serverEndponit.Address.ToString()
                         && x.Protocol == Protocol.TCP
-                        && x.Port == (ushort)endpoint.Port);
+                        && x.Port == (ushort)serverEndponit.Port);
 
                 if (_endpoint == null)
                 {

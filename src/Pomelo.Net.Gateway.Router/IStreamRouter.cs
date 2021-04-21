@@ -11,6 +11,6 @@ namespace Pomelo.Net.Gateway.Router
         Guid Id { get; }
         string Name { get; }
         int ExpectedBufferSize { get; }
-        ValueTask<RouteResult> DetermineIdentifierAsync(Stream stream, Memory<byte> buffer, IPEndPoint endpoint, CancellationToken cancellationToken = default);
+        ValueTask<RouteResult> DetermineIdentifierAsync(Stream stream, Memory<byte> buffer, IPEndPoint serverEndpoint, IPEndPoint clientEndpoint, CancellationToken cancellationToken = default);
     }
 }

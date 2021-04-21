@@ -83,5 +83,11 @@ namespace Pomelo.Net.Gateway
                 var _ = services.GetRequiredService<Tunnel.PacketTunnelClient>();
             }, TaskCreationOptions.LongRunning);
         }
+
+        public static IServiceCollection AddPomeloHttpStack(this IServiceCollection services)
+        {
+            return services.AddSingleton<Tunnel.IStreamTunnel, Http.HttpTunnel>()
+                .AddSingleton<Http.IHttpInterceptor, Http.DefaultHttpInterceptor>();
+        }
     }
 }

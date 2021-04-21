@@ -5,6 +5,7 @@ namespace Pomelo.Net.Gateway.Http
 {
     public class UrlEncodedValueCollection
     {
+        public static UrlEncodedValueCollection Empty = new UrlEncodedValueCollection();
         private Dictionary<string, HttpValue> fields = new Dictionary<string, HttpValue>();
         public Dictionary<string, HttpValue> Fields => fields;
 

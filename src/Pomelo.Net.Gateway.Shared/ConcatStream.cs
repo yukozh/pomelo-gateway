@@ -38,21 +38,14 @@ namespace System.IO
             {
                 return 0;
             }
-            try
+            var _count = readStreams.Peek().Read(buffer, offset, count);
+            if (_count == 0)
             {
-                var _count = readStreams.Peek().Read(buffer, offset, count);
-                if (_count == 0)
-                {
-                    readStreams.Dequeue();
-                    return Read(buffer, offset, count);
-                }
-                position += _count;
-                return _count;
+                readStreams.Dequeue();
+                return Read(buffer, offset, count);
             }
-            catch 
-            {
-                return 0;
-            }
+            position += _count;
+            return _count;
         }
 
         public override long Seek(long offset, SeekOrigin origin)

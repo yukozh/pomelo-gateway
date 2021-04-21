@@ -34,7 +34,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             var length = (int)Math.Min(count, Length - (int)Position);
             this.buffer.Slice((int)Position, length).CopyTo(memory);
             Position += length;
-            if (Position == buffer.Length)
+            if (length == 0)
             {
                 canRead = false;
             }

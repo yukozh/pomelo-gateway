@@ -24,7 +24,7 @@ namespace Pomelo.Net.Gateway.Http
             var header = new HttpHeader();
             await header.ParseHeaderAsync(stream, HttpAction.Request);
             var destination = await FindDestinationByHeadersAsync(header, from, cancellationToken);
-            var count = header.WriteToMemory(HttpAction.Request, buffer);
+            var count = header.CopyToMemory(HttpAction.Request, buffer);
             return new RouteResult
             {
                 HeaderLength = count,

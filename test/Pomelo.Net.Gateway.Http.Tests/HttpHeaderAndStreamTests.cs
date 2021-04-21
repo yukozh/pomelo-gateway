@@ -11,11 +11,11 @@ namespace Pomelo.Net.Gateway.Http.Tests
         public async Task ChunkedBodyTest()
         {
             // Arrange
-            var testData = "6\r\nDotNet\r\n9\r\nDeveloper\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n6\r\nPomelo\r\n10\r\nFoundation\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World";
+            var testData = "6\r\nDotNet\r\n9\r\nDeveloper\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n6\r\nPomelo\r\na\r\nFoundation\r\n0\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World";
             var sourceStream = new MemoryStream(Encoding.ASCII.GetBytes(testData));
 
             // Act 1
-            var stream1 = new HttpBodyReadonlyStream(sourceStream);
+            var stream1 = new HttpBodyStream(null, sourceStream, null);
             var sr1 = new StreamReader(stream1);
             var result1 = sr1.ReadToEnd();
 
@@ -25,7 +25,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Act 2
             var header = new HttpHeader();
             await header.ParseHeaderAsync(sourceStream, HttpAction.Response);
-            var stream2 = new HttpBodyReadonlyStream(sourceStream);
+            var stream2 = new HttpBodyStream(null, sourceStream, null);
             var sr2 = new StreamReader(stream2);
             var result2 = sr2.ReadToEnd();
 
@@ -35,7 +35,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Act 3
             var header2 = new HttpHeader();
             await header2.ParseHeaderAsync(sourceStream, HttpAction.Response);
-            var stream3 = new HttpBodyReadonlyStream(sourceStream, header2.ContentLength);
+            var stream3 = new HttpBodyStream(null, sourceStream, null, header2.ContentLength);
             var sr3 = new StreamReader(stream3);
             var result3 = sr3.ReadToEnd();
 
@@ -53,7 +53,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
             // Act
             var header = new HttpHeader();
             await header.ParseHeaderAsync(sourceStream, HttpAction.Response);
-            var stream = new HttpBodyReadonlyStream(sourceStream, HttpBodyType.NonKeepAlive);
+            var stream = new HttpBodyStream(null, sourceStream, null, HttpBodyType.NonKeepAlive);
             var sr = new StreamReader(stream);
             var result = sr.ReadToEnd();
 
@@ -71,7 +71,7 @@ namespace Pomelo.Net.Gateway.Http.Tests
                 sb.Append((i % 10).ToString());
             }
             var sourceStream = new MemoryStream(Encoding.ASCII.GetBytes(sb.ToString()));
-            var stream = new HttpBodyReadonlyStream(sourceStream, 65536);
+            var stream = new HttpBodyStream(null, sourceStream, null, 65536);
             var destStream = new MemoryStream(new byte[65536 * 2]);
             var sr = new StreamReader(destStream);
 

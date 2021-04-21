@@ -74,7 +74,7 @@ namespace Pomelo.Net.Gateway.Server
                         await udp.InsertPreCreateEndpointRuleAsync(
                             rule.Id,
                             IPEndPoint.Parse(rule.ServerEndpoint),
-                            await AddressHelper.ParseAddressAsync(rule.DestinationEndpoint, 0),
+                            rule.DestinationEndpoint,
                             rule.RouterId,
                             rule.TunnelId);
                     }

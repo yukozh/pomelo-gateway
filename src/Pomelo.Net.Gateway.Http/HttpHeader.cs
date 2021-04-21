@@ -16,6 +16,7 @@ namespace Pomelo.Net.Gateway.Http
 
     public class HttpHeader
     {
+        private bool isWroteToStream = false;
         private Dictionary<string, List<string>> fields = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         public HttpAction Type { get; set; }
         public string Method { get; set; }
@@ -39,6 +40,53 @@ namespace Pomelo.Net.Gateway.Http
         public string Origin => GetHeaderField("origin");
         public string Authorization => GetHeaderField("authorization");
         public string Upgrade => GetHeaderField("upgrade");
+        public bool IsWroteToStream => isWroteToStream;
+
+        public string Path
+        {
+            get
+            {
+                if (Url == null)
+                {
+                    return null;
+                }
+
+                var index = Url.IndexOf('?');
+                if (index < 0)
+                {
+                    return Url;
+                }
+                return Url.Substring(0, Url.IndexOf('?'));
+            }
+        }
+
+        private UrlEncodedValueCollection query;
+
+        public UrlEncodedValueCollection Query
+        {
+            get
+            {
+                if (Url == null)
+                {
+                    return null;
+                }
+
+                if (query == null)
+                {
+                    var index = Url.IndexOf('?');
+                    if (index >= 0)
+                    {
+                        query = new UrlEncodedValueCollection(Url.Substring(Url.IndexOf('?') + 1));
+                    }
+                    else
+                    {
+                        query = UrlEncodedValueCollection.Empty;
+                    }
+                }
+
+                return query;
+            }
+        }
 
         public bool IsKeepAlive
         {
@@ -96,7 +144,7 @@ namespace Pomelo.Net.Gateway.Http
             {
                 return false;
             }
-            HeaderCollection.Add(key, new List<string>() { key });
+            HeaderCollection.Add(key, new List<string>() { value });
             return true;
         }
 
@@ -131,6 +179,7 @@ namespace Pomelo.Net.Gateway.Http
 
         public async ValueTask<bool> ParseHeaderAsync(Stream stream, HttpAction type)
         {
+            isWroteToStream = false;
             var firstLine = true;
             while (true)
             {
@@ -143,6 +192,7 @@ namespace Pomelo.Net.Gateway.Http
                 if (firstLine)
                 {
                     firstLine = false;
+                    fields.Clear();
                     var index1 = line.IndexOf(' ');
                     if (index1 == -1)
                     {
@@ -210,6 +260,11 @@ namespace Pomelo.Net.Gateway.Http
             HttpAction type,
             CancellationToken cancellationToken = default)
         {
+            if (isWroteToStream)
+            {
+                return;
+            }
+            isWroteToStream = true;
             using (var sw = new StreamWriter(stream, Encoding.ASCII, -1, true))
             {
                 if (type == HttpAction.Request)
@@ -224,15 +279,19 @@ namespace Pomelo.Net.Gateway.Http
                 {
                     foreach (var val in field.Value)
                     {
-                        await sw.WriteLineAsync(new StringBuilder($"{field.Key}: {val}"), cancellationToken);
+                        if (string.IsNullOrWhiteSpace(val))
+                        {
+                            continue;
+                        }
+                        await sw.WriteAsync(new StringBuilder($"{field.Key}: {val}\r\n"), cancellationToken);
                     }
                 }
-                await sw.WriteLineAsync(new StringBuilder(""), cancellationToken);
+                await sw.WriteAsync(new StringBuilder("\r\n"), cancellationToken);
                 await sw.FlushAsync();
             }
         }
 
-        public int WriteToMemory(HttpAction type, Memory<byte> buffer)
+        public int CopyToMemory(HttpAction type, Memory<byte> buffer)
         {
             var count = 0;
 
@@ -248,6 +307,10 @@ namespace Pomelo.Net.Gateway.Http
             {
                 foreach (var val in field.Value)
                 {
+                    if (string.IsNullOrWhiteSpace(val))
+                    {
+                        continue;
+                    }
                     count += Encoding.ASCII.GetBytes($"{field.Key}: {val}\r\n", buffer.Slice(count).Span);
                 }
             }

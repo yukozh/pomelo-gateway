@@ -51,11 +51,6 @@ namespace System.IO
 
         public static async ValueTask<string> ReadLineExAsync(this Stream stream, CancellationToken cancellationToken = default)
         {
-            if (!stream.CanRead)
-            {
-                throw new InvalidOperationException("The stream cannot be read");
-            }
-
             var sb = new StringBuilder();
             using (var buffer = MemoryPool<byte>.Shared.Rent(1))
             {

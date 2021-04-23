@@ -15,6 +15,10 @@ component.data = function () {
 };
 
 component.methods = {
+    close: function () {
+        this.$parent.active = null;
+        this.$parent.$container.close(this);
+    },
     isDirty: function () {
         for (var i = 0; i < this.users.length; ++i) {
             if (this.isRowDirty(this.users[i])) {

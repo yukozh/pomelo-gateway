@@ -48,6 +48,7 @@ component.watch = {
 
 component.methods = {
     close: function () {
+        this.$parent.active = null;
         this.$parent.$container.close(this);
     },
     create: async function () {

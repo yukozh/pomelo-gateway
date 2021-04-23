@@ -2,7 +2,7 @@
     <div class="main-header">
         <img src="/assets/img/menu-user.png" class="main-icon" />
         <span class="main-title">Users</span>
-        <span class="main-close">×</span>
+        <span v-on:click="close" class="main-close">×</span>
     </div>
     <div class="action-bar">
         <a class="action-bar-item" v-on:click="save" v-bind:class="{ 'disabled': !isDirty() && !usersToRemove.length }"><i class="fa fa-save"></i> Save</a>

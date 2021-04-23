@@ -31,18 +31,24 @@ namespace Pomelo.Net.Gateway.Server
         {
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddNewtonsoftJson();
             services.AddDbContext<ServerContext>(x => x.UseSqlite(Configuration["DB"]));
             services.AddPomeloGatewayServer(
-                IPEndPoint.Parse(Configuration["AssociationServer"]), 
+                IPEndPoint.Parse(Configuration["AssociationServer"]),
                 IPEndPoint.Parse(Configuration["TunnelServer"]))
                 .AddPomeloHttpStack();
             services.AddSingleton<IHttpInterceptor, HostInterceptor>();
             services.AddSingleton<IAuthenticator, DbBasicAuthenticator>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public async void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
+                await db.InitDatabaseAsync();
+            }
+            /*
             app.ApplicationServices.RunPomeloGatewayServerAsync().ContinueWith((_)=> Task.Run(async ()=>
             {
                 var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
@@ -85,7 +91,7 @@ namespace Pomelo.Net.Gateway.Server
                 }
                 udp.EnsurePreCreateEndpointsAsync();
             }));
-
+            */
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

@@ -36,6 +36,14 @@ namespace Pomelo.Net.Gateway.Server.Models
                 e.HasMany(x => x.EndpointUsers)
                     .WithOne(x => x.Endpoint)
                     .OnDelete(DeleteBehavior.Cascade);
+                e.HasMany(x => x.InitiativeRules)
+                    .WithOne(x => x.Endpoint)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<EndpointUser>(e => 
+            {
+                e.HasKey(x => new { x.EndpointId, x.UserId });
             });
         }
 

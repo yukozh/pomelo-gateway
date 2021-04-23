@@ -1,0 +1,30 @@
+﻿<div>
+    <div class="left-menu">
+        <div class="menu-item" v-bind:class="{ 'active': active === 'all-endpoints' }">
+            <img class="menu-icon" src="/assets/img/menu-all.png" /> All Endpoints
+        </div>
+        <div class="menu-item" v-on:click="open('/endpoint/create')" v-bind:class="{ 'active': active === 'create-endpoint' }">
+            <img class="menu-icon" src="/assets/img/menu-network.png" /> Create Endpoint
+        </div>
+        <div class="menu-item" v-on:click="open('/user')" v-bind:class="{ 'active': active === 'users' }">
+            <img class="menu-icon" src="/assets/img/menu-user.png" /> Users
+        </div>
+        <div class="menu-item" v-on:click="open('/settings')" v-bind:class="{ 'active': active === 'settings' }">
+            <img class="menu-icon" src="/assets/img/menu-settings.png" /> Settings
+        </div>
+        <div class="menu-hr">
+            Fixed Endponits
+        </div>
+        <div class="menu-item">
+            <img class="menu-icon" src="/assets/img/menu-udp.png" /> <span class="menu-badge tcp">TCP</span> 0.0.0.0:1234
+        </div>
+        <div class="menu-item">
+            <img class="menu-icon" src="/assets/img/menu-udp.png" /> <span class="menu-badge udp">UDP</span> 0.0.0.0:1234
+        </div>
+        <div class="menu-hr">
+            On-demand Endponits
+        </div>
+    </div>
+    <div id="content">
+    </div>
+</div>

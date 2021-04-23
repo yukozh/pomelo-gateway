@@ -4,6 +4,7 @@
         user: null,
     },
     mounted: async function () {
+        this.$container.open('/menu');
     },
     created: function () {
     },
@@ -11,7 +12,7 @@
     }
 });
 
-var mainContainer = new PomeloComponentContainer('#content', app, app, function (view) {
+var mainContainer = new PomeloComponentContainer('#main', app, app, function (view) {
 }, function () { });
 
 app.$container = mainContainer;

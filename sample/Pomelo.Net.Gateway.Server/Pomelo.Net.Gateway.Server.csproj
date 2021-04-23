@@ -13,13 +13,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.4" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\PublicRule\" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pomelo.Net.Gateway.All\Pomelo.Net.Gateway.All.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="wwwroot\assets\js\" />
   </ItemGroup>
 </Project>

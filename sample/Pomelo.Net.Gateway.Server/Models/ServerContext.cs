@@ -11,7 +11,11 @@ namespace Pomelo.Net.Gateway.Server.Models
 
         public DbSet<User> Users { get; set; }
 
-        public DbSet<PublicRule> PublicRules { get; set; }
+        public DbSet<Endpoint> Endpoints { get; set; }
+
+        public DbSet<EndpointUser> EndpointUsers { get; set; }
+
+        public DbSet<InitiativeRule> InitiativeRules { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -20,11 +24,18 @@ namespace Pomelo.Net.Gateway.Server.Models
             builder.Entity<User>(e =>
             {
                 e.HasIndex(x => x.Role);
+                e.HasMany(x => x.AllowedEndpoints)
+                    .WithOne(x => x.User)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
-            builder.Entity<PublicRule>(e =>
+            builder.Entity<Endpoint>(e => 
             {
-                e.HasIndex(x => new { x.Protocol, x.ServerEndpoint });
+                e.HasIndex(x => new { x.Protocol, x.Address, x.Port })
+                    .IsUnique();
+                e.HasMany(x => x.EndpointUsers)
+                    .WithOne(x => x.Endpoint)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
 

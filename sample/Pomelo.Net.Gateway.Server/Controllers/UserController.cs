@@ -1,103 +1,92 @@
-﻿using System.Linq;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Server.Models;
 
 namespace Pomelo.Net.Gateway.Server.Controllers
 {
-    [Authorize]
-    public class UserController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UserController : ControllerBase
     {
-        private readonly ILogger<UserController> _logger;
-
-        public UserController(ILogger<UserController> logger)
-        {
-            _logger = logger;
-        }
-
-        public async ValueTask<IActionResult> Index(
+        public async ValueTask<ApiResult<List<User>>> Get(
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
-            => View(await db.Users
-                .OrderByDescending(x => x.Role)
+        {
+            return ApiResult(await db.Users
                 .ToListAsync(cancellationToken));
-
-        [HttpGet]
-        public async ValueTask<IActionResult> Edit(
-            string id,
-            [FromServices] ServerContext db,
-            CancellationToken cancellationToken = default)
-            => View(nameof(Edit), await db.Users
-                .Where(x => x.Username == id)
-                .SingleAsync(cancellationToken));
-
-        [HttpPost]
-        public async ValueTask<IActionResult> Edit(
-            User model,
-            [FromServices] ServerContext db,
-            CancellationToken cancellationToken = default)
-        {
-            var user = await db.Users
-                .Where(x => x.Username == model.Username)
-                .SingleAsync(cancellationToken);
-
-            if (!string.IsNullOrEmpty(model.Password))
-            {
-                user.Password = model.Password;
-            }
-            if (User.Identity.Name == model.Username && model.Role != UserRole.Admin)
-            {
-                ViewBag.Info = "You cannot downgrade the role of yourself";
-                return await Edit(user.Username, db, cancellationToken);
-            }
-            user.Role = model.Role;
-            await db.SaveChangesAsync(cancellationToken);
-            ViewBag.Info = "The user has been updated.";
-            return await Edit(user.Username, db, cancellationToken);
         }
 
-        public async ValueTask<IActionResult> Delete(
+        [HttpGet("{id}")]
+        public async ValueTask<ApiResult<User>> GetSingle(
+            string id, 
+            [FromServices] ServerContext db,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await db.Users
+                .Include(x => x.AllowedEndpoints)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (user == null)
+            {
+                return ApiResult<User>(404, "The specified user is not found");
+            }
+            return ApiResult(user);
+        }
+
+        [HttpPut("{id}")]
+        [HttpPost("{id}")]
+        [HttpPatch("{id}")]
+        public async ValueTask<ApiResult> Patch(
+            string id,
+            [FromServices] ServerContext db,
+            [FromBody] User model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await db.Users.SingleOrDefaultAsync(cancellationToken);
+            if (user == null)
+            {
+                db.Users.Add(model);
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                user.AllowCreateOnDemandEndpoint = model.AllowCreateOnDemandEndpoint;
+                user.Role = model.Role;
+                if (!string.IsNullOrEmpty(model.Password))
+                {
+                    user.Password = model.Password;
+                }
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            return ApiResult(200, "Succeeded");
+        }
+
+        [HttpDelete("{id}")]
+        public async ValueTask<ApiResult> Delete(
             string id,
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
         {
-            if (id == User.Identity.Name)
+            var user = await db.Users.SingleOrDefaultAsync(cancellationToken);
+
+            if (user == null)
             {
-                ViewBag.Info = "You cannot delete yourself";
-                return await Edit(id, db, cancellationToken);
+                return ApiResult(404, "The specified user is not found");
             }
 
-            var user = await db.Users
-                .Where(x => x.Username == id)
-                .SingleAsync(cancellationToken);
+            if (user.Username == User.Identity.Name)
+            {
+                return ApiResult(400, "You cannot delete yourself");
+            }
+
             db.Users.Remove(user);
             await db.SaveChangesAsync(cancellationToken);
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpGet]
-        public IActionResult Create() => View();
-
-        [HttpPost]
-        public async ValueTask<IActionResult> Create(
-            User model, 
-            [FromServices] ServerContext db,
-            CancellationToken cancellationToken = default)
-        {
-            if (await db.Users.AnyAsync(
-                x => x.Username == model.Username, 
-                cancellationToken))
-            {
-                return Content("The username is already existed");
-            }
-
-            db.Users.Add(model);
-            await db.SaveChangesAsync(cancellationToken);
-            return RedirectToAction(nameof(Index));
+            return ApiResult(200, "Succeeded");
         }
     }
 }

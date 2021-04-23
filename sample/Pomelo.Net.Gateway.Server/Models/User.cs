@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Pomelo.Net.Gateway.Server.Models
 {
@@ -17,6 +20,12 @@ namespace Pomelo.Net.Gateway.Server.Models
         [MaxLength(64)]
         public string Password { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public UserRole Role { get; set; }
+
+        public virtual ICollection<EndpointUser> AllowedEndpoints { get; set; } 
+            = new List<EndpointUser>();
+
+        public bool AllowCreateOnDemandEndpoint { get; set; }
     }
 }

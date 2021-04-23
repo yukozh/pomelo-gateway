@@ -14,6 +14,7 @@ using Pomelo.Net.Gateway.Http;
 using Pomelo.Net.Gateway.Server.Authentication;
 using Pomelo.Net.Gateway.Server.Authenticator;
 using Pomelo.Net.Gateway.Server.Models;
+using Pomelo.Net.Gateway.Server.Utils;
 
 namespace Pomelo.Net.Gateway.Server
 {
@@ -36,6 +37,7 @@ namespace Pomelo.Net.Gateway.Server
                 IPEndPoint.Parse(Configuration["AssociationServer"]), 
                 IPEndPoint.Parse(Configuration["TunnelServer"]))
                 .AddPomeloHttpStack();
+            services.AddSingleton<IHttpInterceptor, HostInterceptor>();
             services.AddSingleton<IAuthenticator, DbBasicAuthenticator>();
         }
 
@@ -93,6 +95,7 @@ namespace Pomelo.Net.Gateway.Server
                 app.UseExceptionHandler("/Home/Error");
             }
             app.UseStaticFiles();
+            app.UseVueMiddleware();
 
             app.UseRouting();
 

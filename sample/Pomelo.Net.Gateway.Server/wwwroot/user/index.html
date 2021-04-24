@@ -6,7 +6,7 @@
     </div>
     <div class="action-bar">
         <a class="action-bar-item" v-on:click="save" v-bind:class="{ 'disabled': !isDirty() && !usersToRemove.length }"><i class="fa fa-save"></i> Save</a>
-        <a class="action-bar-item"><i class="fa fa-plus"></i> Add</a>
+        <a class="action-bar-item" v-on:click="ui.createUser = !ui.createUser"><i class="fa fa-plus"></i> Add</a>
         <a class="action-bar-item" v-on:click="deleteUser(selected)" v-bind:class="{ 'disabled': selected == null }"><i class="fa fa-trash"></i> Delete</a>
         <a class="action-bar-item" v-on:click="revert" v-bind:class="{ 'disabled': !isDirty() && !usersToRemove.length }"><i class="fa fa-undo"></i> Revert</a>
     </div>
@@ -53,5 +53,54 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+    <div class="pane" style="top: 144px; left: 354px" v-if="ui.createUser">
+        <div class="pane-inner">
+            <div class="pane-title">Create User</div>
+            <table class="table">
+                <colgroup>
+                    <col style="width: 190px" />
+                    <col />
+                </colgroup>
+                <tr>
+                    <td>Username<span class="red">*</span></td>
+                    <td>
+                        <input type="text" class="textbox"
+                            v-bind:class="{ 'invalid': createUser.validateFields && !/^.{2,32}$/.test(createUser.form.username) }"
+                            v-model="createUser.form.username" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Password<span class="red">*</span></td>
+                    <td>
+                        <input type="password" class="textbox"
+                            v-bind:class="{ 'invalid': createUser.validateFields && !/^.{1,32}$/.test(createUser.form.password) }"
+                            v-model="createUser.form.password" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Role<span class="red">*</span></td>
+                    <td>
+                        <select class="textbox" v-model="createUser.form.role">
+                            <option>Admin</option>
+                            <option>User</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Allow Create On-Demand EP<span class="red">*</span></td>
+                    <td>
+                        <select class="textbox" v-model="createUser.form.allowCreateOnDemandEndpoint">
+                            <option value="true">Allow</option>
+                            <option value="false">Deny</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+            <div class="pane-footer">
+                <a v-on:click="createUserClick" class="button">Create</a>
+                <a v-on:click="ui.createUser = false" class="button gray">Close</a>
+            </div>
+        </div>
     </div>
 </div>

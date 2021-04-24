@@ -10,8 +10,30 @@ component.data = function () {
     return {
         users: [],
         usersToRemove: [],
-        selected: null
+        selected: null,
+        ui: {
+            createUser: false
+        },
+        createUser: {
+            validateFields: false,
+            form: null
+        }
     };
+};
+
+component.watch = {
+    deep: true,
+    'ui.createUser': function () {
+        if (this.ui.createUser) {
+            this.createUser.form = {
+                username: '',
+                password: '',
+                role: 'User',
+                allowCreateOnDemandEndpoint: false
+            };
+            this.createUser.validateFields = false;
+        }
+    }
 };
 
 component.methods = {
@@ -67,5 +89,11 @@ component.methods = {
             }
         }
         this.revert();
+    },
+    createUserClick: function () {
+        this.createUser.validateFields = true;
+        if ($('.invalid').length) {
+            return;
+        }
     }
 };

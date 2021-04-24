@@ -186,7 +186,12 @@ h4, h5 {
     width: 100%;
     color: #555;
     border-radius: 0;
+    border-color: #aaa;
 }
+
+    .textbox:hover {
+        border-color: #555;
+    }
 
 .red {
     color: red;
@@ -339,3 +344,38 @@ h4.section, h5.section {
     overflow-y: auto;
     height: calc(100% - 85px);
 }
+
+.pane {
+    position: fixed;
+    width: 440px;
+    background: #fff;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    top: 60px;
+    left: 280px;
+}
+
+.pane-inner {
+    padding: 20px;
+}
+
+.pane-title {
+    font-size: 18px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.pane-footer {
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.button.gray {
+    background: #ddd;
+    color: #555;
+}
+
+.button.gray:hover {
+    background: #cecece;
+    color: #333;
+}
+

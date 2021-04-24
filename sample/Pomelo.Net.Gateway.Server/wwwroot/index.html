@@ -24,7 +24,7 @@
         </div>
         <div class="notifications">
             <div class="notification" v-for="notification in notifications" v-bind:class="notification.color">
-                <div class="notification-title">{{ notification.title }} <span class="notification-close">×</span></div>
+                <div class="notification-title">{{ notification.title }} <span class="notification-close" v-on:click="closeNotification(notification.id)">×</span></div>
                 <div>{{ notification.subtitle }}</div>
             </div>
         </div>

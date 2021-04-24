@@ -41,6 +41,14 @@
                 notification.closeTime = closeTime;
             }
             return id;
+        },
+        closeNotification: function (id) {
+            for (var i = 0; i < this.notifications.length; ++i) {
+                if (this.notifications[i].id == id) {
+                    this.notifications.splice(i, 1);
+                    return;
+                }
+            }
         }
     }
 });
@@ -74,3 +82,9 @@ $(window).click(function (e) {
         e.preventDefault();
     }
 });
+
+function sleep(ms) {
+    return new Promise((res, rej) => {
+        setTimeout(() => res());
+    });
+}

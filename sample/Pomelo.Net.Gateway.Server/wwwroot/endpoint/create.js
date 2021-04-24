@@ -52,14 +52,18 @@ component.methods = {
         this.$parent.$container.close(this);
     },
     create: async function () {
+        var nId = app.notify('Creating Endpoint', `Validating arguments...`, 'blue', -1);
         this.validateFields = true;
-        var invalid = $('.form').find('.invalid').length;
+        await sleep(500);
+        var invalid = $('.invalid').length;
+        console.log(invalid);
         if (invalid) {
+            app.notify('Create Failed', `Arguments are invalid.`, 'red', 3, nId);
             return;
         }
-        var nId = app.notify('Creating Endpoint', `Creating ${this.form.name}...`, 'blue', -1);
+        app.notify('Creating Endpoint', `Creating ${this.form.name}...`, 'blue', nId);
         try {
-            qv.post('/api/endpoint', this.form);
+            await qv.post('/api/endpoint', this.form);
             app.notify('Created Endpoint', `Created ${this.form.name}...`, 'green', 5, nId);
         } catch (err) {
             app.notify('Create Failed', `Failed to create ${this.form.name}...`, 'red', 10, nId);

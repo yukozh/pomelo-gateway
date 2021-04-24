@@ -193,7 +193,7 @@ h4, h5 {
         border-color: #555;
     }
 
-.red {
+span.red {
     color: red;
 }
 
@@ -379,3 +379,59 @@ h4.section, h5.section {
     color: #333;
 }
 
+.notifications {
+    position: fixed;
+    top: 60px;
+    right: 40px;
+    width: 320px;
+}
+
+.notification {
+    background: #fcfcfc;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-left: 8px solid #ccc;
+    margin-bottom: 5px;
+    transition: all 0.2s ease-in-out;
+}
+
+.notification-title {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.notification.blue {
+    border-color: #95c5ff;
+    background: #f5fbff;
+}
+
+    .notification.blue .notification-title {
+        color: #5ea7ff;
+    }
+
+.notification.green {
+    border-color: #87bc40;
+    background: #f6fff5;
+}
+
+    .notification.green .notification-title {
+        color: #7cb332;
+    }
+
+.notification.red {
+    border-color: #ff6666;
+    background: #fffbfb;
+}
+
+    .notification.red .notification-title {
+        color: #ff5858;
+    }
+
+.notification-close {
+    float: right;
+    font-size: 20px;
+    margin-top: -8px;
+    color: #888;
+    cursor: pointer;
+}

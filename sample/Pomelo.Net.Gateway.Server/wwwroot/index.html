@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <title>Pomelo Gateway</title>
@@ -21,6 +21,12 @@
             </div>
         </div>
         <div id="main">
+        </div>
+        <div class="notifications">
+            <div class="notification" v-for="notification in notifications" v-bind:class="notification.color">
+                <div class="notification-title">{{ notification.title }} <span class="notification-close">×</span></div>
+                <div>{{ notification.subtitle }}</div>
+            </div>
         </div>
     </div>
     <script src="/index.js"></script>

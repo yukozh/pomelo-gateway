@@ -57,8 +57,13 @@ component.methods = {
         if (invalid) {
             return;
         }
-        qv.post('/api/endpoint', this.form);
-        //alert(endpoint.id);
+        var nId = app.notify('Creating Endpoint', `Creating ${this.form.name}...`, 'blue', -1);
+        try {
+            qv.post('/api/endpoint', this.form);
+            app.notify('Created Endpoint', `Created ${this.form.name}...`, 'green', 5, nId);
+        } catch (err) {
+            app.notify('Create Failed', `Failed to create ${this.form.name}...`, 'red', 10, nId);
+        }
     },
     isTunnelValid: function () {
         if (this.form.protocol == 'TCP') {

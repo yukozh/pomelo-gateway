@@ -2,13 +2,46 @@
     data: {
         token: null,
         user: null,
+        notifications: []
     },
     mounted: async function () {
-        this.$container.open('/menu');
-    },
-    created: function () {
+        app.$container.open('/menu');
+        setInterval(function () {
+            for (var i = 0; i < app.notifications.length; ++i) {
+                if (app.notifications[i].closeTime > 0) {
+                    --app.notifications[i].closeTime;
+                }
+                if (app.notifications[i].closeTime == 0) {
+                    app.notifications.splice(i, 1);
+                }
+            }
+        }, 1000);
     },
     methods: {
+        newGuid: function () {
+            return 'xxxxxxxx-xxxx-xxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        },
+        notify: function (title, subtitle, color, closeTime, id) {
+            var generateId = !id;
+            id = id || this.newGuid();
+            if (generateId) {
+                this.notifications.push({ title: title, subtitle: subtitle, color: color, closeTime: closeTime, id: id });
+            } else {
+                var notification = this.notifications.filter(x => x.id == id);
+                if (!notification.length) {
+                    return null;
+                }
+                notification = notification[0];
+                notification.title = title;
+                notification.subtitle = subtitle;
+                notification.color = color;
+                notification.closeTime = closeTime;
+            }
+            return id;
+        }
     }
 });
 

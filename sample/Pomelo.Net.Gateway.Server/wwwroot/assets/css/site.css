@@ -435,3 +435,53 @@ h4.section, h5.section {
     color: #888;
     cursor: pointer;
 }
+
+.narrow {
+    width: 260px;
+    overflow-x: hidden;
+    border-right: 1px solid #ddd;
+    min-height: calc(100% - 45px);
+    float: left;
+}
+
+    .narrow .narrow-hidden {
+        display: none;
+    }
+
+.extend {
+    width: calc(100% - 261px);
+    overflow-x: hidden;
+    min-height: calc(100% - 45px);
+    min-height: calc(100% - 45px);
+    float: left;
+}
+
+.action-bar-item:first-child {
+    margin-left: 15px;
+}
+
+.detail-menu {
+    line-height: 22px;
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.detail-menu-icon {
+    width: 22px;
+    height: 22px;
+    float: left;
+    margin-right: 15px;
+}
+
+.detail-menu:hover, .detail-menu.active {
+    background: #eee;
+}
+
+.table.narrow-col {
+    line-height: 30px!important;
+}
+
+.main-title {
+    font-size: 16px;
+    margin: 15px 0 5px 0;
+}

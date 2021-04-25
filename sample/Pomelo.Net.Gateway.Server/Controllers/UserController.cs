@@ -44,11 +44,10 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             [FromBody] User model,
             CancellationToken cancellationToken = default)
         {
-            var user = await db.Users.SingleOrDefaultAsync(cancellationToken);
+            var user = await db.Users.SingleOrDefaultAsync(x => x.Username == id, cancellationToken);
             if (user == null)
             {
-                db.Users.Add(model);
-                await db.SaveChangesAsync();
+                return ApiResult(404, "User not found");
             }
             else
             {
@@ -60,6 +59,25 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 }
                 await db.SaveChangesAsync(cancellationToken);
             }
+            return ApiResult(200, "Succeeded");
+        }
+
+        [HttpPut]
+        [HttpPost]
+        [HttpPatch]
+        public async ValueTask<ApiResult> Post(
+            string id,
+            [FromServices] ServerContext db,
+            [FromBody] User model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await db.Users.SingleOrDefaultAsync(x => x.Username == id, cancellationToken);
+            if (user != null)
+            {
+                return ApiResult(400, "The user is already existed");
+            }
+            db.Users.Add(model);
+            await db.SaveChangesAsync();
             return ApiResult(200, "Succeeded");
         }
 

@@ -13,6 +13,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
     [ApiController]
     public class EndpointController : ControllerBase
     {
+        [HttpGet]
         public async ValueTask<ApiResult<List<Endpoint>>> Get(
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)

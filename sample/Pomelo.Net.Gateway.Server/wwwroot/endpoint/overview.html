@@ -1,0 +1,42 @@
+﻿<div>
+    <div class="action-bar">
+        <a class="action-bar-item"><i class="fa fa-trash"></i> Delete</a>
+    </div>
+    <div class="container">
+        <h4 class="main-title">Essentials</h4>
+        <div class="essentials-table-outer">
+            <table class="table narrow-col">
+                <colgroup>
+                    <col style="width: 150px" />
+                    <col />
+                    <col style="width: 150px" />
+                    <col />
+                </colgroup>
+                <tr>
+                    <td class="bold">Endpoint Name</td>
+                    <td>{{ endpoint.name }}</td>
+                    <td class="bold">Protocol</td>
+                    <td>{{ endpoint.protocol }}</td>
+                </tr>
+                <tr>
+                    <td class="bold">Address</td>
+                    <td>{{ endpoint.address }}</td>
+                    <td class="bold">Port</td>
+                    <td>{{ endpoint.port }}</td>
+                </tr>
+                <tr>
+                    <td class="bold">Router ID</td>
+                    <td>{{ endpoint.routerId }}</td>
+                    <td class="bold">Router Name</td>
+                    <td>{{ routerName }}</td>
+                </tr>
+                <tr>
+                    <td class="bold">Tunnel Provider ID</td>
+                    <td>{{ endpoint.tunnelId }}</td>
+                    <td class="bold">Tunnel Provider Name</td>
+                    <td>{{ tunnelName }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

@@ -7,39 +7,22 @@ var PomeloComponentContainer = function (el, root, parent, onActive, onViewOpen)
         el: el,
         instance: {},
         active: null,
-        getOrganization: function () {
-            var org = '';
-            var url = window.location.href;
-            if (url.indexOf('?') >= 0) {
-                url = url.substr(url.indexOf('?') + 1);
-                var temp = url.split('&').filter(x => x.indexOf("organization=") >= 0);
-                if (temp.length) {
-                    org = temp[0].substr("organization=".length);
-                }
-            }
-
-            if (!org) {
-                org = sessionStorage.getItem('organization');
-            }
-
-            return org;
-        },
         destroyAll: function () {
             for (var x in this.instance) {
                 this.instance[x].$destroy();
             }
         },
         getTemplate: async function (url) {
-            var result = await fetch(url + '.html?organization=' + this.getOrganization());
+            var result = await fetch(url + '.html');
             if (result.status === 404) {
-                result = await fetch(url + '/index.html?organization=' + this.getOrganization());
+                result = await fetch(url + '/index.html');
             }
             return result.text();
         },
         getScript: async function (url) {
-            var result = await fetch(url + '.js?organization=' + this.getOrganization());
+            var result = await fetch(url + '.js');
             if (result.status === 404) {
-                result = await fetch(url + '/index.js?organization=' + this.getOrganization());
+                result = await fetch(url + '/index.js');
             }
             return result.text();
         },

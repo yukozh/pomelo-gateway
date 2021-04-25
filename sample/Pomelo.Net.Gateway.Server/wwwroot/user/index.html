@@ -8,6 +8,7 @@
         <a class="action-bar-item" v-on:click="save" v-bind:class="{ 'disabled': !isDirty() && !usersToRemove.length }"><i class="fa fa-save"></i> Save</a>
         <a class="action-bar-item" v-on:click="ui.createUser = !ui.createUser"><i class="fa fa-plus"></i> Add</a>
         <a class="action-bar-item" v-on:click="deleteUser(selected)" v-bind:class="{ 'disabled': selected == null }"><i class="fa fa-trash"></i> Delete</a>
+        <a class="action-bar-item" v-on:click="showResetPassword(selected)" v-bind:class="{ 'disabled': selected == null }"><i class="fa fa-lock"></i> Reset Password</a>
         <a class="action-bar-item" v-on:click="revert" v-bind:class="{ 'disabled': !isDirty() && !usersToRemove.length }"><i class="fa fa-undo"></i> Revert</a>
     </div>
     <div class="container scroll-with-action-bar">
@@ -24,24 +25,24 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="(user, i) in users" 
-                    v-bind:row-id="i" 
-                    v-show="!usersToRemove.some(x => x == user.username)" 
-                    v-on:click="selected = user.username" 
+                <tr v-for="(user, i) in users"
+                    v-bind:row-id="i"
+                    v-show="!usersToRemove.some(x => x == user.username)"
+                    v-on:click="selected = user.username"
                     v-bind:class="{ 'selected': selected == user.username, 'dirty': isRowDirty(user) }">
                     <td><div class="avatar">{{ user.username.substr(0, 2).toUpperCase() }}</div></td>
                     <td>{{ user.username }}</td>
                     <td>
                         <select class="inline-select"
-                                v-model="user.role" 
+                                v-model="user.role"
                                 v-bind:class="{ 'dirty': user.role != user.__role }">
                             <option>Admin</option>
                             <option>User</option>
                         </select>
                     </td>
                     <td>
-                        <select class="inline-select" 
-                                v-model="user.allowCreateOnDemandEndpoint" 
+                        <select class="inline-select"
+                                v-model="user.allowCreateOnDemandEndpoint"
                                 v-bind:class="{ 'dirty': user.allowCreateOnDemandEndpoint != user.__allowCreateOnDemandEndpoint }">
                             <option value="true">Allow</option>
                             <option value="false">Deny</option>
@@ -66,16 +67,16 @@
                     <td>Username<span class="red">*</span></td>
                     <td>
                         <input type="text" class="textbox"
-                            v-bind:class="{ 'invalid': createUser.validateFields && !/^.{2,32}$/.test(createUser.form.username) }"
-                            v-model="createUser.form.username" />
+                               v-bind:class="{ 'invalid': createUser.validateFields && !/^.{2,32}$/.test(createUser.form.username) }"
+                               v-model="createUser.form.username" />
                     </td>
                 </tr>
                 <tr>
                     <td>Password<span class="red">*</span></td>
                     <td>
                         <input type="password" class="textbox"
-                            v-bind:class="{ 'invalid': createUser.validateFields && !/^.{1,32}$/.test(createUser.form.password) }"
-                            v-model="createUser.form.password" />
+                               v-bind:class="{ 'invalid': createUser.validateFields && !/^.{1,32}$/.test(createUser.form.password) }"
+                               v-model="createUser.form.password" />
                     </td>
                 </tr>
                 <tr>
@@ -100,6 +101,37 @@
             <div class="pane-footer">
                 <a v-on:click="createUserClick" class="button">Create</a>
                 <a v-on:click="ui.createUser = false" class="button gray">Close</a>
+            </div>
+        </div>
+    </div>
+    <div class="pane" style="top: 144px; left: 502px" v-if="ui.resetPassword">
+        <div class="pane-inner">
+            <div class="pane-title">Reset Password</div>
+            <table class="table">
+                <colgroup>
+                    <col style="width: 190px" />
+                    <col />
+                </colgroup>
+                <tr>
+                    <td>Username</td>
+                    <td>
+                        <input type="text" class="textbox"
+                               disabled
+                               v-model="selected" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Password<span class="red">*</span></td>
+                    <td>
+                        <input type="password" class="textbox"
+                               v-bind:class="{ 'invalid': resetPassword.validateFields && !/^.{1,32}$/.test(resetPassword.password) }"
+                               v-model="resetPassword.password" />
+                    </td>
+                </tr>
+            </table>
+            <div class="pane-footer">
+                <a v-on:click="resetPasswordClick" class="button">ResetPassword</a>
+                <a v-on:click="ui.resetPassword = false" class="button gray">Close</a>
             </div>
         </div>
     </div>

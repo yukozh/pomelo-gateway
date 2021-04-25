@@ -49,6 +49,11 @@
                     return;
                 }
             }
+        },
+        open: async function (url, pushState = true) {
+            if (app.$container.active) {
+                await app.$container.active.open(url, pushState);
+            }
         }
     }
 });

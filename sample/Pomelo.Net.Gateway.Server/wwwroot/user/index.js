@@ -12,11 +12,16 @@ component.data = function () {
         usersToRemove: [],
         selected: null,
         ui: {
-            createUser: false
+            createUser: false,
+            resetPassword: false
         },
         createUser: {
             validateFields: false,
             form: null
+        },
+        resetPassword: {
+            validateFields: false,
+            password: ''
         }
     };
 };
@@ -85,15 +90,65 @@ component.methods = {
         }
         for (var i = 0; i < this.users.length; ++i) {
             if (this.isRowDirty(this.users[i])) {
-                await qv.put('/api/user/' + this.users[i].username, this.users[i]);
+                await qv.put('/api/user/' + this.users[i].username, {
+                    username: this.users[i].username,
+                    role: this.users[i].role,
+                    allowCreateOnDemandEndpoint: this.users[i].allowCreateOnDemandEndpoint
+                });
             }
         }
         this.revert();
     },
-    createUserClick: function () {
+    createUserClick: async function () {
+        var nId = app.notify('Creating User', `Validating arguments...`, 'blue', -1);
         this.createUser.validateFields = true;
+        await sleep(500);
         if ($('.invalid').length) {
+            app.notify('Create Failed', `Arguments are invalid.`, 'red', 3, nId);
             return;
+        }
+        app.notify('Creating User', `Creating ${this.createUser.form.username}`, 'blue', -1, nId);
+        try {
+            await qv.post('/api/user', this.createUser.form);
+            app.notify('Created User', `Created ${this.createUser.form.username}...`, 'green', 5, nId);
+            this.ui.createUser = false;
+            this.loadUsers();
+        } catch (err) {
+            app.notify('Create Failed', err.responseJSON.message, 'red', 10, nId);
+        }
+    },
+    showResetPassword: function (user) {
+        if (!user) {
+            this.ui.resetPassword = false;
+            return;
+        }
+        this.ui.resetPassword = !this.ui.resetPassword;
+        if (this.ui.resetPassword) {
+            this.resetPassword.validateFields = false;
+            this.resetPassword.password = '';
+        }
+    },
+    resetPasswordClick: async function () {
+        var nId = app.notify('Reset Password', `Validating arguments...`, 'blue', -1);
+        this.resetPassword.validateFields = true;
+        await sleep(500);
+        if ($('.invalid').length) {
+            app.notify('Reset Password', `Arguments are invalid.`, 'red', 3, nId);
+            return;
+        }
+        app.notify('Reset Password', `Restting password ${this.selected}`, 'blue', -1, nId);
+        try {
+            var user = this.users.filter(x => x.username == this.selected)[0];
+            await qv.post('/api/user/' + this.selected, {
+                username: user.username,
+                password: this.resetPassword.password,
+                role: user.__role,
+                allowCreateOnDemandEndpoint: user.__allowCreateOnDemandEndpoint
+            });
+            app.notify('Reset Password', `Succeeded`, 'green', 5, nId);
+            this.ui.resetPassword = false;
+        } catch (err) {
+            app.notify('Reset Password Failed', err.responseJSON.message, 'red', 10, nId);
         }
     }
 };

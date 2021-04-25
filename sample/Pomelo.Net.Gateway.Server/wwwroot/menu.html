@@ -1,6 +1,6 @@
 ﻿<div>
     <div class="left-menu">
-        <div class="menu-item" v-bind:class="{ 'active': active === 'all-endpoints' }">
+        <div class="menu-item" v-on:click="open('/endpoint')" v-bind:class="{ 'active': active === 'all-endpoints' }">
             <img class="menu-icon" src="/assets/img/menu-all.png" /> All Endpoints
         </div>
         <div class="menu-item" v-on:click="open('/endpoint/create')" v-bind:class="{ 'active': active === 'create-endpoint' }">

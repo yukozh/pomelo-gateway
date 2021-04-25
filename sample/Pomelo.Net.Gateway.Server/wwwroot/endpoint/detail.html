@@ -1,0 +1,19 @@
+﻿<div class="main">
+    <div class="main-header">
+        <img src="/assets/img/menu-network.png" class="main-icon" />
+        <span class="main-title">{{ endpoint.name }}</span>
+        <span v-on:click="close" class="main-close">×</span>
+    </div>
+    <div class="narrow">
+        <div class="detail-menu" v-bind:class="{ 'active': menu == 'overview' }" v-on:click="open('overview')">
+            <img src="/assets/img/menu-network.png" class="detail-menu-icon" />
+            Overview
+        </div>
+        <div class="detail-menu" v-bind:class="{ 'active': menu == 'accessControl' }" v-on:click="open('accessControl')">
+            <img src="/assets/img/menu-user.png" class="detail-menu-icon" />
+            Access Control
+        </div>
+    </div>
+    <div class="extend" id="detail">
+    </div>
+</div>

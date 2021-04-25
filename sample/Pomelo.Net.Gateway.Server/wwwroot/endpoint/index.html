@@ -1,0 +1,33 @@
+﻿<div class="main">
+    <div class="main-header">
+        <img src="/assets/img/menu-all.png" class="main-icon" />
+        <span class="main-title">All Endpoints</span>
+        <span v-on:click="close" class="main-close">×</span>
+    </div>
+    <div>
+        <div class="action-bar">
+            <a class="action-bar-item" v-on:click="$root.open('/endpoint/create')"><i class="fa fa-plus"></i> Create</a>
+        </div>
+        <div class="container scroll-with-action-bar">
+            <table class="list" style="margin-top: 20px">
+                <thead>
+                    <tr>
+                        <th>NAME</th>
+                        <th class="narrow-hidden">PROTOCOL</th>
+                        <th class="narrow-hidden">ADDRESS</th>
+                        <th class="narrow-hidden">PORT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="endpoint in endpoints"
+                        v-on:click="$root.open('/endpoint/detail?id=' + endpoint.id)">
+                        <td>{{ endpoint.name }}</td>
+                        <td class="narrow-hidden">{{ endpoint.protocol }}</td>
+                        <td class="narrow-hidden">{{ endpoint.address }}</td>
+                        <td class="narrow-hidden">{{ endpoint.port }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

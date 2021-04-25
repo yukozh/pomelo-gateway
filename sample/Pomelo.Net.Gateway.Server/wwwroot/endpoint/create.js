@@ -61,10 +61,11 @@ component.methods = {
             app.notify('Create Failed', `Arguments are invalid.`, 'red', 3, nId);
             return;
         }
-        app.notify('Creating Endpoint', `Creating ${this.form.name}...`, 'blue', nId);
+        app.notify('Creating Endpoint', `Creating ${this.form.name}...`, 'blue', -1, nId);
         try {
             await qv.post('/api/endpoint', this.form);
-            app.notify('Created Endpoint', `Created ${this.form.name}...`, 'green', 5, nId);
+            app.notify('Created Endpoint', `Created ${this.form.name}`, 'green', 5, nId);
+            app.open('/endpoint');
         } catch (err) {
             app.notify('Create Failed', `Failed to create ${this.form.name}...`, 'red', 10, nId);
         }

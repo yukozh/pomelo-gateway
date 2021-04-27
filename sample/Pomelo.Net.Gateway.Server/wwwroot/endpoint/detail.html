@@ -13,6 +13,15 @@
             <img src="/assets/img/menu-user.png" class="detail-menu-icon" />
             Access Control
         </div>
+        <div class="section-header">Settings</div>
+        <div class="detail-menu" v-bind:class="{ 'active': menu == 'config' }" v-on:click="open('config')">
+            <img src="/assets/img/config.png" class="detail-menu-icon" />
+            Configurations
+        </div>
+        <div class="detail-menu" v-bind:class="{ 'active': menu == 'http' }" v-on:click="open('http')">
+            <img src="/assets/img/http.png" class="detail-menu-icon" />
+            HTTP Stack
+        </div>
     </div>
     <div class="extend" id="detail">
     </div>

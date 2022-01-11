@@ -39,7 +39,7 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<IStreamTunnel, HttpTunnel>();
             services.AddSingleton<IHttpInterceptor, DefaultHttpInterceptor>();
             services.AddSingleton<IHttpInterceptor, GoogleInterceptor>();
-            services.AddSingleton<IHttpInterceptor, HostInterceptor>();
+            services.AddSingleton<IHttpInterceptor, HeaderInterceptor>();
             services.AddSingleton<IHttpInterceptor, HttpHeaderInterceptor>();
             services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
             services.AddPomeloGatewayServer(
@@ -53,6 +53,12 @@ namespace Pomelo.WebSlotGateway
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
+                db.InitDatabaseAsync().GetAwaiter().GetResult();
+            }
+                
             app.ApplicationServices.RunPomeloGatewayServerAsync().ContinueWith(_ => Task.Run(async () =>
             {
                 var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();

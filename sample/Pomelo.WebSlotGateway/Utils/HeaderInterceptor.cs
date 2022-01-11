@@ -4,11 +4,11 @@ using Pomelo.Net.Gateway.Http;
 
 namespace Pomelo.WebSlotGateway.Utils
 {
-    public class HostInterceptor : IHttpInterceptor
+    public class HeaderInterceptor : IHttpInterceptor
     {
         private ConfigurationHelper config;
 
-        public HostInterceptor(ConfigurationHelper config)
+        public HeaderInterceptor(ConfigurationHelper config)
         {
             this.config = config;
         }
@@ -29,6 +29,14 @@ namespace Pomelo.WebSlotGateway.Utils
             {
                 context.Request.Headers.AddOrUpdate("host", host);
             }
+
+            var refererFrom = await config.GetOverrideRefererFromAsync(cancellationToken);
+            var refererTo = await config.GetOverrideRefererToAsync(cancellationToken);
+            if (!string.IsNullOrEmpty(refererFrom) && !string.IsNullOrEmpty(context.Request.Headers.Referer))
+            {
+                context.Request.Headers.AddOrUpdate("referer", context.Request.Headers.Referer.Replace(refererFrom, refererTo));
+            }
+
             return false;
         }
     }

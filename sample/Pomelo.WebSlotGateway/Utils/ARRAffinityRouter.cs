@@ -144,7 +144,7 @@ namespace Pomelo.WebSlotGateway.Utils
             {
                 await ReloadSlotsAsync(cancellationToken);
             }
-            if (!slotMaps.ContainsKey(host))
+            if (host == null || !slotMaps.ContainsKey(host))
             {
                 host = "*";
             }

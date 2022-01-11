@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -19,11 +20,15 @@ namespace Pomelo.WebSlotGateway.Utils
         public const string KeyHealthCheckerIntervalSeconds = "HEALTHCHECKERINTERVALSECONDS";
         public const string KeyAppendForwardHeader = "APPENDFORWARDHEADER";
         public const string KeyOverrideHost = "OVERRIDEHOST";
+        public const string KeyOverrideRefererFrom = "OVERRIDEREFERERFROM";
+        public const string KeyOverrideRefererTo = "OVERRIDEREFERERTO";
 
         private IServiceProvider services;
+        private Dictionary<string, string> cache;
 
         public ConfigurationHelper(IServiceProvider services)
         {
+            this.cache = new Dictionary<string, string>();
             this.services = services;
         }
 
@@ -63,5 +68,11 @@ namespace Pomelo.WebSlotGateway.Utils
 
         public ValueTask<string> GetOverrideHostAsync(CancellationToken cancellationToken = default)
             => GetValueAsync(KeyOverrideHost, cancellationToken);
+
+        public ValueTask<string> GetOverrideRefererFromAsync(CancellationToken cancellationToken = default)
+            => GetValueAsync(KeyOverrideRefererFrom, cancellationToken);
+
+        public ValueTask<string> GetOverrideRefererToAsync(CancellationToken cancellationToken = default)
+            => GetValueAsync(KeyOverrideRefererTo, cancellationToken);
     }
 }

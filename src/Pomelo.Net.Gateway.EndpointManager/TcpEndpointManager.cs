@@ -160,7 +160,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             CancellationToken cancellationToken = default)
         {
             return await context.EndpointUsers
-                .SingleAsync(x => x.UserIdentifier == identifier, cancellationToken);
+                .FirstAsync(x => x.UserIdentifier == identifier, cancellationToken);
         }
 
         public async ValueTask<PreCreateEndpoint> GetPreCreateEndpointByIdentifierAsync(
@@ -168,7 +168,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             CancellationToken cancellationToken = default)
         {
             return await context.PreCreateEndpoints
-                .SingleAsync(x => x.Identifier == identifier, cancellationToken);
+                .FirstAsync(x => x.Identifier == identifier, cancellationToken);
         }
 
         private void RecycleEndpoint(Endpoint endpoint)

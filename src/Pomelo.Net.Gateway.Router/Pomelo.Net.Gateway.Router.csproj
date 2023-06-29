@@ -1,12 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <Product>Pomelo Gateway</Product>
     <Company>Pomelo Foundation</Company>
     <Authors>Yuko Zheng</Authors>
-    <Version>0.9.0</Version>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

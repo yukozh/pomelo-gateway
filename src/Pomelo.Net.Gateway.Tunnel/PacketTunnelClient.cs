@@ -26,9 +26,8 @@ namespace Pomelo.Net.Gateway.Tunnel
         public IPEndPoint ServerEndpoint => serverEndpoint;
         public bool Connected { get; private set; }
 
-        public PacketTunnelClient(IPEndPoint serverEndpoint, IServiceProvider services)
+        public PacketTunnelClient(IServiceProvider services)
         {
-            this.serverEndpoint = serverEndpoint;
             this.services = services;
             this.logger = services.GetRequiredService<ILogger<PacketTunnelClient>>();
             this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
@@ -36,9 +35,19 @@ namespace Pomelo.Net.Gateway.Tunnel
             this.tokenProvider = services.GetRequiredService<ITokenProvider>();
         }
 
+        public void SetServer(IPEndPoint serverEndpoint)
+        {
+            this.serverEndpoint = serverEndpoint;
+        }
+
         public void Start()
         {
-            ResetAsync();
+            if (this.serverEndpoint == null)
+            {
+                throw new InvalidOperationException("Please call SetServer before start");
+            }
+
+            _ = ResetAsync();
         }
 
         private async ValueTask ResetAsync()

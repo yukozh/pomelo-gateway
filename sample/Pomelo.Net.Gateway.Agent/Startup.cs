@@ -29,14 +29,14 @@ namespace Pomelo.Net.Gateway.Agent
                     x.SerializerSettings.Converters.Add(new IPEndPointConverter());
                 });
 
-            services.AddPomeloGatewayClient(
-                AddressHelper.ParseAddressAsync(Configuration["AssociationServer"], 12646).Result, 
-                AddressHelper.ParseAddressAsync(Configuration["TunnelServer"], 12647).Result);
+            services.AddPomeloGatewayClient();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.ApplicationServices.RunPomeloGatewayClient();
+            app.ApplicationServices.RunPomeloGatewayClient(AddressHelper.ParseAddressAsync(
+                Configuration["AssociationServer"], 12646).Result,
+                AddressHelper.ParseAddressAsync(Configuration["TunnelServer"], 12647).Result);
 
             if (env.IsDevelopment())
             {

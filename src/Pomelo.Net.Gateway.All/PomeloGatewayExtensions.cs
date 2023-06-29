@@ -9,16 +9,13 @@ namespace Pomelo.Net.Gateway
     {
         public static IServiceCollection AddPomeloGatewayClient(
             this IServiceCollection services,
-            IPEndPoint associateServerEndpoint,
-            IPEndPoint tunnelServerEndpoint,
-            bool enableUdp = true,
-            string ruleJsonPath = "rules.json")
+            string ruleJsonPath = "gateway-client-rules.json")
         {
             return services.AddLogging()
                 .AddSingleton(services
-                    => new Association.AssociateClient(associateServerEndpoint, tunnelServerEndpoint, services))
+                    => new Association.AssociateClient(services))
                 .AddSingleton(services
-                    => new Tunnel.PacketTunnelClient(enableUdp ? tunnelServerEndpoint : null, services))
+                    => new Tunnel.PacketTunnelClient(services))
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
                 .AddSingleton<Tunnel.PacketTunnelContextFactory>()
                 .AddSingleton<EndpointCollection.IMappingRuleProvider, EndpointCollection.LocalFileMappingRuleProvider>(services
@@ -75,10 +72,15 @@ namespace Pomelo.Net.Gateway
             }, TaskCreationOptions.LongRunning);
         }
 
-        public static void RunPomeloGatewayClient(this IServiceProvider services)
+        public static void RunPomeloGatewayClient(
+            this IServiceProvider services,
+            IPEndPoint associateServerEndpoint, 
+            IPEndPoint tunnelServerEndpoint)
         {
             Task.Factory.StartNew(() =>
             {
+                var client = services.GetRequiredService<Association.AssociateClient>();
+                client.SetServers(associateServerEndpoint, tunnelServerEndpoint);
                 services.GetRequiredService<Association.AssociateClient>().Start();
                 var _ = services.GetRequiredService<Tunnel.PacketTunnelClient>();
             }, TaskCreationOptions.LongRunning);

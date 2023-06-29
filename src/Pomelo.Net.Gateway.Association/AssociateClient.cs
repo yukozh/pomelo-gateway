@@ -53,12 +53,8 @@ namespace Pomelo.Net.Gateway.Association
         public IPEndPoint PacketTunnelServerEndpoint => tunnelServerEndpoint;
 
         public AssociateClient(
-            IPEndPoint associateServerEndpoint, 
-            IPEndPoint tunnelServerEndpoint,
             IServiceProvider services)
         {
-            this.associateServerEndpoint = associateServerEndpoint;
-            this.tunnelServerEndpoint = tunnelServerEndpoint;
             this.services = services;
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
@@ -70,9 +66,23 @@ namespace Pomelo.Net.Gateway.Association
             this.serverPacketRouters = new List<Interface>();
         }
 
+        public void SetServers(
+            IPEndPoint associateServerEndpoint,
+            IPEndPoint tunnelServerEndpoint)
+        { 
+            this.associateServerEndpoint = associateServerEndpoint;
+            this.tunnelServerEndpoint = tunnelServerEndpoint;
+        }
+
         public void Start()
         {
-            this.HeartBeatAsync();
+            if (associateServerEndpoint == null 
+                || tunnelServerEndpoint == null)
+            {
+                throw new InvalidOperationException("Please call SetServers before start");
+            }
+
+            _ = this.HeartBeatAsync();
             this.Reset();
         }
 
@@ -173,6 +183,7 @@ namespace Pomelo.Net.Gateway.Association
                     try
                     {
                         await HandshakeAsync();
+                        packetTunnelClient.SetServer(tunnelServerEndpoint);
                         packetTunnelClient.Start();
                         await Task.WhenAll(new[]
                         {

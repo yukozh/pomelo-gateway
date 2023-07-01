@@ -39,6 +39,7 @@ namespace Pomelo.Net.Gateway.Association
         private List<Interface> serverPacketTunnelProviders;
         private List<Interface> serverPacketRouters;
         private bool connected;
+        private bool heartBeatStarted;
 
         public bool Connected => connected;
         public string ServerVersion => serverVersion;
@@ -134,6 +135,12 @@ namespace Pomelo.Net.Gateway.Association
 
         private async ValueTask HeartBeatAsync()
         {
+            if (heartBeatStarted) 
+            {
+                return;
+            }
+
+            heartBeatStarted = true;
             using (var buffer = MemoryPool<byte>.Shared.Rent(2))
             {
                 while (true)
@@ -160,7 +167,7 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        private bool Reset()
+        public void Stop()
         {
             connected = false;
             serverStreamTunnelProviders.Clear();
@@ -172,6 +179,11 @@ namespace Pomelo.Net.Gateway.Association
                 client?.Close();
             }
             client?.Dispose();
+        }
+
+        private bool Reset()
+        {
+            Stop();
             client = new TcpClient();
             client.ReceiveTimeout = 1000 * 30;
             client.SendTimeout = 1000 * 30;

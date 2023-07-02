@@ -84,10 +84,10 @@ namespace Pomelo.Net.Gateway.Association
             }
 
             _ = this.HeartBeatAsync();
-            this.Reset();
+            _ = this.ResetAsync();
         }
 
-        public Task StartAsync()
+        public Task<bool> StartAsync()
         {
             if (associateServerEndpoint == null
                 || tunnelServerEndpoint == null)
@@ -193,62 +193,60 @@ namespace Pomelo.Net.Gateway.Association
             client?.Dispose();
         }
 
-        private Task<bool> ResetAsync()
+        private async Task<bool> ResetAsync()
         {
-            return Task.Run(() => Reset());
-        }
+            while (true)
+            {
+                Stop();
+                client = new TcpClient();
+                client.ReceiveTimeout = 1000 * 30;
+                client.SendTimeout = 1000 * 30;
 
-        private bool Reset()
-        {
-            Stop();
-            client = new TcpClient();
-            client.ReceiveTimeout = 1000 * 30;
-            client.SendTimeout = 1000 * 30;
-            try
-            {
-                client.Connect(associateServerEndpoint);
-                Task.Factory.StartNew(async () => 
+                try
                 {
-                    try
-                    {
-                        await HandshakeAsync();
-                        packetTunnelClient.SetServer(tunnelServerEndpoint);
-                        packetTunnelClient.Start();
-                        await Task.WhenAll(new[]
-                        {
-                            ReceiveNotificationAsync(),
-                            SendRulesAsync()
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex.ToString());
-                        logger.LogError($"Retry after sleep {retryDelay}ms");
-                        await Task.Delay(retryDelay);
-                        retryDelay += 1000;
-                        if (retryDelay > 10000)
-                        {
-                            retryDelay = 1000;
-                        }
-                        Reset();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex.ToString());
-                logger.LogError($"Retry after sleep {retryDelay}ms");
-                Task.Delay(retryDelay).Wait();
-                retryDelay += 1000;
-                if (retryDelay > 10000)
-                {
-                    retryDelay = 1000;
+                    client.Connect(associateServerEndpoint);
                 }
-                Reset();
-            }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex.ToString());
+                    logger.LogError($"Retry after sleep {retryDelay}ms");
+                    Task.Delay(retryDelay).Wait();
+                    retryDelay += 1000;
+                    if (retryDelay > 10000)
+                    {
+                        retryDelay = 1000;
+                    }
 
-            logger.LogInformation("Associate Client Reset");
-            return true;
+                    return false;
+                }
+                try
+                {
+                    await HandshakeAsync();
+                    packetTunnelClient.SetServer(tunnelServerEndpoint);
+                    packetTunnelClient.Start();
+                    await Task.WhenAll(new[]
+                    {
+                        ReceiveNotificationAsync(),
+                        SendRulesAsync()
+                    });
+
+                    logger.LogInformation("Associate Client Reset");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex.ToString());
+                    logger.LogError($"Retry after sleep {retryDelay}ms");
+                    Task.Delay(retryDelay).Wait();
+                    retryDelay += 1000;
+                    if (retryDelay > 10000)
+                    {
+                        retryDelay = 1000;
+                    }
+
+                    return false;
+                }
+            }
         }
 
         private async Task HandshakeAsync()

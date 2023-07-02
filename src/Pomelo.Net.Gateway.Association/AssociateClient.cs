@@ -87,6 +87,18 @@ namespace Pomelo.Net.Gateway.Association
             this.Reset();
         }
 
+        public Task StartAsync()
+        {
+            if (associateServerEndpoint == null
+                || tunnelServerEndpoint == null)
+            {
+                throw new InvalidOperationException("Please call SetServers before start");
+            }
+
+            _ = this.HeartBeatAsync();
+            return this.ResetAsync();
+        }
+
         public async Task SendRulesAsync()
         {
             var stream = client.GetStream();
@@ -179,6 +191,11 @@ namespace Pomelo.Net.Gateway.Association
                 client?.Close();
             }
             client?.Dispose();
+        }
+
+        private Task<bool> ResetAsync()
+        {
+            return Task.Run(() => Reset());
         }
 
         private bool Reset()

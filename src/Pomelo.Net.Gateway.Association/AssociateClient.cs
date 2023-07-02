@@ -41,6 +41,7 @@ namespace Pomelo.Net.Gateway.Association
         private List<Interface> serverPacketRouters;
         private bool connected;
         private bool heartBeatStarted;
+        private bool resetting;
 
         public bool Connected => connected;
         public string ServerVersion => serverVersion;
@@ -196,6 +197,16 @@ namespace Pomelo.Net.Gateway.Association
 
         private async Task<bool> ResetAsync(int retryTimes = -1, CancellationToken cancellationToken = default)
         {
+            lock(this)
+            {
+                if (resetting)
+                {
+                    return false;
+                }
+
+                resetting = true;
+            }
+
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -227,6 +238,7 @@ namespace Pomelo.Net.Gateway.Association
                     retryTimes--; 
                     if (retryTimes == 0)
                     {
+                        resetting = false;
                         return false;
                     }
                 }
@@ -242,6 +254,7 @@ namespace Pomelo.Net.Gateway.Association
                     });
 
                     logger.LogInformation("Associate Client Reset");
+                    resetting = false;
                     return true;
                 }
                 catch (Exception ex)
@@ -263,6 +276,7 @@ namespace Pomelo.Net.Gateway.Association
                     retryTimes--; 
                     if (retryTimes == 0)
                     {
+                        resetting = false;
                         return false;
                     }
                 }

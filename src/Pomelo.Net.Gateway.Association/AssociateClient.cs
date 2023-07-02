@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -193,10 +194,11 @@ namespace Pomelo.Net.Gateway.Association
             client?.Dispose();
         }
 
-        private async Task<bool> ResetAsync()
+        private async Task<bool> ResetAsync(int retryTimes = -1, CancellationToken cancellationToken = default)
         {
             while (true)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 Stop();
                 client = new TcpClient();
                 client.ReceiveTimeout = 1000 * 30;
@@ -210,14 +212,23 @@ namespace Pomelo.Net.Gateway.Association
                 {
                     logger.LogWarning(ex.ToString());
                     logger.LogError($"Retry after sleep {retryDelay}ms");
-                    Task.Delay(retryDelay).Wait();
+                    await Task.Delay(retryDelay);
                     retryDelay += 1000;
                     if (retryDelay > 10000)
                     {
                         retryDelay = 1000;
                     }
 
-                    return false;
+                    if (retryTimes == -1 || retryTimes > 0)
+                    {
+                        continue;
+                    }
+
+                    retryTimes--; 
+                    if (retryTimes == 0)
+                    {
+                        return false;
+                    }
                 }
                 try
                 {
@@ -237,14 +248,23 @@ namespace Pomelo.Net.Gateway.Association
                 {
                     logger.LogWarning(ex.ToString());
                     logger.LogError($"Retry after sleep {retryDelay}ms");
-                    Task.Delay(retryDelay).Wait();
+                    await Task.Delay(retryDelay);
                     retryDelay += 1000;
                     if (retryDelay > 10000)
                     {
                         retryDelay = 1000;
                     }
 
-                    return false;
+                    if (retryTimes == -1 || retryTimes > 0)
+                    {
+                        continue;
+                    }
+
+                    retryTimes--; 
+                    if (retryTimes == 0)
+                    {
+                        return false;
+                    }
                 }
             }
         }

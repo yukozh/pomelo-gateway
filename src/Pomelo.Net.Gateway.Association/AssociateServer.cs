@@ -35,6 +35,7 @@ namespace Pomelo.Net.Gateway.Association
         private UdpEndpointManager udpEndpointManager;
         private ILogger<AssociateServer> logger;
         private IServiceProvider services;
+        private CancellationTokenSource loopCancellationToken;
 
         public IEnumerable<AssociateContext> Clients => clients.Values;
         public IPEndPoint Endpoint => endpoint;
@@ -51,21 +52,30 @@ namespace Pomelo.Net.Gateway.Association
             this.logger = services.GetRequiredService<ILogger<AssociateServer>>();
         }
 
-        public AssociateServer(IPEndPoint endpoint, IServiceProvider services)
-            : this(services)
+        public void Stop()
         {
-            this.endpoint = endpoint;
+            try
+            {
+                loopCancellationToken?.Cancel();
+                loopCancellationToken?.Dispose();
+                server?.Stop();
+                server = null;
+            }
+            catch { }
         }
 
-        public void Start()
+        public void Start(IPEndPoint serverEndpoint)
         {
+            Stop();
+            this.endpoint = serverEndpoint;
             logger.LogInformation("Starting associate server...");
             server = new TcpListener(endpoint);
             server.Server.ReceiveTimeout = 1000 * 30;
             server.Server.SendTimeout = 1000 * 30;
             server.Start();
+            loopCancellationToken = new CancellationTokenSource(); 
             logger.LogInformation($"Associate server is listening on {endpoint}...");
-            LoopAcceptAsync();
+            _ = LoopAcceptAsync(loopCancellationToken.Token);
         }
 
         public AssociateContext GetAssociateContextByUserIdentifier(string identifier) 
@@ -79,13 +89,14 @@ namespace Pomelo.Net.Gateway.Association
             }
         }
 
-        private async ValueTask LoopAcceptAsync()
+        private async ValueTask LoopAcceptAsync(CancellationToken cancellationToken = default)
         {
             while (true)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var client = await server.AcceptTcpClientAsync();
                 logger.LogInformation($"Accepted client from {client.Client.RemoteEndPoint}");
-                HandleClientAcceptAsync(client);
+                _ = HandleClientAcceptAsync(client);
             }
         }
 

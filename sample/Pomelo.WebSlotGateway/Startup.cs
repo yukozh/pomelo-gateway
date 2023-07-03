@@ -42,9 +42,7 @@ namespace Pomelo.WebSlotGateway
             services.AddSingleton<IHttpInterceptor, HeaderInterceptor>();
             services.AddSingleton<IHttpInterceptor, HttpHeaderInterceptor>();
             services.AddSingleton<IHealthChecker, DefaultHealthChecker>();
-            services.AddPomeloGatewayServer(
-                IPEndPoint.Parse("127.0.0.1:16246"),
-                IPEndPoint.Parse("127.0.0.1:16247"));
+            services.AddPomeloGatewayServer();
             services.AddControllersWithViews().AddNewtonsoftJson(x =>
             {
                 x.SerializerSettings.Converters.Add(new IPEndPointConverter());
@@ -59,28 +57,31 @@ namespace Pomelo.WebSlotGateway
                 db.InitDatabaseAsync().GetAwaiter().GetResult();
             }
                 
-            app.ApplicationServices.RunPomeloGatewayServerAsync().ContinueWith(_ => Task.Run(async () =>
-            {
-                var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
-                using (var scope = app.ApplicationServices.CreateScope())
+            app.ApplicationServices.RunPomeloGatewayServerAsync(
+                IPEndPoint.Parse("127.0.0.1:16246"),
+                IPEndPoint.Parse("127.0.0.1:16247"))
+                .ContinueWith(t => Task.Run(async () =>
                 {
-                    var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
-                    var rules = await db.Slots
-                        .ToListAsync();
-                    var serverEndpoint = await app.ApplicationServices.GetRequiredService<ConfigurationHelper>().GetLocalEndpointAsync();
-                    foreach (var rule in rules)
+                    var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
+                    using (var scope = app.ApplicationServices.CreateScope())
                     {
-                        await tcp.InsertPreCreateEndpointRuleAsync(
-                            rule.Id.ToString(),
-                            serverEndpoint,
-                            rule.Destination,
-                            RouterId,
-                            TunnelId,
-                            rule.DestinationType == DestinationType.Https);
+                        var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
+                        var rules = await db.Slots
+                            .ToListAsync();
+                        var serverEndpoint = await app.ApplicationServices.GetRequiredService<ConfigurationHelper>().GetLocalEndpointAsync();
+                        foreach (var rule in rules)
+                        {
+                            await tcp.InsertPreCreateEndpointRuleAsync(
+                                rule.Id.ToString(),
+                                serverEndpoint,
+                                rule.Destination,
+                                RouterId,
+                                TunnelId,
+                                rule.DestinationType == DestinationType.Https);
+                        }
                     }
-                }
-                tcp.EnsurePreCreateEndpointsAsync();
-            }));
+                    _ = tcp.EnsurePreCreateEndpointsAsync();
+                }));
             app.ApplicationServices.GetRequiredService<HealthCheckerProcesser>();
             if (env.IsDevelopment())
             {

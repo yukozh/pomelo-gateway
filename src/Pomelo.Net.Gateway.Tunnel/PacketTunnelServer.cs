@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,7 @@ using Pomelo.Net.Gateway.Association.Udp;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
-    public class PacketTunnelServer
+    public class PacketTunnelServer : IDisposable
     {
         private PomeloUdpClient server;
         private IPEndPoint endpoint;
@@ -21,37 +22,49 @@ namespace Pomelo.Net.Gateway.Tunnel
         private PacketTunnelContextFactory packetTunnelContextFactory;
         private IUdpEndpointListenerFinder udpEndpointListenerFinder;
         private IServiceProvider services;
+        private CancellationTokenSource loopCancellationToken;
 
         public PomeloUdpClient Server => server;
 
-        public PacketTunnelServer(IPEndPoint endpoint, IServiceProvider services)
+        public PacketTunnelServer(IServiceProvider services)
         {
-            this.endpoint = endpoint;
             this.services = services;
             this.logger = services.GetRequiredService<ILogger<PacketTunnelServer>>();
             this.udpAssociator = services.GetRequiredService<IUdpAssociator>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
             this.udpEndpointListenerFinder = services.GetRequiredService<IUdpEndpointListenerFinder>();
-            server = new PomeloUdpClient(endpoint);
         }
 
-        public void Start()
+        public void Stop()
         {
-            logger.LogInformation($"Packet Tunnel Server is listening on {endpoint}...");
-            StartAsync();
+            server?.Dispose();
+            loopCancellationToken?.Cancel();
+            loopCancellationToken?.Dispose();
+            server = null;
         }
 
-        private async ValueTask StartAsync()
+        public void Start(IPEndPoint tunnelServerEndpoint)
+        {
+            Stop();
+            server = new PomeloUdpClient(endpoint);
+            this.endpoint = tunnelServerEndpoint;
+            logger.LogInformation($"Packet Tunnel Server is listening on {endpoint}...");
+            loopCancellationToken = new CancellationTokenSource();
+            _ = StartAsync(loopCancellationToken.Token);
+        }
+
+        private async ValueTask StartAsync(CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(PomeloUdpClient.MaxUDPSize);
             try
             {
                 while (true)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var info = await server.ReceiveAsync(buffer);
                     var op = (PacketTunnelOpCode)buffer[0];
-                    logger.LogInformation($"{info.RemoteEndPoint}: {op.ToString()}");
+                    logger.LogInformation($"{info.RemoteEndPoint}: {op}");
                     switch (op)
                     {
                         case PacketTunnelOpCode.Login:
@@ -140,6 +153,11 @@ namespace Pomelo.Net.Gateway.Tunnel
                 logger.LogWarning($"Packet tunnel {context.TunnelId} has not been found");
             }
             await tunnel.BackwardAsync(udpEndpointListenerFinder.FindServerByEndpoint(context.EntryEndpoint), buffer, from, context);
+        }
+
+        public void Dispose()
+        {
+            Stop();
         }
     }
 }

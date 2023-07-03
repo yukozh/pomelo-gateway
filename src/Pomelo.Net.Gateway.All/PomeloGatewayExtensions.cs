@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Pomelo.Net.Gateway.Association;
 
 namespace Pomelo.Net.Gateway
 {
@@ -30,21 +31,18 @@ namespace Pomelo.Net.Gateway
         }
 
         public static IServiceCollection AddPomeloGatewayServer(
-            this IServiceCollection services,
-            IPEndPoint associateServerEndpoint,
-            IPEndPoint tunnelServerEndpoint)
+            this IServiceCollection services)
         {
             return services.AddLogging()
                 .AddPomeloGatewayEndpointCollection()
-                .AddSingleton(services
-                    => new Association.AssociateServer(associateServerEndpoint, services))
+                .AddSingleton<AssociateServer>()
                 .AddSingleton<Association.Authentication.IAuthenticator, Association.Authentication.DefaultBasicAuthenticator>()
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
                 .AddSingleton<Tunnel.PacketTunnelContextFactory>()
                 .AddSingleton(services 
-                    => new Tunnel.StreamTunnelServer(tunnelServerEndpoint, services))
+                    => new Tunnel.StreamTunnelServer(services))
                 .AddSingleton(services
-                    => new Tunnel.PacketTunnelServer(tunnelServerEndpoint, services))
+                    => new Tunnel.PacketTunnelServer(services))
                 .AddSingleton<Association.Token.ITokenValidator>(services 
                     => services.GetRequiredService<Association.AssociateServer>())
                 .AddSingleton<Tunnel.ITunnelCreationNotifier>(services 
@@ -62,13 +60,13 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Router.IPacketRouter, Router.DefaultPacketRouter>();
         }
 
-        public static Task RunPomeloGatewayServerAsync(this IServiceProvider services)
+        public static Task RunPomeloGatewayServerAsync(this IServiceProvider services, IPEndPoint associateServerEndpoint, IPEndPoint tunnelServerEndpoint)
         {
             return Task.Factory.StartNew(() =>
             {
-                services.GetRequiredService<Association.AssociateServer>().Start();
-                services.GetRequiredService<Tunnel.StreamTunnelServer>().Start();
-                services.GetRequiredService<Tunnel.PacketTunnelServer>().Start();
+                services.GetRequiredService<AssociateServer>().Start(associateServerEndpoint);
+                services.GetRequiredService<Tunnel.StreamTunnelServer>().Start(tunnelServerEndpoint);
+                services.GetRequiredService<Tunnel.PacketTunnelServer>().Start(tunnelServerEndpoint);
             }, TaskCreationOptions.LongRunning);
         }
 

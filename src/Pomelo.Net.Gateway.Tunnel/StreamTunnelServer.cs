@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Token;
+using System.Threading;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -18,36 +19,50 @@ namespace Pomelo.Net.Gateway.Tunnel
         private IServiceProvider services;
         private ILogger<StreamTunnelServer> logger;
         private IPEndPoint endpoint;
+        private CancellationTokenSource loopCancellationToken;
 
         public IPEndPoint Endpoint => endpoint;
 
         public StreamTunnelServer(
-            IPEndPoint endpoint, 
             IServiceProvider services)
         {
-            server = new TcpListener(endpoint);
-            server.Server.ReceiveTimeout = 1000 * 30;
-            server.Server.SendTimeout = 1000 * 30;
-            this.endpoint = endpoint;
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.tokenValidator = services.GetRequiredService<ITokenValidator>();
             this.logger = services.GetRequiredService<ILogger<StreamTunnelServer>>();
             this.services = services;
         }
 
-        public void Start()
+        public void Stop()
         {
-            server.Start();
-            logger.LogInformation($"Stream Tunnel Server is listening on {server.LocalEndpoint}...");
-            StartAcceptAsync();
+            try
+            {
+                server?.Stop();
+                loopCancellationToken?.Cancel();
+                loopCancellationToken?.Dispose();
+                server = null;
+            }
+            catch { }
         }
 
-        private async ValueTask StartAcceptAsync()
+        public void Start(IPEndPoint tunnelServerEndpoint)
+        {
+            server = new TcpListener(endpoint);
+            server.Server.ReceiveTimeout = 1000 * 30;
+            server.Server.SendTimeout = 1000 * 30;
+            this.endpoint = tunnelServerEndpoint;
+            this.loopCancellationToken = new CancellationTokenSource();
+            server.Start();
+            logger.LogInformation($"Stream Tunnel Server is listening on {server.LocalEndpoint}...");
+            _ = StartAcceptAsync(loopCancellationToken.Token);
+        }
+
+        private async ValueTask StartAcceptAsync(CancellationToken cancellationToken)
         {
             while (true)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var client = await server.AcceptTcpClientAsync();
-                HandleClientAcceptAsync(client);
+                _ = HandleClientAcceptAsync(client);
             }
         }
 
@@ -114,7 +129,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public void Dispose()
         {
-            server?.Stop();
+            Stop();
         }
     }
 }

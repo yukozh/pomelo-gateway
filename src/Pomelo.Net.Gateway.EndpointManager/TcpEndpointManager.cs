@@ -11,21 +11,21 @@ using Pomelo.Net.Gateway.EndpointCollection;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class TcpEndpointManager : IDisposable
+    public class TcpEndPointManager : IDisposable
     {
-        private EndpointContext context;
-        private ILogger<TcpEndpointManager> logger;
+        private ILogger<TcpEndPointManager> logger;
         private IServiceProvider services;
         private IServiceScope scope;
-        private ConcurrentDictionary<IPEndPoint, TcpEndpointListener> listeners;
+        private IEndPointProvider endPointProvider;
+        private ConcurrentDictionary<IPEndPoint, TcpEndPointListener> listeners;
 
-        public TcpEndpointManager(IServiceProvider services)
+        public TcpEndPointManager(IServiceProvider services)
         {
             this.services = services;
             this.scope = services.CreateScope();
-            this.context = scope.ServiceProvider.GetService<EndpointContext>();
-            this.logger = services.GetRequiredService<ILogger<TcpEndpointManager>>();
-            this.listeners = new ConcurrentDictionary<IPEndPoint, TcpEndpointListener>();
+            this.endPointProvider = scope.ServiceProvider.GetService<IEndPointProvider>();
+            this.logger = services.GetRequiredService<ILogger<TcpEndPointManager>>();
+            this.listeners = new ConcurrentDictionary<IPEndPoint, TcpEndPointListener>();
         }
 
         public void Dispose()
@@ -34,148 +34,51 @@ namespace Pomelo.Net.Gateway.EndpointManager
             scope = null;
         }
 
-        public TcpEndpointListener GetOrCreateListenerForEndpoint(
-            IPEndPoint endpoint, 
+        public async ValueTask<TcpEndPointListener> GetOrCreateListenerForEndPointAsync(
+            IPEndPoint ep, 
             Guid routerId, 
             Guid tunnelId,
-            string userIdentifier,
-            EndpointUserType userType = EndpointUserType.NonPublic)
+            string userId,
+            EndpointType type = EndpointType.Bridge,
+            CancellationToken cancellationToken = default)
         {
-            logger.LogInformation($"Creating TCP Endpoint Listener {endpoint}");
-            var _endpoint = context.Endpoints
-                .Include(x => x.Users)
-                .SingleOrDefault(x => x.Address == endpoint.Address.ToString() 
-                    && x.Port == endpoint.Port 
-                    && x.Protocol == Protocol.TCP);
-            if (_endpoint == null)
+            logger.LogInformation($"Creating TCP Endpoint Listener {ep}");
+            var endPoint = await endPointProvider.GetOrAddActiveEndPointAsync(ep, routerId, tunnelId, userId, type, cancellationToken);
+            
+            return listeners.GetOrAdd(ep, (key) => 
             {
-                _endpoint = new Endpoint
-                {
-                    Id = Guid.NewGuid(),
-                    Address = endpoint.Address.ToString(),
-                    Protocol = Protocol.TCP,
-                    Port = (ushort)endpoint.Port,
-                    RouterId = routerId,
-                    TunnelId = tunnelId
-                };
-                context.Endpoints.Add(_endpoint);
-                context.SaveChanges();
-            }
-            if (!_endpoint.Users.Any(x => x.EndpointId == _endpoint.Id 
-                && x.UserIdentifier == userIdentifier))
-            {
-                logger.LogInformation($"User {userIdentifier} is using the endpoint TCP:{endpoint}");
-                _endpoint.Users.Add(new EndpointUser
-                {
-                    EndpointId = _endpoint.Id,
-                    UserIdentifier = userIdentifier,
-                    Type = userType
-                });
-                context.SaveChanges();
-            }
-
-            return listeners.GetOrAdd(endpoint, (key) => 
-            {
-                return new TcpEndpointListener(key, services);
+                return new TcpEndPointListener(key, services);
             });
         }
 
-        public async ValueTask RemoveAllRulesFromUserIdentifierAsync(
-            string identifier, 
+        public async ValueTask RemoveAllRulesFromUserAsync(
+            string userId, 
             CancellationToken cancellationToken = default)
         {
-            logger.LogInformation($"Removing rules which created by {identifier}...");
-            context.EndpointUsers.RemoveRange(context.EndpointUsers
-                .Where(x => x.UserIdentifier == identifier)
-                .Where(x => x.Endpoint.Protocol == Protocol.TCP));
-            await context.SaveChangesAsync(cancellationToken);
-            var endpointsToRecycle = await context.Endpoints
-                .Where(x => x.Users.Count == 0)
-                .ToListAsync(cancellationToken);
-            if (endpointsToRecycle.Count > 0)
+            logger.LogInformation($"Removing rules which created by {userId}...");
+            var endpointsToRecycle = await endPointProvider.RemoveAllActiveEndPointsFromUserAsync(userId, cancellationToken);
+            foreach (var ep in endpointsToRecycle)
             {
-                foreach (var endpoint in endpointsToRecycle)
-                {
-                    RecycleEndpoint(endpoint);
-                }
-                context.Endpoints.RemoveRange(endpointsToRecycle);
-                await context.SaveChangesAsync(cancellationToken);
+                listeners.TryRemove(ep.ListenerEndPoint, out var listener);
+                listener.Dispose();
+                logger.LogInformation($"No user uses endpoint {ep.ListenerEndPoint}, recycling...");
             }
         }
 
-        public async ValueTask InsertPreCreateEndpointRuleAsync(
-            string identifier,
-            IPEndPoint serverEndpoint,
-            string destinationEndpoint,
-            Guid routerId,
-            Guid tunnelId,
-            bool withSSL,
-            CancellationToken cancellationToken = default)
+        public async ValueTask EnsureStaticRulesEndPointsCreatedAsync()
         {
-            context.PreCreateEndpoints.Add(new PreCreateEndpoint
-            {
-                DestinationEndpoint = destinationEndpoint,
-                ServerEndpoint = serverEndpoint.ToString(),
-                Identifier = identifier,
-                Protocol = Protocol.TCP,
-                RouterId = routerId,
-                TunnelId = tunnelId,
-                DestinationWithSSL = withSSL
-            });
-            await context.SaveChangesAsync(cancellationToken);
-        }
+            var endpoints = (await endPointProvider.GetStaticRulesAsync())
+                .Where(x => x.Protocol == Protocol.TCP);
 
-        public async ValueTask RemovePreCreateEndpointRuleAsync(
-            string identifier,
-            CancellationToken cancellationToken = default)
-        {
-            var endpoint = await context.PreCreateEndpoints.SingleOrDefaultAsync(
-                x => x.Identifier == identifier && x.Protocol == Protocol.TCP,
-                cancellationToken);
-            if (endpoint != null)
-            {
-                context.PreCreateEndpoints.Remove(endpoint);
-                await context.SaveChangesAsync(cancellationToken);
-            }
-        }
-
-        public async ValueTask EnsurePreCreateEndpointsAsync()
-        {
-            var endpoints = await context.PreCreateEndpoints
-                .Where(x => x.Protocol == Protocol.TCP)
-                .ToListAsync();
             foreach (var endpoint in endpoints)
             {
-                GetOrCreateListenerForEndpoint(
-                    IPEndPoint.Parse(endpoint.ServerEndpoint),
+                await GetOrCreateListenerForEndPointAsync(
+                    endpoint.ListenerEndpoint,
                     endpoint.RouterId,
                     endpoint.TunnelId,
-                    endpoint.Identifier,
-                    EndpointUserType.Public);
+                    endpoint.Id,
+                    EndpointType.Static);
             }
-        }
-
-        public async ValueTask<EndpointUser> GetEndpointUserByIdentifierAsync(
-            string identifier,
-            CancellationToken cancellationToken = default)
-        {
-            return await context.EndpointUsers
-                .FirstAsync(x => x.UserIdentifier == identifier, cancellationToken);
-        }
-
-        public async ValueTask<PreCreateEndpoint> GetPreCreateEndpointByIdentifierAsync(
-            string identifier,
-            CancellationToken cancellationToken = default)
-        {
-            return await context.PreCreateEndpoints
-                .FirstAsync(x => x.Identifier == identifier, cancellationToken);
-        }
-
-        private void RecycleEndpoint(Endpoint endpoint)
-        {
-            logger.LogInformation($"No user uses endpoint {endpoint.Address}:{endpoint.Port}, recycling...");
-            this.listeners.TryRemove(new IPEndPoint(endpoint.IPAddress, endpoint.Port), out var listener);
-            listener?.Dispose();
         }
     }
 }

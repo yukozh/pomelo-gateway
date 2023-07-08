@@ -36,7 +36,7 @@ namespace Pomelo.WebSlotGateway.Controllers
         public async ValueTask<IEnumerable<Slot>> Put(
             [FromBody] SetSlotsRequestViewModel request,
             [FromServices] GatewayContext db,
-            [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] TcpEndPointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
             [FromServices] StreamTunnelContextFactory streamTunnelContextFactory,
             [FromServices] IServiceProvider services,
@@ -45,7 +45,7 @@ namespace Pomelo.WebSlotGateway.Controllers
             var slots = await db.Slots.ToListAsync(cancellationToken);
             foreach (var slot in slots)
             {
-                await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(slot.Id.ToString(), cancellationToken);
+                await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(slot.Id.ToString(), cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
                 streamTunnelContextFactory.DestroyContextsForUserIdentifier(slot.Id.ToString());
             }

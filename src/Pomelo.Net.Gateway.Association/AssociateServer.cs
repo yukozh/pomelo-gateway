@@ -31,8 +31,8 @@ namespace Pomelo.Net.Gateway.Association
         private IAuthenticator authenticator;
         private StreamTunnelContextFactory streamTunnelContextFactory;
         private PacketTunnelContextFactory packetTunnelContextFactory;
-        private TcpEndpointManager tcpEndpointManager;
-        private UdpEndpointManager udpEndpointManager;
+        private TcpEndPointManager tcpEndpointManager;
+        private UdpEndPointManager udpEndpointManager;
         private ILogger<AssociateServer> logger;
         private IServiceProvider services;
         private CancellationTokenSource loopCancellationToken;
@@ -47,8 +47,8 @@ namespace Pomelo.Net.Gateway.Association
             this.authenticator = services.GetRequiredService<IAuthenticator>();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
             this.packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
-            this.tcpEndpointManager = services.GetRequiredService<TcpEndpointManager>();
-            this.udpEndpointManager = services.GetRequiredService<UdpEndpointManager>();
+            this.tcpEndpointManager = services.GetRequiredService<TcpEndPointManager>();
+            this.udpEndpointManager = services.GetRequiredService<UdpEndPointManager>();
             this.logger = services.GetRequiredService<ILogger<AssociateServer>>();
         }
 
@@ -128,8 +128,8 @@ namespace Pomelo.Net.Gateway.Association
                         clients.TryRemove(context.Credential.Identifier, out var _);
                     }
 
-                    await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(context.Credential.Identifier);
-                    await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(context.Credential.Identifier);
+                    await tcpEndpointManager.RemoveAllRulesFromUserAsync(context.Credential.Identifier);
+                    await udpEndpointManager.RemoveAllRulesFromUserAsync(context.Credential.Identifier);
                     streamTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
                     packetTunnelContextFactory.DestroyContextsForUserIdentifier(context.Credential.Identifier);
                     logger.LogInformation($"User {context.Credential.Identifier} is disconnected, recycled its resources.");
@@ -351,23 +351,23 @@ namespace Pomelo.Net.Gateway.Association
 
         internal static void HandleSetRuleCommand(
             Memory<byte> body,
-            TcpEndpointManager tcpEndpointManager,
-            UdpEndpointManager udpEndpointManager,
+            TcpEndPointManager tcpEndpointManager,
+            UdpEndPointManager udpEndpointManager,
             string userIdentifier)
         {
             var endpoint = RuleParser.ParseRulePacket(body);
             if (endpoint.Protocol == Protocol.UDP)
             {
-                udpEndpointManager.GetOrCreateListenerForEndpoint(
-                    new IPEndPoint(endpoint.IPAddress, endpoint.Port),
+                _ = udpEndpointManager.GetOrCreateListenerForEndpointAsync(
+                    endpoint.ListenerEndPoint,
                     endpoint.RouterId,
                     endpoint.TunnelId,
                     userIdentifier);
             }
             else
             {
-                tcpEndpointManager.GetOrCreateListenerForEndpoint(
-                    new IPEndPoint(endpoint.IPAddress, endpoint.Port),
+                _ = tcpEndpointManager.GetOrCreateListenerForEndPointAsync(
+                    endpoint.ListenerEndPoint,
                     endpoint.RouterId,
                     endpoint.TunnelId,
                     userIdentifier);
@@ -375,12 +375,12 @@ namespace Pomelo.Net.Gateway.Association
         }
 
         internal static async ValueTask HandleCleanRulesCommandAsync(
-            TcpEndpointManager tcpEndpointManager,
-            UdpEndpointManager udpEndpointManager,
+            TcpEndPointManager tcpEndpointManager,
+            UdpEndPointManager udpEndpointManager,
             string userIdentifier)
         {
-            await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(userIdentifier);
-            await udpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(userIdentifier);
+            await tcpEndpointManager.RemoveAllRulesFromUserAsync(userIdentifier);
+            await udpEndpointManager.RemoveAllRulesFromUserAsync(userIdentifier);
         }
 
         public void Dispose()

@@ -108,13 +108,12 @@ namespace Pomelo.Net.Gateway.Association
             {
                 foreach (var rule in mappingRuleProvider.Rules)
                 {
-                    var length = RuleParser.BuildRulePacket(new Endpoint 
+                    var length = RuleParser.BuildRulePacket(new EndpointCollection.EndPoint 
                     {
-                        IPAddress = rule.RemoteEndpoint.Address,
-                        Port = (ushort)rule.RemoteEndpoint.Port,
                         RouterId = rule.RemoteRouterId,
                         TunnelId = rule.RemoteTunnelId,
-                        Protocol = rule.Protocol
+                        Protocol = rule.Protocol,
+                        ListenerEndPoint = rule.RemoteEndpoint
                     }, buffer.Memory.Slice(2));
                     buffer.Memory.Span[0] = (byte)AssociateOpCode.SetRule;
                     buffer.Memory.Span[1] = (byte)length;

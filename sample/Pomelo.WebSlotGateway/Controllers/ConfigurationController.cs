@@ -30,7 +30,7 @@ namespace Pomelo.WebSlotGateway.Controllers
         [HttpPatch]
         public async ValueTask<IEnumerable<Config>> Put(
             [FromBody] SetConfigurationRequestViewModel request,
-            [FromServices] TcpEndpointManager tcpEndpointManager,
+            [FromServices] TcpEndPointManager tcpEndpointManager,
             [FromServices] ConfigurationHelper config,
             [FromServices] GatewayContext db,
             [FromServices] StreamTunnelContextFactory streamTunnelContextFactory,
@@ -60,7 +60,7 @@ namespace Pomelo.WebSlotGateway.Controllers
                 var slots = await db.Slots.ToListAsync(cancellationToken);
                 foreach (var slot in slots)
                 {
-                    await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(slot.Id.ToString(), cancellationToken);
+                    await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(slot.Id.ToString(), cancellationToken);
                     await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
                     streamTunnelContextFactory.DestroyContextsForUserIdentifier(slot.Id.ToString());
                 }
@@ -78,7 +78,7 @@ namespace Pomelo.WebSlotGateway.Controllers
                         Startup.TunnelId,
                         rule.DestinationType == DestinationType.Https);
                 }
-                await tcpEndpointManager.EnsurePreCreateEndpointsAsync();
+                await tcpEndpointManager.EnsureStaticRulesEndPointsCreatedAsync();
             }
 
             return await db.Configurations

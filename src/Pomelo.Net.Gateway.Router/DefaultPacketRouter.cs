@@ -22,24 +22,19 @@ namespace Pomelo.Net.Gateway.Router
             this.services = services;
         }
 
-        public async ValueTask<string> DetermineIdentifierAsync(ArraySegment<byte> packet, IPEndPoint endpoint, CancellationToken cancellationToken = default)
+        public async ValueTask<string> RouteAsync(ArraySegment<byte> packet, IPEndPoint endpoint, CancellationToken cancellationToken = default)
         {
             using (var scope = services.CreateScope())
             {
-                var _endpoint = await scope.ServiceProvider.GetRequiredService<EndpointContext>()
-                    .Endpoints
-                    .Include(x => x.Users)
-                    .SingleOrDefaultAsync(x =>
-                        x.Address == endpoint.Address.ToString()
-                        && x.Protocol == Protocol.UDP
-                        && x.Port == (ushort)endpoint.Port);
+                var endPointProvider = scope.ServiceProvider.GetRequiredService<IEndPointProvider>();
+                var _endPoint = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, endpoint, cancellationToken);
 
-                if (_endpoint == null)
+                if (_endPoint == null)
                 {
                     return default;
                 }
 
-                return _endpoint.Users.FirstOrDefault()?.UserIdentifier;
+                return _endPoint.UserIds.FirstOrDefault();
             }
         }
     }

@@ -17,10 +17,9 @@ namespace Pomelo.Net.Gateway.EndpointManager.Tests
             var guid2 = Guid.NewGuid();
 
             // Act
-            var length = RuleParser.BuildRulePacket(new Endpoint 
+            var length = RuleParser.BuildRulePacket(new EndpointCollection.EndPoint
             {
-                IPAddress = IPAddress.Parse(address),
-                Port = 8000,
+                ListenerEndPoint = IPEndPoint.Parse(address + ":8000"),
                 Protocol = Protocol.TCP,
                 RouterId = guid1,
                 TunnelId = guid2
@@ -44,14 +43,13 @@ namespace Pomelo.Net.Gateway.EndpointManager.Tests
             var guid2 = Guid.NewGuid();
 
             // Act
-            var length = RuleParser.BuildRulePacket(new Endpoint
+            var length = RuleParser.BuildRulePacket(new EndpointCollection.EndPoint
             {
-                IPAddress = IPAddress.Parse(address),
-                Port = 8000,
+                ListenerEndPoint = IPEndPoint.Parse(address + ":8000"),
                 Protocol = Protocol.TCP,
                 RouterId = guid1,
                 TunnelId = guid2
-            }, buffer);
+            }, buffer);;
 
             // Assert
             Assert.Equal(51, length);

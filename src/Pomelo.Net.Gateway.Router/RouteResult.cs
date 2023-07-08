@@ -1,9 +1,11 @@
-﻿namespace Pomelo.Net.Gateway.Router
+﻿using Pomelo.Net.Gateway.EndpointCollection;
+
+namespace Pomelo.Net.Gateway.Router
 {
     public struct RouteResult
     {
         public bool IsSucceeded;
-        public string Identifier;
+        public string UserId;
         public int HeaderLength;
     }
 }

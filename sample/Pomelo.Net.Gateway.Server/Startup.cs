@@ -41,7 +41,7 @@ namespace Pomelo.Net.Gateway.Server
         {
             app.ApplicationServices.RunPomeloGatewayServerAsync(IPEndPoint.Parse(Configuration["AssociationServer"]), IPEndPoint.Parse(Configuration["TunnelServer"])).ContinueWith((_)=> Task.Run(async ()=>
             {
-                var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
+                var tcp = app.ApplicationServices.GetRequiredService<TcpEndPointManager>();
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
@@ -59,10 +59,10 @@ namespace Pomelo.Net.Gateway.Server
                             false); // TODO: Support SSL
                     }
                 }
-                tcp.EnsurePreCreateEndpointsAsync();
+                tcp.EnsureStaticRulesEndPointsCreatedAsync();
 
 
-                var udp = app.ApplicationServices.GetRequiredService<UdpEndpointManager>();
+                var udp = app.ApplicationServices.GetRequiredService<UdpEndPointManager>();
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<ServerContext>();

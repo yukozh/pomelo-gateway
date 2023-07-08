@@ -99,8 +99,8 @@ namespace Pomelo.Net.Gateway.Server.Controllers
         [HttpPost]
         public async ValueTask<IActionResult> Create(
             [FromServices] ServerContext db,
-            [FromServices] TcpEndpointManager tcpEndpointManager,
-            [FromServices] UdpEndpointManager udpEndpointManager,
+            [FromServices] TcpEndPointManager tcpEndpointManager,
+            [FromServices] UdpEndPointManager udpEndpointManager,
             PublicRule model,
             CancellationToken cancellationToken = default)
         {
@@ -203,8 +203,8 @@ namespace Pomelo.Net.Gateway.Server.Controllers
         public async ValueTask<IActionResult> Edit(
             PublicRule model,
             [FromServices] IServiceProvider services,
-            [FromServices] TcpEndpointManager tcpEndpointManager,
-            [FromServices] UdpEndpointManager udpEndpointManager,
+            [FromServices] TcpEndPointManager tcpEndpointManager,
+            [FromServices] UdpEndPointManager udpEndpointManager,
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
         {
@@ -231,7 +231,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             // Remove old rule
             if (previousProtocol == EndpointCollection.Protocol.TCP)
             {
-                await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(model.Id, cancellationToken);
+                await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(model.Id, cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(model.Id);
             }
             else
@@ -281,8 +281,8 @@ namespace Pomelo.Net.Gateway.Server.Controllers
         [HttpPost]
         public async ValueTask<IActionResult> Delete(
             string id,
-            [FromServices] TcpEndpointManager tcpEndpointManager,
-            [FromServices] UdpEndpointManager udpEndpointManager,
+            [FromServices] TcpEndPointManager tcpEndpointManager,
+            [FromServices] UdpEndPointManager udpEndpointManager,
             [FromServices] ServerContext db,
             CancellationToken cancellationToken = default)
         {
@@ -291,7 +291,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             await db.SaveChangesAsync(cancellationToken);
             if (rule.Protocol == EndpointCollection.Protocol.TCP)
             {
-                await tcpEndpointManager.RemoveAllRulesFromUserIdentifierAsync(id, cancellationToken);
+                await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(id, cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
             }
             else

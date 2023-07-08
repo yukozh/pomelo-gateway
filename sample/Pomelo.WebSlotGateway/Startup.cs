@@ -62,7 +62,7 @@ namespace Pomelo.WebSlotGateway
                 IPEndPoint.Parse("127.0.0.1:16247"))
                 .ContinueWith(t => Task.Run(async () =>
                 {
-                    var tcp = app.ApplicationServices.GetRequiredService<TcpEndpointManager>();
+                    var tcp = app.ApplicationServices.GetRequiredService<TcpEndPointManager>();
                     using (var scope = app.ApplicationServices.CreateScope())
                     {
                         var db = scope.ServiceProvider.GetRequiredService<GatewayContext>();
@@ -80,7 +80,7 @@ namespace Pomelo.WebSlotGateway
                                 rule.DestinationType == DestinationType.Https);
                         }
                     }
-                    _ = tcp.EnsurePreCreateEndpointsAsync();
+                    _ = tcp.EnsureStaticRulesEndPointsCreatedAsync();
                 }));
             app.ApplicationServices.GetRequiredService<HealthCheckerProcesser>();
             if (env.IsDevelopment())

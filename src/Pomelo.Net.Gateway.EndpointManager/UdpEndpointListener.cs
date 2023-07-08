@@ -5,26 +5,30 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class UdpEndpointListener : IDisposable
+    public class UdpEndPointListener : IDisposable
     {
         private IServiceProvider services;
         private PomeloUdpClient server;
         private PacketTunnelContextFactory packetTunnelContextFactory;
         private IPacketRouter router;
         private IPacketTunnel tunnel;
-        private ILogger<UdpEndpointListener> logger;
+        private ILogger<UdpEndPointListener> logger;
         private PacketTunnelServer tunnelServer;
-        private UdpEndpointManager manager;
+        private UdpEndPointManager manager;
+        private IEndPointProvider endPointProvider;
+        private EndpointCollection.EndPoint endPointInfo;
+        private StaticRule staticRule;
 
         public IPEndPoint Endpoint { get; private set; }
         public PomeloUdpClient Server => server;
 
-        public UdpEndpointListener(
+        public UdpEndPointListener(
             IPEndPoint endpoint,
             Guid routerId,
             Guid tunnelId,
@@ -33,13 +37,13 @@ namespace Pomelo.Net.Gateway.EndpointManager
             Endpoint = endpoint;
             this.services = services;
             packetTunnelContextFactory = services.GetRequiredService<PacketTunnelContextFactory>();
-            logger = services.GetRequiredService<ILogger<UdpEndpointListener>>();
+            logger = services.GetRequiredService<ILogger<UdpEndPointListener>>();
             tunnelServer = services.GetRequiredService<PacketTunnelServer>();
-            manager = services.GetRequiredService<UdpEndpointManager>();
+            manager = services.GetRequiredService<UdpEndPointManager>();
             server = new PomeloUdpClient(endpoint);
             router = FindRouterById(routerId);
             tunnel = FindTunnelById(tunnelId);
-            StartAsync();
+            _ = StartAsync();
             logger.LogInformation($"UDP Endpoint {endpoint} started");
         }
 
@@ -54,13 +58,19 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private async ValueTask StartAsync()
         {
             var buffer = new byte[PomeloUdpClient.MaxUDPSize];
+            endPointInfo = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, Endpoint);
+            if (endPointInfo.Type == EndpointType.Static)
+            {
+                staticRule = await endPointProvider.GetStaticRuleByListenerEndPointAsync(Protocol.UDP, Endpoint);
+            }
+
             while (true)
             {
                 try
                 {
                     var info = await server.ReceiveAsync(new ArraySegment<byte>(buffer, tunnel.ExpectedForwardAppendHeaderLength, buffer.Length - tunnel.ExpectedForwardAppendHeaderLength));
                     var _buffer = new ArraySegment<byte>(buffer, tunnel.ExpectedForwardAppendHeaderLength, info.ReceivedBytes);
-                    var identifier = await router.DetermineIdentifierAsync(_buffer, Endpoint);
+                    var identifier = await router.RouteAsync(_buffer, Endpoint);
                     if (identifier == null)
                     {
                         logger.LogWarning($"No available destination found for UDP Listener {Endpoint}");
@@ -71,9 +81,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     context.LeftEndpoint = info.RemoteEndPoint;
                     context.RightEndpoint = Endpoint;
                     context.EntryEndpoint = Endpoint;
-                    var user = await manager.GetEndpointUserByIdentifierAsync(identifier);
 
-                    if (user.Type == EndpointCollection.EndpointUserType.NonPublic)
+                    if (endPointInfo.Type == EndpointType.Bridge)
                     {
                         // No need to notify
                         await tunnel.ForwardAsync(
@@ -84,11 +93,10 @@ namespace Pomelo.Net.Gateway.EndpointManager
                     }
                     else
                     {
-                        var preCreateEndpoint = await manager.GetPreCreateEndpointByIdentifierAsync(identifier);
                         if (context.Client == null)
                         {
                             logger.LogInformation($"The context is new created, preparing pair udp socket for {context.ConnectionId}");
-                            context.RightEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
+                            context.RightEndpoint = await AddressHelper.ParseAddressAsync(staticRule.DestinationEndpoint.ToString(), 0);
                             logger.LogInformation($"The destination of {context.ConnectionId} is {context.RightEndpoint}");
                             if (OperatingSystem.IsWindows())
                             {
@@ -96,10 +104,10 @@ namespace Pomelo.Net.Gateway.EndpointManager
                             }
                             else
                             {
-                                var destinationEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
+                                var destinationEndpoint = await AddressHelper.ParseAddressAsync(staticRule.DestinationEndpoint.ToString(), 0);
                                 context.Client = new PomeloUdpClient(destinationEndpoint.AddressFamily);
                             }
-                            Task.Run(async ()=>
+                            _ = Task.Run(async ()=>
                             {
                                 logger.LogInformation($"Created UDP client for {context.ConnectionId}");
                                 var buffer = ArrayPool<byte>.Shared.Rent(PomeloUdpClient.MaxUDPSize);

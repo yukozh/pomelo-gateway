@@ -14,7 +14,7 @@ using Pomelo.Net.Gateway.Tunnel;
 
 namespace Pomelo.Net.Gateway.EndpointManager
 {
-    public class TcpEndpointListener : IDisposable
+    public class TcpEndPointListener : IDisposable
     {
         private TcpListener server;
         private StreamTunnelContextFactory streamTunnelContextFactory;
@@ -22,53 +22,63 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IStreamRouter router;
         private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
-        private ILogger<TcpEndpointListener> logger;
-        private TcpEndpointManager manager;
+        private IEndPointProvider endPointProvider;
+        private ILogger<TcpEndPointListener> logger;
+        private TcpEndPointManager manager;
+        private IPEndPoint listenerEndPoint;
+        private EndpointCollection.EndPoint EndPointInfo;
+        private StaticRule StaticRule;
 
-        public TcpEndpointListener(IPEndPoint endpoint, IServiceProvider services)
+        public TcpEndPointListener(IPEndPoint endPoint, IServiceProvider services)
         {
             this.scope = services.CreateScope();
             this.streamTunnelContextFactory = services.GetRequiredService<StreamTunnelContextFactory>();
-            this.logger = services.GetRequiredService<ILogger<TcpEndpointListener>>();
+            this.logger = services.GetRequiredService<ILogger<TcpEndPointListener>>();
             this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
-            this.manager = services.GetRequiredService<TcpEndpointManager>();
-            var ruleContext = scope.ServiceProvider.GetRequiredService<EndpointContext>();
-            var _endpoint = ruleContext.Endpoints.SingleOrDefault(x => x.Address == endpoint.Address.ToString() && x.Protocol == Protocol.TCP && x.Port == endpoint.Port);
-            if (_endpoint == null)
+            this.manager = services.GetRequiredService<TcpEndPointManager>();
+            this.listenerEndPoint = endPoint;
+            _ = StartAsync();
+        }
+
+        private async ValueTask StartAsync()
+        {
+            var EndPointInfo = await endPointProvider.GetActiveEndPointAsync(Protocol.TCP, listenerEndPoint);
+            if (EndPointInfo == null)
             {
                 logger.LogError("The endpoint info has not been found");
                 throw new InvalidOperationException("The endpoint info has not been found");
             }
 
-            this.router = services.GetServices<IStreamRouter>().SingleOrDefault(x => x.Id == _endpoint.RouterId);
+            if (EndPointInfo.Type == EndpointType.Static)
+            {
+                StaticRule = await endPointProvider.GetStaticRuleByListenerEndPointAsync(Protocol.TCP, listenerEndPoint);
+            }
+
+            this.router = scope.ServiceProvider.GetServices<IStreamRouter>().SingleOrDefault(x => x.Id == EndPointInfo.RouterId);
             if (this.router == null)
             {
-                logger.LogError($"The router {_endpoint.RouterId} has not been registered");
-                throw new DllNotFoundException($"The router {_endpoint.RouterId} has not been registered");
+                logger.LogError($"The router {EndPointInfo.RouterId} has not been registered");
+                throw new DllNotFoundException($"The router {EndPointInfo.RouterId} has not been registered");
             }
 
-            this.tunnel = services.GetServices<IStreamTunnel>().SingleOrDefault(x => x.Id == _endpoint.TunnelId);
+            this.tunnel = scope.ServiceProvider.GetServices<IStreamTunnel>().SingleOrDefault(x => x.Id == EndPointInfo.TunnelId);
             if (this.tunnel == null)
             {
-                logger.LogError($"The tunnel {_endpoint.TunnelId} has not been registered");
-                throw new DllNotFoundException($"The tunnel {_endpoint.TunnelId} has not been registered");
+                logger.LogError($"The tunnel {EndPointInfo.TunnelId} has not been registered");
+                throw new DllNotFoundException($"The tunnel {EndPointInfo.TunnelId} has not been registered");
             }
 
-            server = new TcpListener(endpoint);
+            server = new TcpListener(listenerEndPoint);
             server.Server.ReceiveTimeout = 1000 * 30;
             server.Server.SendTimeout = 1000 * 30;
             server.Start();
-            logger.LogInformation($"TCP Endpoint Listener is listening on {endpoint}...");
-            StartAcceptAsync();
-        }
-
-        private async ValueTask StartAcceptAsync()
-        {
+            logger.LogInformation($"TCP Endpoint Listener is listening on {listenerEndPoint}...");
+            
             while (true)
             {
                 var client = await server.AcceptTcpClientAsync();
                 logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} connected...");
-                HandleClientAcceptAsync(client);
+                _ = HandleClientAcceptAsync(client);
             }
         }
 
@@ -77,7 +87,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             var stream = client.GetStream();
             var buffer = MemoryPool<byte>.Shared.Rent(router.ExpectedBufferSize);
             logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} routing...");
-            var result = await router.DetermineIdentifierAsync(stream, buffer.Memory, (IPEndPoint)server.LocalEndpoint, client.Client.RemoteEndPoint as IPEndPoint);
+            var result = await router.RouteAsync(stream, buffer.Memory, (IPEndPoint)server.LocalEndpoint, client.Client.RemoteEndPoint as IPEndPoint);
             if (!result.IsSucceeded)
             {
                 logger.LogWarning($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} route failed.");
@@ -85,41 +95,39 @@ namespace Pomelo.Net.Gateway.EndpointManager
                 client.Close();
                 client.Dispose();
             }
-            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.Identifier}'...");
-            var tunnelContext = streamTunnelContextFactory.Create(buffer, result.Identifier, router, tunnel);
+            logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} destination is '{result.UserId}'...");
+            var tunnelContext = streamTunnelContextFactory.Create(buffer, result.UserId, router, tunnel);
             tunnelContext.HeaderLength = result.HeaderLength;
             logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} creating tunnel, connection id = {tunnelContext.ConnectionId}");
             tunnelContext.RightClient = client;
-            var user = await manager.GetEndpointUserByIdentifierAsync(result.Identifier);
-            if (user.Type == EndpointUserType.NonPublic) // Agent based connection
+            if (EndPointInfo.Type == EndpointType.Bridge) // Agent based connection
             {
-                logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.Identifier}'...");
-                await notifier.NotifyStreamTunnelCreationAsync(result.Identifier, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
+                logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: {client.Client.RemoteEndPoint} notifying '{result.UserId}'...");
+                await notifier.NotifyStreamTunnelCreationAsync(result.UserId, tunnelContext.ConnectionId, server.LocalEndpoint as IPEndPoint);
             }
-            else // Public connection
+            else // Static connection
             {
                 try
                 {
-                    var preCreateEndpoint = await manager.GetPreCreateEndpointByIdentifierAsync(result.Identifier);
                     tunnelContext.LeftClient = new TcpClient();
                     tunnelContext.LeftClient.ReceiveTimeout = 1000 * 30;
                     tunnelContext.LeftClient.SendTimeout = 1000 * 30;
                     // Right: Responser
                     // Left: Requester
-                    var destEndpoint = await AddressHelper.ParseAddressAsync(preCreateEndpoint.DestinationEndpoint, 0);
+                    var destEndpoint = await AddressHelper.ParseAddressAsync(StaticRule.DestinationEndpoint.ToString(), 0);
                     await tunnelContext.LeftClient.ConnectAsync(destEndpoint.Address, destEndpoint.Port);
 
                     // Start forwarding
                     var concatStream = new ConcatStream();
                     concatStream.Join(tunnelContext.GetHeaderStream(), tunnelContext.RightClient.GetStream());
                     Stream leftStream = tunnelContext.LeftClient.GetStream();
-                    if (preCreateEndpoint.DestinationWithSSL)
+                    if (StaticRule.UnwrapSsl)
                     {
                         var baseStream = tunnelContext.LeftClient.GetStream();
                         var sslStream = new SslStream(baseStream);
                         sslStream.ReadTimeout = baseStream.ReadTimeout;
                         sslStream.WriteTimeout = baseStream.WriteTimeout;
-                        await sslStream.AuthenticateAsClientAsync(AddressHelper.TrimPort(preCreateEndpoint.DestinationEndpoint));
+                        await sslStream.AuthenticateAsClientAsync(AddressHelper.TrimPort(StaticRule.DestinationEndpoint.ToString()));
                         leftStream = sslStream;
                     }
                     await Task.WhenAll(new[]
@@ -143,7 +151,11 @@ namespace Pomelo.Net.Gateway.EndpointManager
         public void Dispose()
         {
             logger.LogInformation($"TCP Endpoint Listener<{server.LocalEndpoint}>: Stopping...");
-            server?.Stop();
+            try
+            {
+                server?.Stop();
+            }
+            catch { }
             server = null;
             scope?.Dispose();
             scope = null;

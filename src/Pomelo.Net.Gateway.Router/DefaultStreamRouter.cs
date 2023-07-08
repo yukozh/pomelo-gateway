@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.EndpointCollection;
 
@@ -22,23 +21,17 @@ namespace Pomelo.Net.Gateway.Router
             this.services = services;
         }
 
-        public async ValueTask<RouteResult> DetermineIdentifierAsync(
+        public async ValueTask<RouteResult> RouteAsync(
             Stream stream, 
             Memory<byte> buffer,
-            IPEndPoint serverEndponit,
-            IPEndPoint clientEndpoint,
+            IPEndPoint listenerEndPoint,
+            IPEndPoint clientEndPoint,
             CancellationToken cancellationToken = default)
         {
             using (var scope = services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<EndpointContext>();
-                var _endpoint = await db
-                    .Endpoints
-                    .Include(x => x.Users)
-                    .SingleOrDefaultAsync(x =>
-                        x.Address == serverEndponit.Address.ToString()
-                        && x.Protocol == Protocol.TCP
-                        && x.Port == (ushort)serverEndponit.Port);
+                var endPointProvider = scope.ServiceProvider.GetRequiredService<IEndPointProvider>();
+                var _endpoint = await endPointProvider.GetActiveEndPointAsync(Protocol.TCP, listenerEndPoint, cancellationToken);
 
                 if (_endpoint == null)
                 {
@@ -49,7 +42,7 @@ namespace Pomelo.Net.Gateway.Router
                 {
                     IsSucceeded = true,
                     HeaderLength = 0,
-                    Identifier = _endpoint.Users.FirstOrDefault()?.UserIdentifier
+                    UserId = _endpoint.UserIds.FirstOrDefault(), // In default stream router, a listener should only be consumed by single user.
                 };
             }
         }

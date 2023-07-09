@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Pomelo.Net.Gateway.EndpointManager;
 
 namespace Pomelo.Net.Gateway
 {
@@ -63,14 +64,20 @@ namespace Pomelo.Net.Gateway
                 .AddFileBasedStaticRuleProvider(staticRulesFilePath);
         }
 
-        public static Task RunPomeloGatewayServerAsync(this IServiceProvider services, IPEndPoint associateServerEndpoint, IPEndPoint tunnelServerEndpoint)
+        public static void RunPomeloGatewayServer(this IServiceProvider services, IPEndPoint associateServerEndpoint, IPEndPoint tunnelServerEndpoint)
         {
-            return Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
                 services.GetRequiredService<AssociateServer>().Start(associateServerEndpoint);
                 services.GetRequiredService<Tunnel.StreamTunnelServer>().Start(tunnelServerEndpoint);
                 services.GetRequiredService<Tunnel.PacketTunnelServer>().Start(tunnelServerEndpoint);
             }, TaskCreationOptions.LongRunning);
+
+            var tcp = services.GetRequiredService<TcpEndPointManager>();
+            _ = tcp.EnsureStaticRulesEndPointsCreatedAsync();
+
+            var udp = services.GetRequiredService<UdpEndPointManager>();
+            _ = udp.EnsureStaticRulesEndPointsCreatedAsync();
         }
 
         public static void RunPomeloGatewayClient(

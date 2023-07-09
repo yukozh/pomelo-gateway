@@ -39,48 +39,7 @@ namespace Pomelo.Net.Gateway.Server
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.ApplicationServices.RunPomeloGatewayServerAsync(IPEndPoint.Parse(Configuration["AssociationServer"]), IPEndPoint.Parse(Configuration["TunnelServer"])).ContinueWith((_)=> Task.Run(async ()=>
-            {
-                var tcp = app.ApplicationServices.GetRequiredService<TcpEndPointManager>();
-                using (var scope = app.ApplicationServices.CreateScope())
-                {
-                    var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
-                    var rules = await db.PublicRules
-                        .Where(x => x.Protocol == EndpointCollection.Protocol.TCP)
-                        .ToListAsync();
-                    foreach (var rule in rules)
-                    {
-                        await tcp.InsertPreCreateEndpointRuleAsync(
-                            rule.Id,
-                            IPEndPoint.Parse(rule.ServerEndpoint),
-                            rule.DestinationEndpoint,
-                            rule.RouterId,
-                            rule.TunnelId,
-                            false); // TODO: Support SSL
-                    }
-                }
-                tcp.EnsureStaticRulesEndPointsCreatedAsync();
-
-
-                var udp = app.ApplicationServices.GetRequiredService<UdpEndPointManager>();
-                using (var scope = app.ApplicationServices.CreateScope())
-                {
-                    var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
-                    var rules = await db.PublicRules
-                        .Where(x => x.Protocol == EndpointCollection.Protocol.UDP)
-                        .ToListAsync();
-                    foreach (var rule in rules)
-                    {
-                        await udp.InsertPreCreateEndpointRuleAsync(
-                            rule.Id,
-                            IPEndPoint.Parse(rule.ServerEndpoint),
-                            rule.DestinationEndpoint,
-                            rule.RouterId,
-                            rule.TunnelId);
-                    }
-                }
-                udp.EnsurePreCreateEndpointsAsync();
-            }));
+            app.ApplicationServices.RunPomeloGatewayServer(IPEndPoint.Parse(Configuration["AssociationServer"]), IPEndPoint.Parse(Configuration["TunnelServer"]));
 
             if (env.IsDevelopment())
             {

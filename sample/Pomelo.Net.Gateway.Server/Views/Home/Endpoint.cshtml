@@ -18,8 +18,8 @@
             @foreach (var x in Model)
             {
             <tr>
-                <td>@x.Protocol.ToString() @x.Address:@x.Port</td>
-                <td>@x.Users.Count</td>
+                <td>@x.Protocol.ToString() @x.ListenerEndPoint</td>
+                <td>@x.UserIds.Count</td>
                 @if (x.Protocol == Pomelo.Net.Gateway.EndpointCollection.Protocol.TCP)
                 {
                     <td>@(ViewBag.StreamTunnels.ContainsKey(x.TunnelId) ? ViewBag.StreamTunnels[x.TunnelId].Name : "Unknown")</td>

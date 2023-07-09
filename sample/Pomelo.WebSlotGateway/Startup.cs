@@ -57,7 +57,7 @@ namespace Pomelo.WebSlotGateway
                 db.InitDatabaseAsync().GetAwaiter().GetResult();
             }
                 
-            app.ApplicationServices.RunPomeloGatewayServerAsync(
+            app.ApplicationServices.RunPomeloGatewayServer(
                 IPEndPoint.Parse("127.0.0.1:16246"),
                 IPEndPoint.Parse("127.0.0.1:16247"))
                 .ContinueWith(t => Task.Run(async () =>

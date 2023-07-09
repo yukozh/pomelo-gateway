@@ -60,8 +60,8 @@ namespace Pomelo.WebSlotGateway.Controllers
                 var slots = await db.Slots.ToListAsync(cancellationToken);
                 foreach (var slot in slots)
                 {
-                    await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(slot.Id.ToString(), cancellationToken);
-                    await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(slot.Id.ToString(), cancellationToken);
+                    await tcpEndpointManager.RemoveAllRulesFromUserAsync(slot.Id.ToString(), cancellationToken);
+                    await tcpEndpointManager.RemoveAllRulesFromUserAsync(slot.Id.ToString(), cancellationToken);
                     streamTunnelContextFactory.DestroyContextsForUserIdentifier(slot.Id.ToString());
                 }
                 db.RemoveRange(slots);
@@ -70,7 +70,7 @@ namespace Pomelo.WebSlotGateway.Controllers
                 // Setup rules
                 foreach (var rule in slots)
                 {
-                    await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                    await tcpEndpointManager.GetOrCreateListenerForEndPointAsync(
                         rule.Id.ToString(),
                         await config.GetLocalEndpointAsync(),
                         rule.Destination,

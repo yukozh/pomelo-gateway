@@ -69,7 +69,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             }
         }
 
-        public async ValueTask EnsurePreCreateEndpointsAsync(CancellationToken cancellationToken = default)
+        public async ValueTask EnsureStaticRulesEndPointsCreatedAsync(CancellationToken cancellationToken = default)
         {
             try
             {

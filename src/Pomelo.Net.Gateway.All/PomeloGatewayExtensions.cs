@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.Net.Gateway.Association;
+using Pomelo.Net.Gateway.EndpointCollection;
 
 namespace Pomelo.Net.Gateway
 {
@@ -31,10 +32,10 @@ namespace Pomelo.Net.Gateway
         }
 
         public static IServiceCollection AddPomeloGatewayServer(
-            this IServiceCollection services)
+            this IServiceCollection services,
+            string staticRulesFilePath = "gateway-static-rules.json")
         {
             return services.AddLogging()
-                //.AddPomeloGatewayEndpointCollection()
                 .AddSingleton<AssociateServer>()
                 .AddSingleton<Association.Authentication.IAuthenticator, Association.Authentication.DefaultBasicAuthenticator>()
                 .AddSingleton<Tunnel.StreamTunnelContextFactory>()
@@ -57,7 +58,9 @@ namespace Pomelo.Net.Gateway
                 .AddSingleton<Tunnel.IPacketTunnel, Tunnel.ServerSidePacketTunnel>()
                 .AddSingleton<Tunnel.IPacketTunnel, Tunnel.PublicPacketTunnel>()
                 .AddSingleton<Router.IStreamRouter, Router.DefaultStreamRouter>()
-                .AddSingleton<Router.IPacketRouter, Router.DefaultPacketRouter>();
+                .AddSingleton<Router.IPacketRouter, Router.DefaultPacketRouter>()
+                .AddMemoryEndPointProvider()
+                .AddFileBasedStaticRuleProvider(staticRulesFilePath);
         }
 
         public static Task RunPomeloGatewayServerAsync(this IServiceProvider services, IPEndPoint associateServerEndpoint, IPEndPoint tunnelServerEndpoint)

@@ -23,6 +23,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IStreamTunnel tunnel;
         private ITunnelCreationNotifier notifier;
         private IEndPointProvider endPointProvider;
+        private IStaticRuleProvider staticRuleProvider;
         private ILogger<TcpEndPointListener> logger;
         private TcpEndPointManager manager;
         private IPEndPoint listenerEndPoint;
@@ -36,6 +37,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.logger = services.GetRequiredService<ILogger<TcpEndPointListener>>();
             this.notifier = services.GetRequiredService<ITunnelCreationNotifier>();
             this.manager = services.GetRequiredService<TcpEndPointManager>();
+            this.endPointProvider = services.GetRequiredService<IEndPointProvider>();
+            this.staticRuleProvider = services.GetRequiredService<IStaticRuleProvider>();
             this.listenerEndPoint = endPoint;
             _ = StartAsync();
         }
@@ -51,7 +54,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
             if (EndPointInfo.Type == EndpointType.Static)
             {
-                StaticRule = await endPointProvider.GetStaticRuleByListenerEndPointAsync(Protocol.TCP, listenerEndPoint);
+                StaticRule = await staticRuleProvider.GetStaticRuleByListenerEndPointAsync(Protocol.TCP, listenerEndPoint);
             }
 
             this.router = scope.ServiceProvider.GetServices<IStreamRouter>().SingleOrDefault(x => x.Id == EndPointInfo.RouterId);

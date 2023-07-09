@@ -68,7 +68,8 @@ namespace Pomelo.Net.Gateway.Server.Controllers
 
         public async ValueTask<IActionResult> Endpoint(
             [FromServices] IServiceProvider services, 
-            [FromServices] EndpointContext db)
+            [FromServices] IEndPointProvider endPointProvider,
+            CancellationToken cancellationToken = default)
         {
             ViewBag.StreamTunnels = services.GetServices<IStreamTunnel>()
                 .Select(x => new Interface
@@ -99,9 +100,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 })
                 .ToDictionary(x => x.Id);
 
-            return View(await db.Endpoints
-                .Include(x => x.Users)
-                .ToListAsync());
+            return View(await endPointProvider.GetActiveEndPointsAsync(cancellationToken));
         }
 
         public async ValueTask<IActionResult> User(

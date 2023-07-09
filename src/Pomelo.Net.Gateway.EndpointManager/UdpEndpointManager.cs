@@ -18,6 +18,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IServiceProvider services;
         private IServiceScope scope;
         private IEndPointProvider endPointProvider;
+        private IStaticRuleProvider staticRuleProvider;
         private ConcurrentDictionary<IPEndPoint, UdpEndPointListener> listeners;
 
         public UdpEndPointManager(IServiceProvider services)
@@ -26,6 +27,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.scope = services.CreateScope();
             this.logger = services.GetRequiredService<ILogger<UdpEndPointManager>>();
             this.listeners = new ConcurrentDictionary<IPEndPoint, UdpEndPointListener>();
+            this.endPointProvider = services.GetRequiredService<IEndPointProvider>();
+            this.staticRuleProvider = services.GetRequiredService<IStaticRuleProvider>();
         }
 
         public void Dispose()
@@ -70,7 +73,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         {
             try
             {
-                var endpoints = (await endPointProvider.GetStaticRulesAsync(cancellationToken))
+                var endpoints = (await staticRuleProvider.GetStaticRulesAsync(cancellationToken))
                     .Where(x => x.Protocol == Protocol.UDP);
 
                 foreach (var endpoint in endpoints)

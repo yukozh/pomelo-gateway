@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.EndpointCollection;
@@ -17,6 +16,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private IServiceProvider services;
         private IServiceScope scope;
         private IEndPointProvider endPointProvider;
+        private IStaticRuleProvider staticRuleProvider;
         private ConcurrentDictionary<IPEndPoint, TcpEndPointListener> listeners;
 
         public TcpEndPointManager(IServiceProvider services)
@@ -24,6 +24,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             this.services = services;
             this.scope = services.CreateScope();
             this.endPointProvider = scope.ServiceProvider.GetService<IEndPointProvider>();
+            this.staticRuleProvider = scope.ServiceProvider.GetService<IStaticRuleProvider>();
             this.logger = services.GetRequiredService<ILogger<TcpEndPointManager>>();
             this.listeners = new ConcurrentDictionary<IPEndPoint, TcpEndPointListener>();
         }
@@ -43,7 +44,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             CancellationToken cancellationToken = default)
         {
             logger.LogInformation($"Creating TCP Endpoint Listener {ep}");
-            var endPoint = await endPointProvider.GetOrAddActiveEndPointAsync(ep, routerId, tunnelId, userId, type, cancellationToken);
+            var endPoint = await endPointProvider.GetOrAddActiveEndPointAsync(Protocol.TCP, ep, routerId, tunnelId, userId, type, cancellationToken);
             
             return listeners.GetOrAdd(ep, (key) => 
             {
@@ -67,7 +68,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
         public async ValueTask EnsureStaticRulesEndPointsCreatedAsync()
         {
-            var endpoints = (await endPointProvider.GetStaticRulesAsync())
+            var endpoints = (await staticRuleProvider.GetStaticRulesAsync())
                 .Where(x => x.Protocol == Protocol.TCP);
 
             foreach (var endpoint in endpoints)

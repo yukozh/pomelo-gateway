@@ -22,6 +22,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private PacketTunnelServer tunnelServer;
         private UdpEndPointManager manager;
         private IEndPointProvider endPointProvider;
+        private IStaticRuleProvider staticRuleProvider;
         private EndpointCollection.EndPoint endPointInfo;
         private StaticRule staticRule;
 
@@ -43,6 +44,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             server = new PomeloUdpClient(endpoint);
             router = FindRouterById(routerId);
             tunnel = FindTunnelById(tunnelId);
+            endPointProvider = services.GetRequiredService<IEndPointProvider>();
+            staticRuleProvider = services.GetRequiredService<IStaticRuleProvider>();
             _ = StartAsync();
             logger.LogInformation($"UDP Endpoint {endpoint} started");
         }
@@ -61,7 +64,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
             endPointInfo = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, Endpoint);
             if (endPointInfo.Type == EndpointType.Static)
             {
-                staticRule = await endPointProvider.GetStaticRuleByListenerEndPointAsync(Protocol.UDP, Endpoint);
+                staticRule = await staticRuleProvider.GetStaticRuleByListenerEndPointAsync(Protocol.UDP, Endpoint);
             }
 
             while (true)

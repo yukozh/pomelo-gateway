@@ -8,14 +8,6 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 {
     public interface IEndPointProvider
     {
-        ValueTask<IEnumerable<StaticRule>> GetStaticRulesAsync(
-            CancellationToken cancellationToken = default);
-
-        ValueTask<StaticRule> GetStaticRuleByListenerEndPointAsync(
-            Protocol protocol,
-            IPEndPoint endPoint,
-            CancellationToken cancellationToken = default);
-
         ValueTask<IEnumerable<EndPoint>> GetActiveEndPointsAsync(
             CancellationToken cancellationToken = default);
 
@@ -25,6 +17,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
             CancellationToken cancellationToken = default);
 
         ValueTask<EndPoint> GetOrAddActiveEndPointAsync(
+            Protocol protocol,
             IPEndPoint endpoint,
             Guid routerId,
             Guid tunnelId,

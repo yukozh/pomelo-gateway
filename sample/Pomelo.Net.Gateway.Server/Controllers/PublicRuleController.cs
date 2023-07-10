@@ -130,7 +130,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
 
             if (model.Protocol == EndpointCollection.Protocol.TCP)
             {
-                await tcpEndpointManager.InsertPreCreateEndpointRuleAsync(
+                await ruleProvider.c(
                     model.Id,
                     serverEndpoint,
                     model.DestinationEndpoint,
@@ -296,6 +296,7 @@ namespace Pomelo.Net.Gateway.Server.Controllers
             await db.SaveChangesAsync(cancellationToken);
             if (rule.Protocol == EndpointCollection.Protocol.TCP)
             {
+                await 
                 await tcpEndpointManager.RemoveAllRulesFromAgentBridgeAsync(id, cancellationToken);
                 await tcpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
             }

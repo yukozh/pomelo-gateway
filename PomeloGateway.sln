@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31025.194
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{00678BA8-1744-4B02-A1B7-74CB56AE47CC}"
 EndProject
@@ -37,11 +37,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Agent", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Server", "sample\Pomelo.Net.Gateway.Server\Pomelo.Net.Gateway.Server.csproj", "{80E02233-7A38-49DB-B58C-7429C1DCAEA0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.WebSlotGateway", "sample\Pomelo.WebSlotGateway\Pomelo.WebSlotGateway.csproj", "{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Http", "src\Pomelo.Net.Gateway.Http\Pomelo.Net.Gateway.Http.csproj", "{346DEA57-82F1-4D84-B025-1ACAE758038B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pomelo.Net.Gateway.Http.Tests", "test\Pomelo.Net.Gateway.Http.Tests\Pomelo.Net.Gateway.Http.Tests.csproj", "{0DE15098-7A76-4855-A1CB-7C370A470EC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pomelo.Net.Gateway.Http.Tests", "test\Pomelo.Net.Gateway.Http.Tests\Pomelo.Net.Gateway.Http.Tests.csproj", "{0DE15098-7A76-4855-A1CB-7C370A470EC4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,10 +103,6 @@ Global
 		{80E02233-7A38-49DB-B58C-7429C1DCAEA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80E02233-7A38-49DB-B58C-7429C1DCAEA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80E02233-7A38-49DB-B58C-7429C1DCAEA0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{346DEA57-82F1-4D84-B025-1ACAE758038B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -136,7 +130,6 @@ Global
 		{745E8F80-91AB-498B-A7F9-B6D60FF5FD7B} = {00678BA8-1744-4B02-A1B7-74CB56AE47CC}
 		{D912EEEE-BAFF-439A-A421-A59C9F2F233F} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
 		{80E02233-7A38-49DB-B58C-7429C1DCAEA0} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
-		{04E1EF1D-5158-4D6B-B9D1-21C3B85BB1E2} = {F4F57681-7948-4F76-9CB1-C384AA2E82CD}
 		{346DEA57-82F1-4D84-B025-1ACAE758038B} = {00678BA8-1744-4B02-A1B7-74CB56AE47CC}
 		{0DE15098-7A76-4855-A1CB-7C370A470EC4} = {2E32FDF7-DB0D-4A12-A6F2-AEAB55A3C395}
 	EndGlobalSection

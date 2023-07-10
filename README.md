@@ -1,1 +1,5 @@
 # Pomelo Gateway
+
+## License
+
+aGPL

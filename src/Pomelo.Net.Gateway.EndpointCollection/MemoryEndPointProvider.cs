@@ -117,6 +117,23 @@ namespace Pomelo.Net.Gateway.EndpointCollection
 
             return ValueTask.FromResult(ret.AsEnumerable());
         }
+
+        public ValueTask RemoveEndPointAsync(
+            Protocol protocol, 
+            IPEndPoint endPoint,
+            CancellationToken cancellationToken = default)
+        {
+            if (protocol == Protocol.TCP)
+            {
+                tcpEndPoints.TryRemove(endPoint, out var _);
+            }
+            else
+            {
+                udpEndPoints.TryRemove(endPoint, out var _);
+            }
+
+            return ValueTask.CompletedTask;
+        }
     }
 
     public static class MemoryEndPointProviderExtensions

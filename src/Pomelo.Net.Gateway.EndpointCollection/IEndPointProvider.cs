@@ -28,5 +28,10 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         ValueTask<IEnumerable<EndPoint>> RemoveAllActiveEndPointsFromUserAsync(
             string userId, 
             CancellationToken cancellationToken = default);
+
+        ValueTask RemoveEndPointAsync(
+            Protocol protocol, 
+            IPEndPoint endPoint, 
+            CancellationToken cancellationToken = default);
     }
 }

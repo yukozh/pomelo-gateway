@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -7,7 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Pomelo.Net.Gateway.Association.Models;
+using Pomelo.Net.Gateway.EndpointCollection;
 using Pomelo.Net.Gateway.EndpointManager;
 using Pomelo.Net.Gateway.Router;
 using Pomelo.Net.Gateway.Server.Models;
@@ -300,6 +305,17 @@ namespace Pomelo.Net.Gateway.Server.Controllers
                 await udpEndpointManager.RemovePreCreateEndpointRuleAsync(id);
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private static List<StaticRule> GetStaticRules()
+        {
+            var text = System.IO.File.ReadAllText("gateway-static-rules.json");
+            return JsonConvert.DeserializeObject<List<StaticRule>>(text);
+        }
+
+        private static void SetStaticRules(IEnumerable<StaticRule> values)
+        {
+            System.IO.File.WriteAllText("gateway-static-rules.json", JsonConvert.SerializeObject(values));
         }
     }
 }

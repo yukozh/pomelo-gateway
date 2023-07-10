@@ -54,6 +54,19 @@ namespace Pomelo.Net.Gateway.EndpointManager
             });
         }
 
+        public async ValueTask RemoveEndPointAsync(
+            IPEndPoint ep, 
+            CancellationToken cancellationToken = default)
+        {
+            await endPointProvider.RemoveEndPointAsync(Protocol.UDP, ep, cancellationToken);
+
+            if (listeners.TryRemove(ep, out var listener))
+            {
+                listener.Dispose();
+                logger.LogInformation($"Removed UDP listener {ep}");
+            }
+        }
+
         public async ValueTask RemoveAllRulesFromUserAsync(
             string userId,
             CancellationToken cancellationToken = default)

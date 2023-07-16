@@ -35,7 +35,7 @@ namespace Pomelo.Net.Gateway.Agent.Controllers
             {
                 Protocol = x.Protocol,
                 LocalEndpoint = x.LocalEndpoint,
-                RemoteEndpoint = IPEndPoint.Parse(x.RemoteEndpoint),
+                RemoteEndpoint = x.RemoteEndpoint,
                 LocalTunnelId = x.LocalTunnelId,
                 LocalWithSSL = x.LocalWithSSL,
                 RemoteRouterId = x.RemoteRouterId,

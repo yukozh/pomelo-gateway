@@ -11,7 +11,7 @@ namespace Pomelo.Net.Gateway.EndpointCollection
         public Protocol Protocol { get; set; }
         public string LocalEndpoint { get; set; }
         public bool LocalWithSSL { get; set; }
-        public IPEndPoint RemoteEndpoint { get; set; }
+        public string RemoteEndpoint { get; set; }
         public Guid LocalTunnelId { get; set; }
         public Guid RemoteTunnelId { get; set; }
         public Guid RemoteRouterId { get; set; }

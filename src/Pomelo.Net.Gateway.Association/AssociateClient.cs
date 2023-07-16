@@ -113,7 +113,7 @@ namespace Pomelo.Net.Gateway.Association
                         RouterId = rule.RemoteRouterId,
                         TunnelId = rule.RemoteTunnelId,
                         Protocol = rule.Protocol,
-                        ListenerEndPoint = rule.RemoteEndpoint
+                        ListenerEndPoint = IPEndPoint.Parse(rule.RemoteEndpoint)
                     }, buffer.Memory.Slice(2));
                     buffer.Memory.Span[0] = (byte)AssociateOpCode.SetRule;
                     buffer.Memory.Span[1] = (byte)length;

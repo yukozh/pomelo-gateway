@@ -45,7 +45,8 @@ namespace Pomelo.Net.Gateway.EndpointManager
             CancellationToken cancellationToken = default)
         {
             logger.LogInformation($"Creating UDP Endpoint Listener {endpoint}");
-            var _endpoint = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, endpoint, cancellationToken);
+
+            var endPoint = await endPointProvider.GetOrAddActiveEndPointAsync(Protocol.UDP, endpoint, routerId, tunnelId, userId, userType, cancellationToken);
 
             return listeners.GetOrAdd(endpoint, (key) =>
             {

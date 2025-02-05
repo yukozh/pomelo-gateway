@@ -40,7 +40,7 @@ namespace Pomelo.Net.Gateway.Association
         public IEnumerable<AssociateContext> Clients => clients.Values;
         public IPEndPoint Endpoint => endpoint;
 
-        private AssociateServer(IServiceProvider services)
+        public AssociateServer(IServiceProvider services)
         {
             this.clients = new ConcurrentDictionary<string, AssociateContext>();
             this.services = services;

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pomelo.Net.Gateway.Association.Token;
 using Pomelo.Net.Gateway.EndpointCollection;
+using Newtonsoft.Json;
 
 namespace Pomelo.Net.Gateway.Tunnel
 {
@@ -209,7 +210,7 @@ namespace Pomelo.Net.Gateway.Tunnel
                 var serverEndpoint = new IPEndPoint(
                     new IPAddress(buffer.Slice(18, isIPv6 ? 16 : 4).AsSpan()),
                     BitConverter.ToUInt16(buffer.Slice(34, 2).AsSpan()));
-                var rule = mappingRuleProvider.Rules.SingleOrDefault(x => x.RemoteEndpoint.Equals(serverEndpoint));
+                var rule = mappingRuleProvider.Rules.SingleOrDefault(x => x.RemoteEndpoint.Equals(serverEndpoint.ToString()));
                 if (rule == null)
                 {
                     logger.LogWarning($"Packet tunnel rule not found: {serverEndpoint}");

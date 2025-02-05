@@ -61,23 +61,33 @@ namespace Pomelo.Net.Gateway.EndpointManager
         private async ValueTask StartAsync()
         {
             var buffer = new byte[PomeloUdpClient.MaxUDPSize];
-            endPointInfo = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, Endpoint);
-            if (endPointInfo.Type == EndpointType.Static)
+            try
             {
-                staticRule = await staticRuleProvider.GetStaticRuleByListenerEndPointAsync(Protocol.UDP, Endpoint);
+                endPointInfo = await endPointProvider.GetActiveEndPointAsync(Protocol.UDP, Endpoint);
+                if (endPointInfo.Type == EndpointType.Static)
+                {
+                    staticRule = await staticRuleProvider.GetStaticRuleByListenerEndPointAsync(Protocol.UDP, Endpoint);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.ToString());
             }
 
             while (true)
             {
                 try
                 {
+                    //logger.LogInformation("Waiting for client packet...");
                     var info = await server.ReceiveAsync(new ArraySegment<byte>(buffer, tunnel.ExpectedForwardAppendHeaderLength, buffer.Length - tunnel.ExpectedForwardAppendHeaderLength));
+
+                    //logger.LogInformation("Received for client packet...");
                     var _buffer = new ArraySegment<byte>(buffer, tunnel.ExpectedForwardAppendHeaderLength, info.ReceivedBytes);
-                    var identifier = await router.RouteAsync(_buffer, Endpoint);
+                    var identifier = "admin";
                     if (identifier == null)
                     {
                         logger.LogWarning($"No available destination found for UDP Listener {Endpoint}");
-                        continue;
+                        //continue;
                     }
 
                     var context = packetTunnelContextFactory.GetOrCreateContext(identifier, info.RemoteEndPoint, tunnel.Id);
@@ -87,6 +97,7 @@ namespace Pomelo.Net.Gateway.EndpointManager
 
                     if (endPointInfo.Type == EndpointType.Bridge)
                     {
+                        logger.LogInformation("Forwarding packet...");
                         // No need to notify
                         await tunnel.ForwardAsync(
                             tunnelServer.Server,

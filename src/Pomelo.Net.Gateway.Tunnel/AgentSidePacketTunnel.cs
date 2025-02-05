@@ -74,7 +74,7 @@ namespace Pomelo.Net.Gateway.Tunnel
             var serverEndpoint = new IPEndPoint(
                 new IPAddress(buffer.Slice(18, isIPv6 ? 16 : 4).AsSpan()),
                 BitConverter.ToUInt16(buffer.Slice(34, 2).AsSpan()));
-            var rule = mappingRuleProvider.Rules.SingleOrDefault(x => x.RemoteEndpoint.Equals(serverEndpoint));
+            var rule = mappingRuleProvider.Rules.SingleOrDefault(x => x.RemoteEndpoint.Equals(serverEndpoint.ToString()));
             if (rule == null)
             {
                 logger.LogWarning($"Packet router has not found the destination from server {serverEndpoint}");

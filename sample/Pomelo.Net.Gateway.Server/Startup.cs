@@ -30,7 +30,7 @@ namespace Pomelo.Net.Gateway.Server
         {
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddDbContext<ServerContext>(x => x.UseSqlite(Configuration["DB"]));
             services.AddPomeloGatewayServer()
                 .AddPomeloHttpStack();
@@ -39,6 +39,9 @@ namespace Pomelo.Net.Gateway.Server
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            using var scope = app.ApplicationServices.CreateScope();
+            using var db = scope.ServiceProvider.GetRequiredService<ServerContext>();
+            db.InitDatabaseAsync().GetAwaiter().GetResult();
             app.ApplicationServices.RunPomeloGatewayServer(IPEndPoint.Parse(Configuration["AssociationServer"]), IPEndPoint.Parse(Configuration["TunnelServer"]));
 
             if (env.IsDevelopment())

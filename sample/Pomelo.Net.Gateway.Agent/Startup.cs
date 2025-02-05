@@ -24,6 +24,7 @@ namespace Pomelo.Net.Gateway.Agent
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
             services.AddControllersWithViews()
+                .AddRazorRuntimeCompilation()
                 .AddNewtonsoftJson(x => 
                 {
                     x.SerializerSettings.Converters.Add(new IPEndPointConverter());

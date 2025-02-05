@@ -47,8 +47,8 @@ namespace Pomelo.Net.Gateway.Tunnel
         public void Start(IPEndPoint tunnelServerEndpoint)
         {
             Stop();
-            server = new PomeloUdpClient(endpoint);
             this.endpoint = tunnelServerEndpoint;
+            server = new PomeloUdpClient(endpoint);
             logger.LogInformation($"Packet Tunnel Server is listening on {endpoint}...");
             loopCancellationToken = new CancellationTokenSource();
             _ = StartAsync(loopCancellationToken.Token);

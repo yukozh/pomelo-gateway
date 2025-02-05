@@ -46,7 +46,7 @@ namespace Pomelo.Net.Gateway.Tunnel
 
         public void Start(IPEndPoint tunnelServerEndpoint)
         {
-            server = new TcpListener(endpoint);
+            server = new TcpListener(tunnelServerEndpoint);
             server.Server.ReceiveTimeout = 1000 * 30;
             server.Server.SendTimeout = 1000 * 30;
             this.endpoint = tunnelServerEndpoint;
